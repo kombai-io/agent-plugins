@@ -1,0 +1,20 @@
+{
+  "name": "kombai",
+  "version": "0.1.0",
+  "description": "Design and build user interfaces with the installed Kombai desktop app from Cursor.",
+  "author": {
+    "name": "Kombai"
+  },
+  "homepage": "https://kombai.com/",
+  "repository": "https://github.com/kombai-io/agent-plugins",
+  "license": "MIT",
+  "keywords": [
+    "kombai",
+    "design",
+    "ui",
+    "cursor",
+    "mcp"
+  ],
+  "logo": "assets/logo.png",
+  "skills": "./skills/"
+}

@@ -24,3 +24,5 @@ jobs:
         run: node scripts/codex-plugin.mjs validate
       - name: Validate Claude Code plugin
         run: node scripts/claude-code-plugin.mjs validate
+      - name: Validate Cursor plugin
+        run: node scripts/cursor-plugin.mjs validate

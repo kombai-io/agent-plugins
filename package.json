@@ -13,7 +13,11 @@
     "version:claude-code": "node scripts/claude-code-plugin.mjs bump",
     "test:claude-code": "node --test scripts/claude-code-plugin.test.mjs",
     "test": "node --test scripts/*.test.mjs",
-    "check": "node scripts/codex-plugin.mjs validate && node scripts/claude-code-plugin.mjs validate"
+    "check": "node scripts/codex-plugin.mjs validate && node scripts/claude-code-plugin.mjs validate && node scripts/cursor-plugin.mjs validate",
+    "check:cursor": "node scripts/cursor-plugin.mjs validate",
+    "pack:cursor": "node scripts/cursor-plugin.mjs pack",
+    "version:cursor": "node scripts/cursor-plugin.mjs bump",
+    "test:cursor": "node --test scripts/cursor-plugin.test.mjs"
   },
   "packageManager": "pnpm@10.15.1",
   "engines": {

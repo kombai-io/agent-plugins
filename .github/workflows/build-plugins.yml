@@ -23,6 +23,16 @@ on:
         description: 'Optional Claude Code plugin version for this build (leave blank to use the committed version)'
         default: ''
         required: false
+      build-cursor-plugin:
+        type: boolean
+        description: 'Build Cursor plugin'
+        default: false
+        required: false
+      cursor-plugin-version:
+        type: string
+        description: 'Optional Cursor plugin version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
 
 permissions:
   contents: read
@@ -99,5 +109,42 @@ jobs:
         with:
           name: kombai-claude-code-plugin-${{ steps.plugin-version.outputs.version }}
           path: ${{ runner.temp }}/kombai-claude-code-plugin-${{ steps.plugin-version.outputs.version }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-cursor-plugin:
+    if: ${{ inputs.build-cursor-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+
+      - name: Apply Cursor plugin version
+        if: ${{ inputs.cursor-plugin-version != '' }}
+        env:
+          CURSOR_PLUGIN_VERSION: ${{ inputs.cursor-plugin-version }}
+        run: node scripts/cursor-plugin.mjs bump "$CURSOR_PLUGIN_VERSION"
+
+      - name: Test Cursor plugin release checks
+        run: node --test scripts/cursor-plugin.test.mjs
+
+      - name: Validate Cursor plugin
+        id: plugin-version
+        run: node scripts/cursor-plugin.mjs validate --github-output
+
+      - name: Package Cursor plugin marketplace
+        run: node scripts/cursor-plugin.mjs pack "$RUNNER_TEMP"
+
+      - name: Upload Cursor plugin marketplace
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-cursor-plugin-${{ steps.plugin-version.outputs.version }}
+          path: ${{ runner.temp }}/kombai-cursor-plugin-${{ steps.plugin-version.outputs.version }}.zip
           if-no-files-found: error
           compression-level: 0

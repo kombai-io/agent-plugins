@@ -21,4 +21,4 @@ Identify which Kombai build the user requested before choosing an executable. Fo
 
 After the MCP is connected, use the matching task skill installed by the Kombai app, such as `/design-with-kombai`, `/code-with-kombai`, or `/describe-kombai-canvas`. Those skills describe how to perform each task. The MCP server's instructions describe tool arguments, status polling, and retries; follow them rather than duplicating them here.
 
-If Kombai reports `not_signed_in`, ask the user to open the Kombai app and sign in there. Do not request credentials in Claude Code or pass them through MCP. Handle credit or account refusals in Kombai. If the user needs to answer a question during a Kombai run, direct them to the app.
+Do not perform sign-in or sign-up on the user's behalf unless they explicitly ask you to. If Kombai reports `not_signed_in` and the user has not explicitly asked you to handle sign-in, ask them to open the Kombai app and sign in there. Do not request credentials in Claude Code or pass them through MCP. Handle credit or account refusals in Kombai. If the user needs to answer a question during a Kombai run, direct them to the app.

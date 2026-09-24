@@ -1,0 +1,16 @@
+{
+  "name": "kombai",
+  "owner": {
+    "name": "Kombai"
+  },
+  "metadata": {
+    "description": "Kombai agent plugins for Cursor"
+  },
+  "plugins": [
+    {
+      "name": "kombai",
+      "source": "plugins/cursor",
+      "description": "Design and build UIs with the installed Kombai desktop app."
+    }
+  ]
+}
