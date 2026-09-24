@@ -1,0 +1,27 @@
+{
+  "name": "@kombai/agent-plugins",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Host-specific Kombai agent plugin payloads",
+  "scripts": {
+    "check:codex": "node scripts/codex-plugin.mjs validate",
+    "pack:codex": "node scripts/codex-plugin.mjs pack",
+    "version:codex": "node scripts/codex-plugin.mjs bump",
+    "test:codex": "node --test scripts/codex-plugin.test.mjs",
+    "check:claude-code": "node scripts/claude-code-plugin.mjs validate",
+    "pack:claude-code": "node scripts/claude-code-plugin.mjs pack",
+    "version:claude-code": "node scripts/claude-code-plugin.mjs bump",
+    "test:claude-code": "node --test scripts/claude-code-plugin.test.mjs",
+    "test": "node --test scripts/*.test.mjs",
+    "check": "node scripts/codex-plugin.mjs validate && node scripts/claude-code-plugin.mjs validate"
+  },
+  "packageManager": "pnpm@10.15.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kombai-io/agent-plugins.git"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "kombai",
+  "description": "Kombai plugins for coding agents.",
+  "owner": {
+    "name": "Kombai"
+  },
+  "plugins": [
+    {
+      "name": "kombai",
+      "source": "./plugins/claude-code",
+      "description": "Use the installed Kombai desktop app for UI design and implementation in Claude Code."
+    }
+  ]
+}

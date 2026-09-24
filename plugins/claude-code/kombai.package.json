@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "kombai-claude-code-plugin/v1",
+  "name": "kombai",
+  "version": "0.1.0",
+  "minimumKombaiVersion": "2.0.125",
+  "mcpServer": "kombai",
+  "mcpTransport": "stdio",
+  "localMcp": {
+    "owner": "installed-kombai-desktop-app",
+    "packagedInstallArgs": ["mcp", "install", "claude-code"],
+    "requiredTools": ["chat_start", "chat_status", "canvas_read"],
+    "authentication": "sign-in-in-kombai-app"
+  }
+}

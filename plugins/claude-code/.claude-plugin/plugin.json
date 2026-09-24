@@ -1,0 +1,10 @@
+{
+  "name": "kombai",
+  "version": "0.1.0",
+  "description": "Design and build user interfaces with the installed Kombai desktop app from Claude Code.",
+  "author": {
+    "name": "Kombai"
+  },
+  "repository": "https://github.com/kombai-io/agent-plugins",
+  "homepage": "https://kombai.com/"
+}

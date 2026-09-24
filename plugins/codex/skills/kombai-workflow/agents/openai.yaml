@@ -1,0 +1,4 @@
+interface:
+  display_name: "Work with Kombai"
+  short_description: "Design and build UI through the Kombai app."
+  default_prompt: "Use $kombai-workflow to design or build a UI with Kombai."

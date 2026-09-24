@@ -1,0 +1,26 @@
+name: Validate Plugins
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+      - name: Test release scripts
+        run: node --test scripts/*.test.mjs
+      - name: Validate Codex plugin
+        run: node scripts/codex-plugin.mjs validate
+      - name: Validate Claude Code plugin
+        run: node scripts/claude-code-plugin.mjs validate

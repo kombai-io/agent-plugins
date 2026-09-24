@@ -1,0 +1,103 @@
+name: Build Plugins
+
+on:
+  workflow_dispatch:
+    inputs:
+      build-codex-plugin:
+        type: boolean
+        description: 'Build Codex plugin'
+        default: false
+        required: false
+      codex-plugin-version:
+        type: string
+        description: 'Optional Codex plugin version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
+      build-claude-code-plugin:
+        type: boolean
+        description: 'Build Claude Code plugin'
+        default: false
+        required: false
+      claude-code-plugin-version:
+        type: string
+        description: 'Optional Claude Code plugin version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-codex-plugin:
+    if: ${{ inputs.build-codex-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+
+      - name: Apply Codex plugin version
+        if: ${{ inputs.codex-plugin-version != '' }}
+        env:
+          CODEX_PLUGIN_VERSION: ${{ inputs.codex-plugin-version }}
+        run: node scripts/codex-plugin.mjs bump "$CODEX_PLUGIN_VERSION"
+
+      - name: Test Codex plugin release checks
+        run: node --test scripts/codex-plugin.test.mjs
+
+      - name: Validate Codex plugin
+        id: plugin-version
+        run: node scripts/codex-plugin.mjs validate --github-output
+
+      - name: Package Codex plugin
+        run: node scripts/codex-plugin.mjs pack "$RUNNER_TEMP"
+
+      - name: Upload Codex plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-codex-plugin-${{ steps.plugin-version.outputs.version }}
+          path: ${{ runner.temp }}/kombai-codex-plugin-${{ steps.plugin-version.outputs.version }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-claude-code-plugin:
+    if: ${{ inputs.build-claude-code-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+
+      - name: Apply Claude Code plugin version
+        if: ${{ inputs.claude-code-plugin-version != '' }}
+        env:
+          CLAUDE_CODE_PLUGIN_VERSION: ${{ inputs.claude-code-plugin-version }}
+        run: node scripts/claude-code-plugin.mjs bump "$CLAUDE_CODE_PLUGIN_VERSION"
+
+      - name: Test Claude Code plugin release checks
+        run: node --test scripts/claude-code-plugin.test.mjs
+
+      - name: Validate Claude Code plugin
+        id: plugin-version
+        run: node scripts/claude-code-plugin.mjs validate --github-output
+
+      - name: Package Claude Code plugin marketplace
+        run: node scripts/claude-code-plugin.mjs pack "$RUNNER_TEMP"
+
+      - name: Upload Claude Code plugin marketplace
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-claude-code-plugin-${{ steps.plugin-version.outputs.version }}
+          path: ${{ runner.temp }}/kombai-claude-code-plugin-${{ steps.plugin-version.outputs.version }}.zip
+          if-no-files-found: error
+          compression-level: 0
