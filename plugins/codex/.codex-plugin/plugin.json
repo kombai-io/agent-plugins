@@ -1,6 +1,6 @@
 {
   "name": "kombai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Design and build user interfaces with the installed Kombai desktop app from Codex.",
   "author": {
     "name": "Kombai",
@@ -8,7 +8,13 @@
   },
   "repository": "https://github.com/kombai-io/agent-plugins",
   "homepage": "https://kombai.com/",
-  "keywords": ["kombai", "design", "ui", "codex", "mcp"],
+  "keywords": [
+    "kombai",
+    "design",
+    "ui",
+    "codex",
+    "mcp"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Kombai",
@@ -16,7 +22,10 @@
     "longDescription": "Send design and implementation work from Codex to the Kombai desktop app, then follow progress and review the result.",
     "developerName": "Kombai",
     "category": "Creativity",
-    "capabilities": ["Interactive", "Write"],
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
     "websiteURL": "https://kombai.com/",
     "brandColor": "#48DE94",
     "composerIcon": "./assets/icon.png",
