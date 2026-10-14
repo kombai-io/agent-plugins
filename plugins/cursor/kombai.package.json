@@ -1,7 +1,7 @@
 {
   "schemaVersion": "kombai-cursor-plugin/v1",
   "name": "kombai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minimumKombaiVersion": "2.0.126",
   "mcpServer": "kombai",
   "mcpTransport": "stdio",
