@@ -1,30 +1,33 @@
 {
-  "name": "kombai",
-  "version": "0.1.0",
-  "description": "Design and build user interfaces with the installed Kombai desktop app from Codex.",
-  "author": {
-    "name": "Kombai",
-    "url": "https://kombai.com/"
-  },
-  "repository": "https://github.com/kombai-io/agent-plugins",
-  "homepage": "https://kombai.com/",
-  "keywords": ["kombai", "design", "ui", "codex", "mcp"],
-  "skills": "./skills/",
-  "interface": {
-    "displayName": "Kombai",
-    "shortDescription": "Design and build UIs with Kombai.",
-    "longDescription": "Send design and implementation work from Codex to the Kombai desktop app, then follow progress and review the result.",
-    "developerName": "Kombai",
-    "category": "Creativity",
-    "capabilities": ["Interactive", "Write"],
-    "websiteURL": "https://kombai.com/",
-    "brandColor": "#48DE94",
-    "composerIcon": "./assets/icon.png",
+	"name": "kombai",
+	"version": "0.1.0",
+	"description": "Kombai is an AI design engineer with built-in taste. Use the Kombai plugin to design a new page or product UI, or improve an existing screen.\n\nFor every task, Kombai's taste agent creates a design direction grounded in your brief and product. It follows the choices you've already made and makes creative decisions where needed. It draws on 20,000+ curated references to guide page structure, hierarchy, visual style, content, motion and interactions.\n\nKombai also provides an infinite, editable canvas where you can explore and compare design approaches side by side, refine them with the agent, or edit any element's text, styles or layout directly.",
+	"author": {
+		"name": "Kombai",
+		"url": "https://kombai.com/"
+	},
+	"repository": "https://github.com/kombai-io/agent-plugins",
+	"homepage": "https://kombai.com/",
+	"keywords": ["kombai", "design", "ui", "codex", "mcp"],
+	"skills": "./skills/",
+	"interface": {
+		"displayName": "Kombai",
+		"shortDescription": "Your AI design engineer",
+		"longDescription": "Kombai is an AI design engineer with built-in taste. Use the Kombai plugin to design a new page or product UI, or improve an existing screen.\n\nFor every task, Kombai's taste agent creates a design direction grounded in your brief and product. It follows the choices you've already made and makes creative decisions where needed. It draws on 20,000+ curated references to guide page structure, hierarchy, visual style, content, motion and interactions.\n\nKombai also provides an infinite, editable canvas where you can explore and compare design approaches side by side, refine them with the agent, or edit any element's text, styles or layout directly.",
+		"developerName": "Kombai",
+		"category": "Creativity",
+		"capabilities": ["Interactive", "Write"],
+		"websiteURL": "https://kombai.com/",
+		"privacyPolicyURL": "https://kombai.com/privacy/",
+		"termsOfServiceURL": "https://kombai.com/terms/",
+		"supportURL": "https://kombai.com/support/",
+		"brandColor": "#26cf7a",
+		"composerIcon": "./assets/icon.png",
     "logo": "./assets/logo.png",
     "defaultPrompt": [
-      "Use Kombai to design a landing page for this project.",
-      "Ask Kombai to improve the UI of this screen.",
-      "Have Kombai implement this design in my codebase."
+      "Design a playful website for a robotic ice-cream shop with expressive characters, kinetic typography, & delightful interactions.",
+      "Design a launch page for a lunar tourism company, using archival space imagery, and showing an interactive journey to the Moon.",
+      "Create three side-by-side luxury fragrance directions on canvas: botanical, surrealist, and darkly romantic."
     ]
-  }
+	}
 }
