@@ -13,6 +13,21 @@ The Claude Code marketplace is [`.claude-plugin/marketplace.json`](.claude-plugi
 The Cursor marketplace is [`.cursor-plugin/marketplace.json`](.cursor-plugin/marketplace.json).
 Codex and Claude Code use the plugin selector `kombai@kombai`; Cursor uses its Customize plugin UI.
 
+## Install with the skills CLI
+
+For a platform-independent workflow skill, use Vercel's `skills` CLI:
+
+```sh
+pnpm dlx skills add kombai-io/agent-plugins --skill kombai-workflow
+```
+
+The CLI discovers [`skills/kombai-workflow/SKILL.md`](skills/kombai-workflow/SKILL.md)
+before the same-named skills inside the host plugins. This standalone skill uses the
+current agent's MCP settings rather than assuming a particular host. Installing it does
+not install the Kombai desktop app or register its MCP server; the installed app must
+support the chosen agent. The existing plugin marketplaces and packages continue to use
+their host-specific skills under `plugins/`.
+
 ## Local development
 
 Use Node.js 22 (see `.nvmrc`) and pnpm 10.15.1. Packaging and the release tests also need
