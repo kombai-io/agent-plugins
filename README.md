@@ -18,7 +18,7 @@ Codex and Claude Code use the plugin selector `kombai@kombai`; Cursor uses its C
 For a platform-independent workflow skill, use Vercel's `skills` CLI:
 
 ```sh
-pnpm dlx skills add kombai-io/agent-plugins --skill kombai-workflow
+npx skills add kombai-io/agent-plugins --skill kombai-workflow
 ```
 
 The CLI discovers [`skills/kombai-workflow/SKILL.md`](skills/kombai-workflow/SKILL.md)
