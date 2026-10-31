@@ -24,7 +24,8 @@ npx skills add kombai-io/agent-plugins --skill kombai-workflow
 The CLI discovers [`skills/kombai-workflow/SKILL.md`](skills/kombai-workflow/SKILL.md)
 before the same-named skills inside the host plugins. This standalone skill uses the
 current agent's MCP settings rather than assuming a particular host. Installing it does
-not install the Kombai desktop app or register its MCP server; the installed app must
+not install the Kombai desktop app or register its MCP server; when the app is missing,
+the skill has the agent install the official production build. The installed app must
 support the chosen agent. The existing plugin marketplaces and packages continue to use
 their host-specific skills under `plugins/`.
 
