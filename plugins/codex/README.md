@@ -18,7 +18,9 @@ use Kombai Dev for a task. It should explain that the requested app build is mis
 offering the production download as a substitute. Install and sign in to your Dev build, then
 tell Codex to continue. The workflow skill should locate that installed build, register its
 MCP with Codex (in a sandboxed task it should first ask to run that command outside the
-sandbox), verify the entry, and offer to start a new Codex task that carries your request, since
+sandbox; when the chat's permissions refuse that, as they do in a desktop chat with no project
+set to ask for approval, it should ask you to switch the chat's permissions or run the command in
+Terminal), verify the entry, and offer to start a new Codex task that carries your request, since
 the current task cannot load the new tools. In the desktop app it starts that task itself once
 you agree; in the CLI or IDE extension it asks you to start one.
 
