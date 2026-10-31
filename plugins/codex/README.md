@@ -17,7 +17,8 @@ To rehearse the user journey, install this plugin **before** installing Kombai D
 use Kombai Dev for a task. It should explain that the requested app build is missing, without
 offering the production download as a substitute. Install and sign in to your Dev build, then
 tell Codex to continue. The workflow skill should locate that installed build, register its
-MCP with Codex, verify the entry, and direct you to start a new Codex task for the tools.
+MCP with Codex (in a sandboxed task it should first ask to run that command outside the
+sandbox), verify the entry, and direct you to start a new Codex task for the tools.
 
 For a direct registration diagnostic, `mcp install codex` must run through the installed
 **Kombai Dev** executable, not the production app. On macOS, find the executable name in that app's
