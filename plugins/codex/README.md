@@ -32,7 +32,11 @@ Codex currently has one user-level MCP key, `kombai`, shared by those builds. Re
 another installed build replaces that key, and an opted-in app can refresh it at startup.
 Re-run the desired build's install command before testing if the entry points elsewhere.
 
-Sign in inside the Kombai app before starting work. The plugin never requests credentials in chat or stores them in MCP arguments.
+When Kombai is not installed, the workflow skill installs the official production build itself (Homebrew cask or the signed installer from agent.kombai.com, signature checked first) instead of sending the user to a download page; Codex asks the user to approve the download and the install. A non-production build is never substituted.
+
+Signing in needs no visit to the Kombai app: a `not_signed_in` refusal opens Kombai's sign-in page in the user's browser, and the app finishes the sign-in by polling. The plugin never requests credentials in chat or stores them in MCP arguments.
+
+Kombai's questions during a run are asked in the Codex chat: `chat_question` shows them as a card the user answers in.
 
 The skill is [`skills/kombai-workflow/SKILL.md`](skills/kombai-workflow/SKILL.md). It complements the task-specific Kombai skills installed by the app, such as `design-with-kombai` and `code-with-kombai`.
 

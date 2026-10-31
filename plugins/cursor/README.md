@@ -6,6 +6,6 @@ To try this plugin before marketplace submission, copy the `plugins/cursor` dire
 
 Alternatively, import the repository in Cursor Customize using **From GitHub Repository** and install the Kombai plugin. The repository's `.cursor-plugin/marketplace.json` points to `plugins/cursor`.
 
-If Kombai Dev is requested, register the MCP with the installed Dev executable. The single user-level `kombai` entry may be replaced by another Kombai build; inspect Cursor's MCP settings or `~/.cursor/mcp.json` before testing. Reload Cursor or start a new session after registration if the tools were not available in the current session. Complete authentication in the Kombai app.
+If Kombai Dev is requested, register the MCP with the installed Dev executable. The single user-level `kombai` entry may be replaced by another Kombai build; inspect Cursor's MCP settings or `~/.cursor/mcp.json` before testing. Reload Cursor or start a new session after registration if the tools were not available in the current session. Sign in from the browser page Kombai opens when it reports `not_signed_in`; the Kombai app does not need to be opened for it.
 
 Licensed under the [MIT License](LICENSE).
