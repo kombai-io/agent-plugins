@@ -1,6 +1,6 @@
 {
 	"name": "kombai",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "Kombai is an AI design engineer with built-in taste. Use the Kombai plugin to design a new page or product UI, or improve an existing screen.\n\nFor every task, Kombai's taste agent creates a design direction grounded in your brief and product. It follows the choices you've already made and makes creative decisions where needed. It draws on 20,000+ curated references to guide page structure, hierarchy, visual style, content, motion and interactions.\n\nKombai also provides an infinite, editable canvas where you can explore and compare design approaches side by side, refine them with the agent, or edit any element's text, styles or layout directly.",
 	"author": {
 		"name": "Kombai",
