@@ -18,7 +18,9 @@ use Kombai Dev for a task. It should explain that the requested app build is mis
 offering the production download as a substitute. Install and sign in to your Dev build, then
 tell Codex to continue. The workflow skill should locate that installed build, register its
 MCP with Codex (in a sandboxed task it should first ask to run that command outside the
-sandbox), verify the entry, and direct you to start a new Codex task for the tools.
+sandbox), verify the entry, and offer to start a new Codex task that carries your request, since
+the current task cannot load the new tools. In the desktop app it starts that task itself once
+you agree; in the CLI or IDE extension it asks you to start one.
 
 For a direct registration diagnostic, `mcp install codex` must run through the installed
 **Kombai Dev** executable, not the production app. On macOS, find the executable name in that app's
