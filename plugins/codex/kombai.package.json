@@ -1,7 +1,7 @@
 {
   "schemaVersion": "kombai-codex-plugin/v1",
   "name": "kombai",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "minimumKombaiVersion": "2.0.125",
   "mcpServer": "kombai",
   "mcpTransport": "stdio",
