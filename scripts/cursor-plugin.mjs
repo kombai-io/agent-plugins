@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { checkCliContract } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -48,18 +49,7 @@ export function validateCursorPlugin(root = workspaceRoot) {
   assert(manifest.logo === 'assets/logo.png', 'Cursor manifest must point to its bundled logo.');
   assert(VERSION_RE.test(manifest.version), `Invalid Cursor plugin version: ${manifest.version}`);
   assert(manifest.version === contract.version, 'Cursor manifest and package contract versions must match.');
-  assert(VERSION_RE.test(contract.minimumKombaiVersion), 'Invalid minimum Kombai app version.');
-  assert(contract.schemaVersion === 'kombai-cursor-plugin/v1', 'Unexpected Cursor package contract schema.');
-  assert(contract.mcpServer === 'kombai' && contract.mcpTransport === 'stdio', 'Unexpected MCP contract.');
-  assert(
-    contract.localMcp?.owner === 'installed-kombai-desktop-app' &&
-      JSON.stringify(contract.localMcp.packagedInstallArgs) === JSON.stringify(['mcp', 'install', 'cursor']),
-    'Cursor plugin must register through the installed Kombai app.',
-  );
-  assert(
-    JSON.stringify(contract.localMcp.requiredTools) === JSON.stringify(['chat_start', 'chat_status', 'canvas_read']),
-    'Unexpected required MCP tools.',
-  );
+  assert(contract.schemaVersion === 'kombai-cursor-plugin/v2', 'Unexpected Cursor package contract schema.');
   for (const file of [
     'README.md',
     'kombai.package.json',
@@ -69,12 +59,7 @@ export function validateCursorPlugin(root = workspaceRoot) {
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Cursor plugin file: ${file}`);
   }
-  for (const forbidden of ['.mcp.json', 'mcp.json', '.app.json']) {
-    assert(
-      !fs.existsSync(path.join(pluginRoot, forbidden)),
-      `Local MCP config must not ship in the plugin: ${forbidden}`,
-    );
-  }
+  checkCliContract(pluginRoot, contract, 'Cursor');
   const skillRoot = path.join(pluginRoot, 'skills');
   const skills = fs.readdirSync(skillRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory());
   assert(skills.length === 1 && skills[0].name === 'kombai-workflow', 'Cursor plugin must contain its workflow skill.');

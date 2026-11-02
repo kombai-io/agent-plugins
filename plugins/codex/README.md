@@ -1,10 +1,8 @@
 # Kombai for Codex
 
-This plugin's `kombai-workflow` skill runs the Kombai CLI's team build (`npx -y @kombai-io/cli@next skill`) and follows what it prints: Codex designs on a hosted Kombai canvas, or, when the Kombai desktop app is installed and the user picks it, hands the work to the app as below. The CLI needs Node.js 20 or later, and npm access to `@kombai-io` on GitHub Packages.
+This plugin's `kombai-workflow` skill runs the Kombai CLI's team build (`npx -y @kombai-io/cli@next skill`) and follows what it prints: Codex designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later, and npm access to `@kombai-io` on GitHub Packages.
 
-`.mcp.json` registers one server, `kombai-cli` (`npx -y @kombai-io/cli@next mcp`), which shows a hosted canvas beside the Codex desktop chat. The app independently owns the local `kombai` MCP server; this payload contains no app executable or fixed localhost address.
-
-Kombai must be installed and its MCP registered with Codex. You can turn on Codex in Kombai's MCP settings, or run `mcp install codex` through the **installed Kombai app executable**. The command requires a packaged Kombai build that includes this operation; it writes the Codex entry and the app's existing client skills. Check the result with `codex mcp get kombai --json`. If Codex cannot see newly registered tools in its current task, start a new Codex task.
+`.mcp.json` registers one server, `kombai-cli` (`npx -y @kombai-io/cli@next mcp`), which shows the hosted canvas beside the Codex desktop chat. Codex in a terminal gets no view; the skill opens the canvas in the browser instead. This is the plugin's `cli.view` in `kombai.package.json`; see the repository README's "The canvas view".
 
 For local development, point Codex at this package's marketplace root, then install its plugin:
 
@@ -13,37 +11,8 @@ codex plugin marketplace add /absolute/path/to/agent-plugins --json
 codex plugin add kombai@kombai --json
 ```
 
-This installs the plugin payload only. Register the MCP from the installed Kombai app or its settings.
+Signing in happens in the browser: the CLI opens Kombai's sign-in page and shows a match code to compare. The plugin never requests credentials in chat or stores them in MCP arguments.
 
-To rehearse the user journey, install this plugin **before** installing Kombai Dev. Ask Codex to
-use Kombai Dev for a task. It should explain that the requested app build is missing, without
-offering the production download as a substitute. Install and sign in to your Dev build, then
-tell Codex to continue. The workflow skill should locate that installed build, register its
-MCP with Codex (in a sandboxed task it should first ask to run that command outside the
-sandbox; when the chat's permissions refuse that, as they do in a desktop chat with no project
-set to ask for approval, it should ask you to switch the chat's permissions or run the command in
-Terminal), verify the entry, and offer to start a new Codex task that carries your request, since
-the current task cannot load the new tools. In the desktop app it starts that task itself once
-you agree; in the CLI or IDE extension it asks you to start one.
-
-For a direct registration diagnostic, `mcp install codex` must run through the installed
-**Kombai Dev** executable, not the production app. On macOS, find the executable name in that app's
-`Contents/Info.plist` and run the binary under `Contents/MacOS/`. Then inspect
-`codex mcp get kombai --json`: its command and gateway paths should point into the Dev
-installation, and its registration argument should name that build's launch record.
-Start a new Codex task after registration so it loads the changed MCP entry.
-
-The app's launch record is separate for each build identity, including Dev and variants.
-Codex currently has one user-level MCP key, `kombai`, shared by those builds. Registering
-another installed build replaces that key, and an opted-in app can refresh it at startup.
-Re-run the desired build's install command before testing if the entry points elsewhere.
-
-When Kombai is not installed, the workflow skill installs the official production build itself (Homebrew cask or the signed installer from agent.kombai.com, signature checked first) instead of sending the user to a download page; Codex asks the user to approve the download and the install. A non-production build is never substituted.
-
-Signing in needs no visit to the Kombai app: a `not_signed_in` refusal opens Kombai's sign-in page in the user's browser, and the app finishes the sign-in by polling. The plugin never requests credentials in chat or stores them in MCP arguments.
-
-Kombai's questions during a run are asked in the Codex chat: `chat_question` shows them as a card the user answers in.
-
-The skill is [`skills/kombai-workflow/SKILL.md`](skills/kombai-workflow/SKILL.md). It complements the task-specific Kombai skills installed by the app, such as `design-with-kombai` and `code-with-kombai`.
+The skill is [`skills/kombai-workflow/SKILL.md`](skills/kombai-workflow/SKILL.md).
 
 Licensed under the [MIT License](LICENSE).

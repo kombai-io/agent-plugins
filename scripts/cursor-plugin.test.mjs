@@ -67,6 +67,6 @@ test('Cursor validation rejects mismatched versions and bundled MCP configuratio
     contract.version = originalVersion;
     fs.writeFileSync(contractPath, JSON.stringify(contract));
     fs.writeFileSync(path.join(root, 'plugins/cursor/.mcp.json'), '{}');
-    assert.throws(() => validateCursorPlugin(root), /Local MCP config must not ship/);
+    assert.throws(() => validateCursorPlugin(root), /canvas view off, so \.mcp\.json must not ship/);
   });
 });

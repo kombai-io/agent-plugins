@@ -5,14 +5,12 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 their local marketplaces, and release tooling.
 
 Each plugin's `kombai-workflow` skill runs the Kombai CLI's team build
-(`npx -y @kombai-io/cli@next skill`), which prints the full instructions: designing on a hosted
-Kombai canvas, or handing work to the desktop app when the user picks it. The CLI needs Node.js 20
-or later and npm access to `@kombai-io` on GitHub Packages.
+(`npx -y @kombai-io/cli@next skill`), which prints the full instructions for designing on a hosted
+Kombai canvas. The CLI needs Node.js 20 or later and npm access to `@kombai-io` on GitHub Packages.
 
-The installed Kombai desktop app owns the local `kombai` MCP server, registration commands,
-gateway, and task skills. This repository supplies workflow instructions and plugin packaging;
-it does not build the desktop app. The Codex plugin's `.mcp.json` registers only the CLI's
-canvas view (`kombai-cli`).
+The only MCP server a plugin registers is the CLI's canvas view (`kombai-cli`), and only the Codex
+plugin registers it today; see [The canvas view](#the-canvas-view). This repository supplies the
+workflow skill and plugin packaging; it builds neither the CLI nor the desktop app.
 
 The Codex marketplace is [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json).
 The Claude Code marketplace is [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
@@ -28,12 +26,37 @@ npx skills add kombai-io/agent-plugins --skill kombai-workflow
 ```
 
 The CLI discovers [`skills/kombai-workflow/SKILL.md`](skills/kombai-workflow/SKILL.md)
-before the same-named skills inside the host plugins. This standalone skill uses the
-current agent's MCP settings rather than assuming a particular host. Installing it does
-not install the Kombai desktop app or register its MCP server; when the app is missing,
-the skill has the agent install the official production build. The installed app must
-support the chosen agent. The existing plugin marketplaces and packages continue to use
-their host-specific skills under `plugins/`.
+before the same-named skills inside the host plugins. It is the same CLI stub as the plugins'
+and works in any agent that can run `npx`. It registers no MCP server, so the agent opens the
+canvas in its own browser panel or the user's browser rather than in a view beside the chat.
+The existing plugin marketplaces and packages continue to use their host-specific skills under
+`plugins/`.
+
+## The canvas view
+
+`kombai mcp` serves a view of the live hosted canvas beside the agent's chat, as an MCP App
+(server `kombai-cli`, run as `npx -y <cli.package> mcp`). A host shows it only if it renders MCP
+App views, and the CLI lists the view only to hosts it has a row for (`VIEW_HOSTS` in
+vscode-assistant's `packages/cli/src/mcp/client-gate.js`). Today that is Codex desktop, so only
+the Codex plugin's `kombai.package.json` has `cli.view` on. Validation checks each plugin
+against its contract: `.mcp.json` ships exactly when `cli.view` is on, with exactly the CLI
+view in it (`scripts/cli-view.mjs`).
+
+### Adding a host to the canvas view
+
+When another host (Claude Code, Cursor, …) can show MCP App views:
+
+1. Set `cli.view` to `true` in that plugin's `kombai.package.json`.
+2. Add the plugin's `.mcp.json`; validation gives its exact content (`cliViewMcpConfig`). Check
+   the host's plugin format first: Codex also points its manifest's `mcpServers` at the file,
+   and validation knows only `.mcp.json`, so a host that reads another file needs
+   `scripts/cli-view.mjs` taught its format.
+3. Bump that plugin's version and release it.
+
+The CLI, the hosted canvas page and the backend each need a change for the new host too;
+vscode-assistant's `agent-docs/peripheral-packages/cli.md` lists them under "Adding a host to
+the view". The two sides can ship in either order: until the CLI has a row for the host, the
+registered server lists no tools.
 
 ## Local development
 
@@ -71,8 +94,7 @@ claude plugin install kombai@kombai
 If an existing local marketplace points into the desktop app's old package directory,
 replace that marketplace source with this repository's path before reinstalling the plugin.
 For Cursor, use **From GitHub Repository** in Customize or copy `plugins/cursor` to
-`~/.cursor/plugins/local/kombai` and reload. See each plugin README for app setup and
-the Kombai Dev testing flow.
+`~/.cursor/plugins/local/kombai` and reload. See each plugin README for its setup.
 
 ## Versions and compatibility
 
@@ -87,9 +109,9 @@ pnpm run version:cursor 0.1.1
 ```
 
 The scripts require an increasing `major.minor.patch` version. Each plugin's
-`kombai.package.json` records its minimum required Kombai app version. Validation checks
-that version's format and the registration contract; compatibility with a released app
-must be verified using that app. The scripts do not read a sibling app checkout.
+`kombai.package.json` names the CLI its workflow skill runs (`cli.package`) and whether the
+plugin registers the canvas view (`cli.view`). Validation checks that the skill runs that CLI
+and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling checkout.
 
 ## CI and packaging
 

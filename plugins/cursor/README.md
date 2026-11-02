@@ -1,13 +1,13 @@
 # Kombai for Cursor
 
-This plugin's `kombai-workflow` skill runs the Kombai CLI's team build (`npx -y @kombai-io/cli@next skill`) and follows what it prints: Cursor designs on a hosted Kombai canvas, or, when the Kombai desktop app is installed and the user picks it, hands the work to the app as below. The CLI needs Node.js 20 or later, and npm access to `@kombai-io` on GitHub Packages.
+This plugin's `kombai-workflow` skill runs the Kombai CLI's team build (`npx -y @kombai-io/cli@next skill`) and follows what it prints: Cursor designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later, and npm access to `@kombai-io` on GitHub Packages.
 
-For the app, the plugin adds setup and recovery instructions for using the installed Kombai desktop app from Cursor. It does not bundle the Kombai MCP server. The app owns the user-level `kombai` MCP entry and installs the task skills when you enable Cursor in its MCP settings or run the installed app executable with `mcp install cursor`.
+The plugin registers no MCP server: the skill opens the canvas in Cursor's browser panel or the user's browser. The CLI's canvas view is off for Cursor (`cli.view` in `kombai.package.json`) until Cursor shows MCP App views; the repository README's "The canvas view" says how to turn it on.
 
 To try this plugin before marketplace submission, copy the `plugins/cursor` directory to `~/.cursor/plugins/local/kombai`. Keep its `.cursor-plugin/plugin.json`, `skills/`, `assets/`, and `LICENSE` together. Reload Cursor, then check Customize for the Kombai plugin and its `kombai-workflow` skill. Cursor ignores symlinks that point outside `~/.cursor/plugins/local`.
 
 Alternatively, import the repository in Cursor Customize using **From GitHub Repository** and install the Kombai plugin. The repository's `.cursor-plugin/marketplace.json` points to `plugins/cursor`.
 
-If Kombai Dev is requested, register the MCP with the installed Dev executable. The single user-level `kombai` entry may be replaced by another Kombai build; inspect Cursor's MCP settings or `~/.cursor/mcp.json` before testing. Reload Cursor or start a new session after registration if the tools were not available in the current session. Sign in from the browser page Kombai opens when it reports `not_signed_in`; the Kombai app does not need to be opened for it.
+Signing in happens in the browser: the CLI opens Kombai's sign-in page and shows a match code to compare.
 
 Licensed under the [MIT License](LICENSE).

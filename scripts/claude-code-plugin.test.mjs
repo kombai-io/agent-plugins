@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpClaudeCodeVersion, packClaudeCodePlugin, validateClaudeCodePlugin } from './claude-code-plugin.mjs';
+import { cliViewMcpConfig } from './cli-view.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -67,6 +68,23 @@ test('Claude validation rejects mismatched versions and bundled MCP configuratio
     contract.version = originalVersion;
     fs.writeFileSync(contractPath, JSON.stringify(contract));
     fs.writeFileSync(path.join(root, 'plugins/claude-code/.mcp.json'), '{}');
-    assert.throws(() => validateClaudeCodePlugin(root), /Local MCP config must not ship/);
+    assert.throws(() => validateClaudeCodePlugin(root), /canvas view off, so \.mcp\.json must not ship/);
+  });
+});
+
+test('turning the canvas view on for Claude Code takes the contract flag and the CLI view registration', () => {
+  fixture((root) => {
+    const pluginRoot = path.join(root, 'plugins/claude-code');
+    const contractPath = path.join(pluginRoot, 'kombai.package.json');
+    const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
+    contract.cli.view = true;
+    fs.writeFileSync(contractPath, JSON.stringify(contract));
+    assert.throws(() => validateClaudeCodePlugin(root), /canvas view on, so it must ship \.mcp\.json/);
+    fs.writeFileSync(path.join(pluginRoot, '.mcp.json'), JSON.stringify(cliViewMcpConfig(contract.cli.package)));
+    validateClaudeCodePlugin(root);
+    const archive = packClaudeCodePlugin(path.join(root, 'out'), root);
+    const packed = spawnSync('unzip', ['-p', archive, 'plugins/claude-code/.mcp.json'], { encoding: 'utf8' });
+    assert.equal(packed.status, 0, packed.stderr);
+    assert.deepEqual(Object.keys(JSON.parse(packed.stdout).mcpServers), ['kombai-cli']);
   });
 });

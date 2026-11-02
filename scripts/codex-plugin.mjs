@@ -3,15 +3,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { checkCliContract } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
-const PACKAGE_FILES = ['.codex-plugin', '.mcp.json', 'assets', 'skills', 'README.md', 'kombai.package.json', 'LICENSE'];
-// The one MCP server this plugin may bundle: the Kombai CLI's Codex canvas view (`kombai mcp`). The app's own
-// `kombai` server is still registered by the installed app, never by this plugin.
-const CLI_MCP_CONFIG = {
-  mcpServers: { 'kombai-cli': { command: 'npx', args: ['-y', '@kombai-io/cli@next', 'mcp'] } },
-};
+// Plus `.mcp.json` while the contract has the canvas view on (cli-view.mjs).
+const PACKAGE_FILES = ['.codex-plugin', 'assets', 'skills', 'README.md', 'kombai.package.json', 'LICENSE'];
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -38,14 +35,7 @@ export function validateCodexPlugin(root = workspaceRoot) {
   assert(manifest.name === 'kombai' && contract.name === manifest.name, 'Codex plugin names must be kombai.');
   assert(VERSION_RE.test(manifest.version), `Invalid Codex plugin version: ${manifest.version}`);
   assert(manifest.version === contract.version, 'Codex manifest and package contract versions must match.');
-  assert(VERSION_RE.test(contract.minimumKombaiVersion), 'Invalid minimum Kombai app version.');
-  assert(contract.schemaVersion === 'kombai-codex-plugin/v1', 'Unexpected Codex package contract schema.');
-  assert(contract.mcpServer === 'kombai' && contract.mcpTransport === 'stdio', 'Unexpected MCP contract.');
-  assert(
-    contract.localMcp?.owner === 'installed-kombai-desktop-app' &&
-      JSON.stringify(contract.localMcp.packagedInstallArgs) === JSON.stringify(['mcp', 'install', 'codex']),
-    'Codex plugin must register through the installed Kombai app.',
-  );
+  assert(contract.schemaVersion === 'kombai-codex-plugin/v2', 'Unexpected Codex package contract schema.');
   assert(manifest.skills === './skills/', 'Codex manifest must point at ./skills/.');
 
   for (const relative of PACKAGE_FILES) {
@@ -56,16 +46,10 @@ export function validateCodexPlugin(root = workspaceRoot) {
     assert(typeof relative === 'string' && relative.startsWith('./assets/'), `Invalid ${field} path.`);
     requireFile(path.join(pluginRoot, relative));
   }
-  assert(manifest.mcpServers === './.mcp.json', 'Codex manifest must point mcpServers at ./.mcp.json.');
-  assert(
-    JSON.stringify(readJson(path.join(pluginRoot, '.mcp.json'))) === JSON.stringify(CLI_MCP_CONFIG),
-    'Codex .mcp.json may only register the Kombai CLI view (kombai-cli).',
-  );
-  for (const forbidden of ['mcp.json', '.app.json']) {
-    assert(
-      !fs.existsSync(path.join(pluginRoot, forbidden)),
-      `Local MCP config must not ship in the plugin: ${forbidden}`,
-    );
+  if (checkCliContract(pluginRoot, contract, 'Codex')) {
+    assert(manifest.mcpServers === './.mcp.json', 'Codex manifest must point mcpServers at ./.mcp.json.');
+  } else {
+    assert(manifest.mcpServers === undefined, 'Codex manifest must not name mcpServers while the canvas view is off.');
   }
 
   const skillsRoot = path.join(pluginRoot, 'skills');
@@ -117,8 +101,10 @@ export function packCodexPlugin(outputDir = path.join(os.tmpdir(), 'kombai-agent
   const archive = path.join(outputDir, `kombai-codex-plugin-${version}.zip`);
   fs.rmSync(archive, { force: true });
   const cwd = path.join(root, 'plugins/codex');
+  // Validation has checked that .mcp.json is there exactly when the canvas view is on.
+  const files = fs.existsSync(path.join(cwd, '.mcp.json')) ? [...PACKAGE_FILES, '.mcp.json'] : PACKAGE_FILES;
   for (const [command, args] of [
-    ['zip', ['-q', '-r', archive, ...PACKAGE_FILES]],
+    ['zip', ['-q', '-r', archive, ...files]],
     ['unzip', ['-tq', archive]],
   ]) {
     const result = spawnSync(command, args, { cwd, encoding: 'utf8' });

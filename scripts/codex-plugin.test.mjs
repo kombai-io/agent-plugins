@@ -64,7 +64,38 @@ test('validation accepts only the Kombai CLI view as a bundled MCP server', () =
     fs.writeFileSync(file, JSON.stringify(config));
     assert.throws(() => validateCodexPlugin(root), /may only register the Kombai CLI view/);
     fs.rmSync(file);
-    assert.throws(() => validateCodexPlugin(root), /Missing Codex package content: \.mcp\.json/);
+    assert.throws(() => validateCodexPlugin(root), /canvas view on, so it must ship \.mcp\.json/);
+  });
+});
+
+test('with the canvas view off, the plugin registers no MCP server and packs none', () => {
+  fixture((root) => {
+    const pluginRoot = path.join(root, 'plugins/codex');
+    const contractPath = path.join(pluginRoot, 'kombai.package.json');
+    const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
+    contract.cli.view = false;
+    fs.writeFileSync(contractPath, JSON.stringify(contract));
+    assert.throws(() => validateCodexPlugin(root), /canvas view off, so \.mcp\.json must not ship/);
+    fs.rmSync(path.join(pluginRoot, '.mcp.json'));
+    assert.throws(() => validateCodexPlugin(root), /must not name mcpServers/);
+    const manifestPath = path.join(pluginRoot, '.codex-plugin/plugin.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    delete manifest.mcpServers;
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+    const archive = packCodexPlugin(path.join(root, 'out'), root);
+    const listing = spawnSync('unzip', ['-Z1', archive], { encoding: 'utf8' });
+    assert.equal(listing.status, 0, listing.stderr);
+    assert.ok(!listing.stdout.split('\n').includes('.mcp.json'));
+  });
+});
+
+test('validation holds the skill and the view to the CLI the contract names', () => {
+  fixture((root) => {
+    const contractPath = path.join(root, 'plugins/codex/kombai.package.json');
+    const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
+    contract.cli.package = '@kombai/cli@latest';
+    fs.writeFileSync(contractPath, JSON.stringify(contract));
+    assert.throws(() => validateCodexPlugin(root), /workflow skill must run @kombai\/cli@latest/);
   });
 });
 
