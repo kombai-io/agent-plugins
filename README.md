@@ -34,13 +34,15 @@ The existing plugin marketplaces and packages continue to use their host-specifi
 
 ## The canvas view
 
-`kombai mcp` serves a view of the live hosted canvas beside the agent's chat, as an MCP App
-(server `kombai-cli`, run as `npx -y <cli.package> mcp`). A host shows it only if it renders MCP
-App views, and the CLI lists the view only to hosts it has a row for (`VIEW_HOSTS` in
-vscode-assistant's `packages/cli/src/mcp/client-gate.js`). Today that is Codex desktop, so only
-the Codex plugin's `kombai.package.json` has `cli.view` on. Validation checks each plugin
+`kombai mcp` serves a view of the live hosted canvas beside the agent's chat, and Kombai's cards
+in it (a taste run's design brief, and the plans when taste is out of credits), as MCP Apps
+(server `kombai-cli`, run as `npx -y <cli.package> mcp`). A host shows them only if it renders
+MCP App views, and the CLI decides what each host is listed (`VIEW_HOSTS` and `cardsFor` in
+vscode-assistant's `packages/cli/src/mcp/client-gate.js`): Codex desktop gets the view and both
+cards, and Claude desktop's Code tab the taste card. So the Codex and Claude Code plugins have
+`cli.view` on, which registers the server; Cursor's is off. Validation checks each plugin
 against its contract: `.mcp.json` ships exactly when `cli.view` is on, with exactly the CLI
-view in it (`scripts/cli-view.mjs`).
+server in it (`scripts/cli-view.mjs`).
 
 ### Adding a host to the canvas view
 

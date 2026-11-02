@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-// The Kombai CLI's canvas view (`kombai mcp`, registered as `kombai-cli`) is the one MCP server a plugin may bundle.
-// Which hosts are shown the view is the CLI's call (VIEW_HOSTS in vscode-assistant's
-// packages/cli/src/mcp/client-gate.js); a plugin only registers the server, and only while its kombai.package.json
-// has `cli.view` on. Turning it on for another host: README.md, "Adding a host to the canvas view".
+// The Kombai CLI's MCP server (`kombai mcp`, registered as `kombai-cli`: the canvas view and Kombai's cards) is the one
+// MCP server a plugin may bundle. What each host is listed is the CLI's call (VIEW_HOSTS and cardsFor in
+// vscode-assistant's packages/cli/src/mcp/client-gate.js); a plugin only registers the server, and only while its
+// kombai.package.json has `cli.view` on. Turning it on for another host: README.md, "Adding a host to the canvas view".
 export const CLI_VIEW_SERVER = 'kombai-cli';
 const CLI_PACKAGE_RE = /^@kombai(-io)?\/cli@\S+$/;
 

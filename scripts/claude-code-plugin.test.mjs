@@ -57,7 +57,7 @@ test('Claude version bump and marketplace package are independent of Codex', () 
   });
 });
 
-test('Claude validation rejects mismatched versions and bundled MCP configuration', () => {
+test('Claude validation rejects mismatched versions and any MCP configuration but the CLI server', () => {
   fixture((root) => {
     const contractPath = path.join(root, 'plugins/claude-code/kombai.package.json');
     const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
@@ -68,23 +68,21 @@ test('Claude validation rejects mismatched versions and bundled MCP configuratio
     contract.version = originalVersion;
     fs.writeFileSync(contractPath, JSON.stringify(contract));
     fs.writeFileSync(path.join(root, 'plugins/claude-code/.mcp.json'), '{}');
-    assert.throws(() => validateClaudeCodePlugin(root), /canvas view off, so \.mcp\.json must not ship/);
+    assert.throws(() => validateClaudeCodePlugin(root), /may only register the Kombai CLI view/);
   });
 });
 
-test('turning the canvas view on for Claude Code takes the contract flag and the CLI view registration', () => {
+test('the Claude Code plugin registers the CLI server for the taste card, and packs it', () => {
   fixture((root) => {
     const pluginRoot = path.join(root, 'plugins/claude-code');
-    const contractPath = path.join(pluginRoot, 'kombai.package.json');
-    const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
-    contract.cli.view = true;
-    fs.writeFileSync(contractPath, JSON.stringify(contract));
-    assert.throws(() => validateClaudeCodePlugin(root), /canvas view on, so it must ship \.mcp\.json/);
-    fs.writeFileSync(path.join(pluginRoot, '.mcp.json'), JSON.stringify(cliViewMcpConfig(contract.cli.package)));
+    const contract = JSON.parse(fs.readFileSync(path.join(pluginRoot, 'kombai.package.json'), 'utf8'));
+    assert.equal(contract.cli.view, true);
     validateClaudeCodePlugin(root);
     const archive = packClaudeCodePlugin(path.join(root, 'out'), root);
     const packed = spawnSync('unzip', ['-p', archive, 'plugins/claude-code/.mcp.json'], { encoding: 'utf8' });
     assert.equal(packed.status, 0, packed.stderr);
-    assert.deepEqual(Object.keys(JSON.parse(packed.stdout).mcpServers), ['kombai-cli']);
+    assert.deepEqual(JSON.parse(packed.stdout), cliViewMcpConfig(contract.cli.package));
+    fs.rmSync(path.join(pluginRoot, '.mcp.json'));
+    assert.throws(() => validateClaudeCodePlugin(root), /canvas view on, so it must ship \.mcp\.json/);
   });
 });

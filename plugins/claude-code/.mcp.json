@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "kombai-cli": {
+      "command": "npx",
+      "args": ["-y", "@kombai-io/cli@next", "mcp"]
+    }
+  }
+}
