@@ -4,9 +4,15 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 [Claude Code](plugins/claude-code/README.md), and [Cursor](plugins/cursor/README.md) plugins,
 their local marketplaces, and release tooling.
 
+Each plugin's `kombai-workflow` skill runs the Kombai CLI's team build
+(`npx -y @kombai-io/cli@next skill`), which prints the full instructions: designing on a hosted
+Kombai canvas, or handing work to the desktop app when the user picks it. The CLI needs Node.js 20
+or later and npm access to `@kombai-io` on GitHub Packages.
+
 The installed Kombai desktop app owns the local `kombai` MCP server, registration commands,
 gateway, and task skills. This repository supplies workflow instructions and plugin packaging;
-it does not build the desktop app or bundle an MCP server or `.mcp.json`.
+it does not build the desktop app. The Codex plugin's `.mcp.json` registers only the CLI's
+canvas view (`kombai-cli`).
 
 The Codex marketplace is [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json).
 The Claude Code marketplace is [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).

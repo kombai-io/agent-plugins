@@ -56,9 +56,30 @@ test('validation stops packaging when versions disagree', () => {
   });
 });
 
-test('validation rejects a bundled MCP configuration', () => {
+test('validation accepts only the Kombai CLI view as a bundled MCP server', () => {
   fixture((root) => {
-    fs.writeFileSync(path.join(root, 'plugins/codex/.mcp.json'), '{}');
+    const file = path.join(root, 'plugins/codex/.mcp.json');
+    const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+    config.mcpServers.kombai = { command: '/Applications/Kombai.app/Contents/MacOS/Kombai', args: [] };
+    fs.writeFileSync(file, JSON.stringify(config));
+    assert.throws(() => validateCodexPlugin(root), /may only register the Kombai CLI view/);
+    fs.rmSync(file);
+    assert.throws(() => validateCodexPlugin(root), /Missing Codex package content: \.mcp\.json/);
+  });
+});
+
+test('validation rejects an app MCP configuration', () => {
+  fixture((root) => {
+    fs.writeFileSync(path.join(root, 'plugins/codex/.app.json'), '{}');
     assert.throws(() => validateCodexPlugin(root), /Local MCP config must not ship/);
+  });
+});
+
+test('the packed plugin carries the CLI view', () => {
+  fixture((root) => {
+    const archive = packCodexPlugin(path.join(root, 'out'), root);
+    const packed = spawnSync('unzip', ['-p', archive, '.mcp.json'], { encoding: 'utf8' });
+    assert.equal(packed.status, 0, packed.stderr);
+    assert.deepEqual(Object.keys(JSON.parse(packed.stdout).mcpServers), ['kombai-cli']);
   });
 });

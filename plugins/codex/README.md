@@ -1,6 +1,8 @@
 # Kombai for Codex
 
-This plugin teaches Codex to hand UI design and implementation work to the installed Kombai desktop app. It supplies a workflow skill and visual assets. The app independently owns the local `kombai` MCP server; this payload contains no MCP executable, `.mcp.json`, or fixed localhost address.
+This plugin's `kombai-workflow` skill runs the Kombai CLI's team build (`npx -y @kombai-io/cli@next skill`) and follows what it prints: Codex designs on a hosted Kombai canvas, or, when the Kombai desktop app is installed and the user picks it, hands the work to the app as below. The CLI needs Node.js 20 or later, and npm access to `@kombai-io` on GitHub Packages.
+
+`.mcp.json` registers one server, `kombai-cli` (`npx -y @kombai-io/cli@next mcp`), which shows a hosted canvas beside the Codex desktop chat. The app independently owns the local `kombai` MCP server; this payload contains no app executable or fixed localhost address.
 
 Kombai must be installed and its MCP registered with Codex. You can turn on Codex in Kombai's MCP settings, or run `mcp install codex` through the **installed Kombai app executable**. The command requires a packaged Kombai build that includes this operation; it writes the Codex entry and the app's existing client skills. Check the result with `codex mcp get kombai --json`. If Codex cannot see newly registered tools in its current task, start a new Codex task.
 

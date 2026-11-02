@@ -1,6 +1,8 @@
 # Kombai for Cursor
 
-This plugin adds setup and recovery instructions for using the installed Kombai desktop app from Cursor. It does not bundle the Kombai MCP server. The app owns the user-level `kombai` MCP entry and installs the task skills when you enable Cursor in its MCP settings or run the installed app executable with `mcp install cursor`.
+This plugin's `kombai-workflow` skill runs the Kombai CLI's team build (`npx -y @kombai-io/cli@next skill`) and follows what it prints: Cursor designs on a hosted Kombai canvas, or, when the Kombai desktop app is installed and the user picks it, hands the work to the app as below. The CLI needs Node.js 20 or later, and npm access to `@kombai-io` on GitHub Packages.
+
+For the app, the plugin adds setup and recovery instructions for using the installed Kombai desktop app from Cursor. It does not bundle the Kombai MCP server. The app owns the user-level `kombai` MCP entry and installs the task skills when you enable Cursor in its MCP settings or run the installed app executable with `mcp install cursor`.
 
 To try this plugin before marketplace submission, copy the `plugins/cursor` directory to `~/.cursor/plugins/local/kombai`. Keep its `.cursor-plugin/plugin.json`, `skills/`, `assets/`, and `LICENSE` together. Reload Cursor, then check Customize for the Kombai plugin and its `kombai-workflow` skill. Cursor ignores symlinks that point outside `~/.cursor/plugins/local`.
 

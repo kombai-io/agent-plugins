@@ -6,7 +6,12 @@ import { fileURLToPath } from 'node:url';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
-const PACKAGE_FILES = ['.codex-plugin', 'assets', 'skills', 'README.md', 'kombai.package.json', 'LICENSE'];
+const PACKAGE_FILES = ['.codex-plugin', '.mcp.json', 'assets', 'skills', 'README.md', 'kombai.package.json', 'LICENSE'];
+// The one MCP server this plugin may bundle: the Kombai CLI's Codex canvas view (`kombai mcp`). The app's own
+// `kombai` server is still registered by the installed app, never by this plugin.
+const CLI_MCP_CONFIG = {
+  mcpServers: { 'kombai-cli': { command: 'npx', args: ['-y', '@kombai-io/cli@next', 'mcp'] } },
+};
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -51,7 +56,12 @@ export function validateCodexPlugin(root = workspaceRoot) {
     assert(typeof relative === 'string' && relative.startsWith('./assets/'), `Invalid ${field} path.`);
     requireFile(path.join(pluginRoot, relative));
   }
-  for (const forbidden of ['.mcp.json', 'mcp.json', '.app.json']) {
+  assert(manifest.mcpServers === './.mcp.json', 'Codex manifest must point mcpServers at ./.mcp.json.');
+  assert(
+    JSON.stringify(readJson(path.join(pluginRoot, '.mcp.json'))) === JSON.stringify(CLI_MCP_CONFIG),
+    'Codex .mcp.json may only register the Kombai CLI view (kombai-cli).',
+  );
+  for (const forbidden of ['mcp.json', '.app.json']) {
     assert(
       !fs.existsSync(path.join(pluginRoot, forbidden)),
       `Local MCP config must not ship in the plugin: ${forbidden}`,
