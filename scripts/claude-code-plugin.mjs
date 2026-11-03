@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkCliContract } from './cli-view.mjs';
+import { checkCliContract, checkSkills } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -52,17 +52,13 @@ export function validateClaudeCodePlugin(root = workspaceRoot) {
     'README.md',
     'kombai.package.json',
     '.claude-plugin/plugin.json',
-    'skills/kombai-workflow/SKILL.md',
+    'skills/work-with-kombai/SKILL.md',
+    'skills/about-kombai/SKILL.md',
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Claude plugin file: ${file}`);
   }
   checkCliContract(pluginRoot, contract, 'Claude');
-  const skillRoot = path.join(pluginRoot, 'skills');
-  const skills = fs.readdirSync(skillRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory());
-  assert(skills.length === 1 && skills[0].name === 'kombai-workflow', 'Claude plugin must contain its workflow skill.');
-  const skill = fs.readFileSync(path.join(skillRoot, 'kombai-workflow/SKILL.md'), 'utf8');
-  assert(/^---\r?\n[\s\S]*?^name: kombai-workflow\r?$/m.test(skill), 'Claude workflow skill name is missing.');
-  assert(/^description: \S.+$/m.test(skill), 'Claude workflow skill description is missing.');
+  checkSkills(pluginRoot, 'Claude');
   return manifest.version;
 }
 
