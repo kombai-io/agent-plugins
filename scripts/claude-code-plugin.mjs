@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkCliContract, checkSkills } from './cli-view.mjs';
+import { checkCliContract, checkSkills, stageTeamBuild } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -78,20 +78,33 @@ export function bumpClaudeCodeVersion(next, root = workspaceRoot) {
   return next;
 }
 
-export function packClaudeCodePlugin(outputDir = path.join(os.tmpdir(), 'kombai-agent-plugins'), root = workspaceRoot) {
+export function packClaudeCodePlugin(
+  outputDir = path.join(os.tmpdir(), 'kombai-agent-plugins'),
+  root = workspaceRoot,
+  { team = false } = {},
+) {
   const version = validateClaudeCodePlugin(root);
-  fs.mkdirSync(outputDir, { recursive: true });
-  const archive = path.join(outputDir, `kombai-claude-code-plugin-${version}.zip`);
-  fs.rmSync(archive, { force: true });
-  for (const [command, args] of [
-    ['zip', ['-q', '-r', archive, ...PACKAGE_FILES]],
-    ['unzip', ['-tq', archive]],
-  ]) {
-    const result = spawnSync(command, args, { cwd: root, encoding: 'utf8' });
-    if (result.error) throw result.error;
-    if (result.status !== 0) throw new Error(`${command} failed: ${result.stderr || result.stdout}`);
+  // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
+  const from = team
+    ? stageTeamBuild(root, PACKAGE_FILES, readJson(path.join(root, 'plugins/claude-code/kombai.package.json')))
+    : root;
+  try {
+    if (team) validateClaudeCodePlugin(from);
+    fs.mkdirSync(outputDir, { recursive: true });
+    const archive = path.join(outputDir, `kombai-claude-code-plugin-${version}${team ? '-team' : ''}.zip`);
+    fs.rmSync(archive, { force: true });
+    for (const [command, args] of [
+      ['zip', ['-q', '-r', archive, ...PACKAGE_FILES]],
+      ['unzip', ['-tq', archive]],
+    ]) {
+      const result = spawnSync(command, args, { cwd: from, encoding: 'utf8' });
+      if (result.error) throw result.error;
+      if (result.status !== 0) throw new Error(`${command} failed: ${result.stderr || result.stdout}`);
+    }
+    return archive;
+  } finally {
+    if (team) fs.rmSync(from, { recursive: true, force: true });
   }
-  return archive;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -109,8 +122,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       assert(value && extra.length === 0, 'Usage: bump <version>');
       result = bumpClaudeCodeVersion(value);
     } else if (command === 'pack') {
-      assert(extra.length === 0, 'Usage: pack [output-directory]');
-      result = packClaudeCodePlugin(value && path.resolve(value));
+      const args = [value, ...extra].filter((arg) => arg !== undefined);
+      const dirs = args.filter((arg) => arg !== '--team');
+      assert(dirs.length <= 1, 'Usage: pack [output-directory] [--team]');
+      result = packClaudeCodePlugin(dirs[0] && path.resolve(dirs[0]), undefined, { team: args.includes('--team') });
     } else {
       throw new Error('Usage: claude-code-plugin.mjs <validate|bump|pack>');
     }

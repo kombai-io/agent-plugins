@@ -148,6 +148,17 @@ as a local marketplace. For Cursor, copy
 the extracted `plugins/cursor` directory to Cursor's local plugin folder for testing. Workflow artifacts do not publish marketplace
 listings or GitHub releases.
 
+### Team builds
+
+Colleagues trying a CLI beta before it reaches npm use a team build of each plugin: the same
+plugin, running the CLI's team build (`@kombai-io/cli@next` on GitHub Packages, from
+vscode-assistant's `cli-v<version>-beta.N` tags) with the stubs' note on reaching GitHub Packages.
+Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
+(`<host>` is `codex`, `claude-code` or `cursor`): it writes `kombai-<host>-plugin-<version>-team.zip`
+from a staged copy, so the source always names `@kombai/cli@latest`. A team ZIP installs like the
+public one and has the same plugin name, so a machine has one or the other. The team CLI needs a
+GitHub token with `read:packages` in `~/.npmrc` (the stubs say how).
+
 ## Repository and license
 
 Source repository: [kombai-io/agent-plugins](https://github.com/kombai-io/agent-plugins).

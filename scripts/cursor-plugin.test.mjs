@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpCursorVersion, packCursorPlugin, validateCursorPlugin } from './cursor-plugin.mjs';
+import { RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE, TEAM_NPM_NOTE } from './cli-view.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -23,6 +24,31 @@ function fixture(run) {
     run(root);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
+  }
+}
+
+/** Unzip a team archive and check each stub runs the CLI's team build, with the GitHub Packages note. */
+function checkTeamArchive(archive, pluginDir) {
+  const extracted = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-team-unpacked-'));
+  try {
+    const result = spawnSync('unzip', ['-q', archive, '-d', extracted], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    const plugin = path.join(extracted, pluginDir);
+    const contract = JSON.parse(fs.readFileSync(path.join(plugin, 'kombai.package.json'), 'utf8'));
+    assert.equal(contract.cli.package, TEAM_CLI_PACKAGE);
+    for (const [skill, topic] of [
+      ['work-with-kombai', ''],
+      ['about-kombai', ' faq'],
+    ]) {
+      const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
+      assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
+      assert.ok(text.includes(`${TEAM_NPM_NOTE}\n- **The network is blocked**`), skill);
+      assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
+    }
+    return { extracted, plugin };
+  } catch (error) {
+    fs.rmSync(extracted, { recursive: true, force: true });
+    throw error;
   }
 }
 
@@ -68,5 +94,20 @@ test('Cursor validation rejects mismatched versions and bundled MCP configuratio
     fs.writeFileSync(contractPath, JSON.stringify(contract));
     fs.writeFileSync(path.join(root, 'plugins/cursor/.mcp.json'), '{}');
     assert.throws(() => validateCursorPlugin(root), /canvas view off, so \.mcp\.json must not ship/);
+  });
+});
+
+test('a Cursor team pack runs the CLI team build', () => {
+  fixture((root) => {
+    const version = validateCursorPlugin(root);
+    const archive = packCursorPlugin(path.join(root, 'out'), root, { team: true });
+    assert.equal(path.basename(archive), `kombai-cursor-plugin-${version}-team.zip`);
+    const { extracted, plugin } = checkTeamArchive(archive, 'plugins/cursor');
+    try {
+      assert.equal(fs.existsSync(path.join(plugin, '.mcp.json')), false);
+      assert.equal(validateCursorPlugin(extracted), version);
+    } finally {
+      fs.rmSync(extracted, { recursive: true, force: true });
+    }
   });
 });

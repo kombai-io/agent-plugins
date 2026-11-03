@@ -6,6 +6,13 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpCodexVersion, packCodexPlugin, validateCodexPlugin } from './codex-plugin.mjs';
+import {
+  cliViewMcpConfig,
+  RELEASE_CLI_PACKAGE,
+  stageTeamBuild,
+  TEAM_CLI_PACKAGE,
+  TEAM_NPM_NOTE,
+} from './cli-view.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -25,6 +32,31 @@ function fixture(run) {
     run(root);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
+  }
+}
+
+/** Unzip a team archive and check each stub runs the CLI's team build, with the GitHub Packages note. */
+function checkTeamArchive(archive, pluginDir) {
+  const extracted = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-team-unpacked-'));
+  try {
+    const result = spawnSync('unzip', ['-q', archive, '-d', extracted], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    const plugin = path.join(extracted, pluginDir);
+    const contract = JSON.parse(fs.readFileSync(path.join(plugin, 'kombai.package.json'), 'utf8'));
+    assert.equal(contract.cli.package, TEAM_CLI_PACKAGE);
+    for (const [skill, topic] of [
+      ['work-with-kombai', ''],
+      ['about-kombai', ' faq'],
+    ]) {
+      const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
+      assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
+      assert.ok(text.includes(`${TEAM_NPM_NOTE}\n- **The network is blocked**`), skill);
+      assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
+    }
+    return { extracted, plugin };
+  } catch (error) {
+    fs.rmSync(extracted, { recursive: true, force: true });
+    throw error;
   }
 }
 
@@ -182,5 +214,35 @@ test('the packed plugin carries the CLI view', () => {
     const packed = spawnSync('unzip', ['-p', archive, 'plugins/codex/.mcp.json'], { encoding: 'utf8' });
     assert.equal(packed.status, 0, packed.stderr);
     assert.deepEqual(Object.keys(JSON.parse(packed.stdout).mcpServers), ['kombai']);
+  });
+});
+
+test('a team pack runs the CLI team build from GitHub Packages, and the source stays on the release', () => {
+  fixture((root) => {
+    const version = validateCodexPlugin(root);
+    const archive = packCodexPlugin(path.join(root, 'out'), root, { team: true });
+    assert.equal(path.basename(archive), `kombai-codex-plugin-${version}-team.zip`);
+    const { extracted, plugin } = checkTeamArchive(archive, 'plugins/codex');
+    try {
+      assert.deepEqual(
+        JSON.parse(fs.readFileSync(path.join(plugin, '.mcp.json'), 'utf8')),
+        cliViewMcpConfig(TEAM_CLI_PACKAGE),
+      );
+      // The extracted team marketplace is a valid plugin of its own.
+      assert.equal(validateCodexPlugin(extracted), version);
+    } finally {
+      fs.rmSync(extracted, { recursive: true, force: true });
+    }
+    const contract = JSON.parse(fs.readFileSync(path.join(root, 'plugins/codex/kombai.package.json'), 'utf8'));
+    assert.equal(contract.cli.package, RELEASE_CLI_PACKAGE);
+  });
+});
+
+test('a team build starts only from the release plugin', () => {
+  fixture((root) => {
+    assert.throws(
+      () => stageTeamBuild(root, [], { cli: { package: TEAM_CLI_PACKAGE } }),
+      /starts from the release plugin/,
+    );
   });
 });
