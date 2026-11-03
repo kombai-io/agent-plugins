@@ -16,6 +16,11 @@ function fixture(run) {
     fs.mkdirSync(root, { recursive: true });
     fs.copyFileSync(path.join(source, 'LICENSE'), path.join(root, 'LICENSE'));
     fs.copyFileSync(path.join(source, 'package.json'), path.join(root, 'package.json'));
+    fs.mkdirSync(path.join(root, '.agents/plugins'), { recursive: true });
+    fs.copyFileSync(
+      path.join(source, '.agents/plugins/marketplace.json'),
+      path.join(root, '.agents/plugins/marketplace.json'),
+    );
     fs.cpSync(path.join(source, 'plugins/codex'), path.join(root, 'plugins/codex'), { recursive: true });
     run(root);
   } finally {
@@ -34,16 +39,81 @@ test('a Codex version bump updates its release files without changing the worksp
     assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version, workspaceVersion);
     const archive = packCodexPlugin(path.join(root, 'out'), root);
     assert.equal(path.basename(archive), `kombai-codex-plugin-${next}.zip`);
-    for (const licensePath of ['LICENSE']) {
+    for (const licensePath of ['LICENSE', 'plugins/codex/LICENSE']) {
       const packedLicense = spawnSync('unzip', ['-p', archive, licensePath], { encoding: 'utf8' });
       assert.equal(packedLicense.status, 0, packedLicense.stderr);
       assert.equal(packedLicense.stdout, fs.readFileSync(path.join(root, 'LICENSE'), 'utf8'));
     }
-    const packedManifest = spawnSync('unzip', ['-p', archive, '.codex-plugin/plugin.json'], { encoding: 'utf8' });
+    const packedManifest = spawnSync('unzip', ['-p', archive, 'plugins/codex/.codex-plugin/plugin.json'], {
+      encoding: 'utf8',
+    });
     assert.equal(packedManifest.status, 0, packedManifest.stderr);
     assert.equal(JSON.parse(packedManifest.stdout).version, next);
     assert.throws(() => bumpCodexVersion(current, root), /version must increase/);
   });
+});
+
+test('the extracted Codex archive is a self-contained marketplace', () => {
+  fixture((root) => {
+    const version = validateCodexPlugin(root);
+    const originalSkill = fs.readFileSync(path.join(root, 'plugins/codex/skills/kombai-workflow/SKILL.md'), 'utf8');
+    fs.writeFileSync(path.join(root, 'plugins/codex/development-only.txt'), 'Do not package this file.');
+    const archive = packCodexPlugin(path.join(root, 'out'), root);
+    const extracted = path.join(path.dirname(root), 'unpacked');
+    const result = spawnSync('unzip', ['-q', archive, '-d', extracted], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+
+    // The installed marketplace must work without the original checkout or its archive.
+    fs.rmSync(root, { recursive: true, force: true });
+    const marketplace = JSON.parse(fs.readFileSync(path.join(extracted, '.agents/plugins/marketplace.json'), 'utf8'));
+    assert.equal(marketplace.name, 'kombai');
+    assert.equal(marketplace.plugins.length, 1);
+    const entry = marketplace.plugins[0];
+    assert.equal(entry.name, 'kombai');
+    assert.deepEqual(entry.source, { source: 'local', path: './plugins/codex' });
+    const pluginRoot = path.resolve(extracted, entry.source.path);
+    const manifest = JSON.parse(fs.readFileSync(path.join(pluginRoot, '.codex-plugin/plugin.json'), 'utf8'));
+    assert.equal(manifest.name, entry.name);
+    assert.equal(manifest.version, version);
+    const skillFile = path.resolve(pluginRoot, manifest.skills, 'kombai-workflow/SKILL.md');
+    assert.equal(fs.readFileSync(skillFile, 'utf8'), originalSkill);
+    assert.equal(validateCodexPlugin(extracted), version);
+    assert.equal(fs.existsSync(path.join(pluginRoot, 'development-only.txt')), false);
+  });
+});
+
+test('a missing Codex marketplace stops validation and packaging', () => {
+  fixture((root) => {
+    fs.rmSync(path.join(root, '.agents/plugins/marketplace.json'));
+    assert.throws(() => validateCodexPlugin(root), /marketplace\.json/);
+    assert.throws(() => packCodexPlugin(path.join(root, 'out'), root), /marketplace\.json/);
+    assert.equal(fs.existsSync(path.join(root, 'out')), false);
+  });
+});
+
+test('validation rejects malformed Codex marketplace metadata', () => {
+  const entry = { name: 'kombai', source: { source: 'local', path: './plugins/codex' } };
+  const invalid = [
+    ['invalid JSON', '{'],
+    ['wrong marketplace name', JSON.stringify({ name: 'other', plugins: [entry] })],
+    ['missing plugin', JSON.stringify({ name: 'kombai', plugins: [] })],
+    ['extra plugin', JSON.stringify({ name: 'kombai', plugins: [entry, { ...entry, name: 'other' }] })],
+    ['wrong plugin name', JSON.stringify({ name: 'kombai', plugins: [{ ...entry, name: 'other' }] })],
+    [
+      'non-local source',
+      JSON.stringify({ name: 'kombai', plugins: [{ ...entry, source: { source: 'github', path: './plugins/codex' } }] }),
+    ],
+    [
+      'source outside bundled plugin',
+      JSON.stringify({ name: 'kombai', plugins: [{ ...entry, source: { source: 'local', path: '../codex' } }] }),
+    ],
+  ];
+  for (const [label, contents] of invalid) {
+    fixture((root) => {
+      fs.writeFileSync(path.join(root, '.agents/plugins/marketplace.json'), contents);
+      assert.throws(() => validateCodexPlugin(root), undefined, label);
+    });
+  }
 });
 
 test('validation stops packaging when versions disagree', () => {
@@ -85,7 +155,7 @@ test('with the canvas view off, the plugin registers no MCP server and packs non
     const archive = packCodexPlugin(path.join(root, 'out'), root);
     const listing = spawnSync('unzip', ['-Z1', archive], { encoding: 'utf8' });
     assert.equal(listing.status, 0, listing.stderr);
-    assert.ok(!listing.stdout.split('\n').includes('.mcp.json'));
+    assert.ok(!listing.stdout.split('\n').includes('plugins/codex/.mcp.json'));
   });
 });
 
@@ -109,7 +179,7 @@ test('validation rejects an app MCP configuration', () => {
 test('the packed plugin carries the CLI view', () => {
   fixture((root) => {
     const archive = packCodexPlugin(path.join(root, 'out'), root);
-    const packed = spawnSync('unzip', ['-p', archive, '.mcp.json'], { encoding: 'utf8' });
+    const packed = spawnSync('unzip', ['-p', archive, 'plugins/codex/.mcp.json'], { encoding: 'utf8' });
     assert.equal(packed.status, 0, packed.stderr);
     assert.deepEqual(Object.keys(JSON.parse(packed.stdout).mcpServers), ['kombai-cli']);
   });
