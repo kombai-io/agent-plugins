@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kombai FAQ"
+  short_description: "Answer questions about Kombai."
+  default_prompt: "Use $about-kombai to answer a question about Kombai."

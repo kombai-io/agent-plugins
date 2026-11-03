@@ -1,11 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-// The Kombai CLI's MCP server (`kombai mcp`, registered as `kombai-cli`: the canvas view and Kombai's cards) is the one
+// The Kombai CLI's MCP server (`kombai mcp`, registered as `kombai`: the canvas view and Kombai's cards) is the one
 // MCP server a plugin may bundle. What each host is listed is the CLI's call (VIEW_HOSTS and cardsFor in
 // vscode-assistant's packages/cli/src/mcp/client-gate.js); a plugin only registers the server, and only while its
 // kombai.package.json has `cli.view` on. Turning it on for another host: README.md, "Adding a host to the canvas view".
-export const CLI_VIEW_SERVER = 'kombai-cli';
+export const CLI_VIEW_SERVER = 'kombai';
+// Each plugin's skills, both stubs over the CLI's text: the workflow runs `kombai skill`, the FAQ `kombai skill faq`.
+export const WORKFLOW_SKILL = 'work-with-kombai';
+export const FAQ_SKILL = 'about-kombai';
+const SKILL_TOPICS = { [WORKFLOW_SKILL]: '', [FAQ_SKILL]: ' faq' };
 const CLI_PACKAGE_RE = /^@kombai(-io)?\/cli@\S+$/;
 
 function readJson(file) {
@@ -22,7 +26,7 @@ export function cliViewMcpConfig(cliPackage) {
 }
 
 /**
- * Check a plugin against the `cli` block of its kombai.package.json: its workflow skill runs that CLI, and its
+ * Check a plugin against the `cli` block of its kombai.package.json: its skills run that CLI, and its
  * `.mcp.json` registers the view exactly when `cli.view` is on. No other MCP or app configuration ships.
  * Returns whether the plugin registers the view.
  */
@@ -33,8 +37,13 @@ export function checkCliContract(pluginRoot, contract, host) {
     `${host} contract must name the Kombai CLI it runs (cli.package).`,
   );
   assert(typeof cli.view === 'boolean', `${host} contract must say whether it registers the canvas view (cli.view).`);
-  const skill = fs.readFileSync(path.join(pluginRoot, 'skills/kombai-workflow/SKILL.md'), 'utf8');
-  assert(skill.includes(`npx -y ${cli.package} skill`), `${host} workflow skill must run ${cli.package}.`);
+  for (const [name, topic] of Object.entries(SKILL_TOPICS)) {
+    const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');
+    assert(
+      skill.includes(`npx -y ${cli.package} skill${topic}\``),
+      `${host} ${name} skill must run ${cli.package} skill${topic}.`,
+    );
+  }
 
   const mcpFile = path.join(pluginRoot, '.mcp.json');
   if (cli.view) {
@@ -53,4 +62,23 @@ export function checkCliContract(pluginRoot, contract, host) {
     );
   }
   return cli.view;
+}
+
+/** Check that a plugin ships exactly the workflow and FAQ skills, each named in its frontmatter and described. */
+export function checkSkills(pluginRoot, host) {
+  const skillRoot = path.join(pluginRoot, 'skills');
+  const names = fs
+    .readdirSync(skillRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  assert(
+    JSON.stringify(names) === JSON.stringify(Object.keys(SKILL_TOPICS).sort()),
+    `${host} plugin must contain the ${WORKFLOW_SKILL} and ${FAQ_SKILL} skills, and no other.`,
+  );
+  for (const name of names) {
+    const skill = fs.readFileSync(path.join(skillRoot, name, 'SKILL.md'), 'utf8');
+    assert(new RegExp(`^---\\r?\\n[\\s\\S]*?^name: ${name}\\r?$`, 'm').test(skill), `${host} ${name} skill name is missing.`);
+    assert(/^description: \S.+$/m.test(skill), `${host} ${name} skill description is missing.`);
+  }
 }

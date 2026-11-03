@@ -1,4 +1,4 @@
 interface:
   display_name: "Work with Kombai"
   short_description: "Design UI with Kombai."
-  default_prompt: "Use $kombai-workflow to design a UI with Kombai."
+  default_prompt: "Use $work-with-kombai to design a UI with Kombai."

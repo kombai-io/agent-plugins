@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkCliContract } from './cli-view.mjs';
+import { checkCliContract, checkSkills } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -54,18 +54,14 @@ export function validateCursorPlugin(root = workspaceRoot) {
     'README.md',
     'kombai.package.json',
     '.cursor-plugin/plugin.json',
-    'skills/kombai-workflow/SKILL.md',
+    'skills/work-with-kombai/SKILL.md',
+    'skills/about-kombai/SKILL.md',
     'assets/logo.png',
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Cursor plugin file: ${file}`);
   }
   checkCliContract(pluginRoot, contract, 'Cursor');
-  const skillRoot = path.join(pluginRoot, 'skills');
-  const skills = fs.readdirSync(skillRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory());
-  assert(skills.length === 1 && skills[0].name === 'kombai-workflow', 'Cursor plugin must contain its workflow skill.');
-  const skill = fs.readFileSync(path.join(skillRoot, 'kombai-workflow/SKILL.md'), 'utf8');
-  assert(/^---\r?\n[\s\S]*?^name: kombai-workflow\r?$/m.test(skill), 'Cursor workflow skill name is missing.');
-  assert(/^description: \S.+$/m.test(skill), 'Cursor workflow skill description is missing.');
+  checkSkills(pluginRoot, 'Cursor');
   return manifest.version;
 }
 

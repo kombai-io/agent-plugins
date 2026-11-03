@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkCliContract } from './cli-view.mjs';
+import { checkCliContract, checkSkills } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -63,6 +63,7 @@ export function validateCodexPlugin(root = workspaceRoot) {
     assert(manifest.mcpServers === undefined, 'Codex manifest must not name mcpServers while the canvas view is off.');
   }
 
+  checkSkills(pluginRoot, 'Codex');
   const skillsRoot = path.join(pluginRoot, 'skills');
   const skills = fs.readdirSync(skillsRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory());
   assert(skills.length > 0, 'Codex plugin must contain at least one skill.');
