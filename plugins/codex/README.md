@@ -17,6 +17,18 @@ codex plugin marketplace add /absolute/path/to/agent-plugins --json
 codex plugin add kombai@kombai --json
 ```
 
+To install a packaged build, unzip `kombai-codex-plugin-0.3.5.zip` into a directory you will keep.
+The extracted root contains `.agents/plugins/marketplace.json`, which points to the bundled
+`plugins/codex` directory. Register the extracted root, then install the plugin:
+
+```sh
+codex plugin marketplace add /absolute/path/to/kombai-codex-plugin-0.3.5 --json
+codex plugin add kombai@kombai --json
+```
+
+Start a new Codex chat after installation. Versions through 0.3.4 packaged only the plugin
+payload and cannot be registered directly as a marketplace; use a 0.3.5 or later ZIP.
+
 Signing in happens in the browser: the CLI opens Kombai's sign-in page and shows a match code to compare. The plugin never requests credentials in chat or stores them in MCP arguments.
 
 The skill is [`skills/kombai-workflow/SKILL.md`](skills/kombai-workflow/SKILL.md).

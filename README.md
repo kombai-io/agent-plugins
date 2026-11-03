@@ -135,9 +135,11 @@ version. A supplied higher version changes the plugin manifest and contract in t
 checkout only; it does not commit or push changes. For releases installed from Git, commit
 that version change before publishing the revision.
 
-The Codex ZIP contains the plugin payload at its root. The Claude Code and Cursor ZIPs
-contain their respective marketplace manifests and plugin directories. Unzip the Claude Code
-artifact before registering its extracted directory as a local marketplace. For Cursor, copy
+The Codex ZIP contains `.agents/plugins/marketplace.json` and the plugin under `plugins/codex/`.
+Unzip it and pass the extracted root to `codex plugin marketplace add`, then install
+`kombai@kombai`. The Claude Code and Cursor ZIPs contain their respective marketplace manifests
+and plugin directories. Unzip the Claude Code artifact before registering its extracted directory
+as a local marketplace. For Cursor, copy
 the extracted `plugins/cursor` directory to Cursor's local plugin folder for testing. Workflow artifacts do not publish marketplace
 listings or GitHub releases.
 

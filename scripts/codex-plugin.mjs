@@ -8,7 +8,8 @@ import { checkCliContract } from './cli-view.mjs';
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 // Plus `.mcp.json` while the contract has the canvas view on (cli-view.mjs).
-const PACKAGE_FILES = ['.codex-plugin', 'assets', 'skills', 'README.md', 'kombai.package.json', 'LICENSE'];
+const PLUGIN_FILES = ['.codex-plugin', 'assets', 'skills', 'README.md', 'kombai.package.json', 'LICENSE'];
+const MARKETPLACE_FILE = '.agents/plugins/marketplace.json';
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -24,8 +25,18 @@ function assert(condition, message) {
 
 export function validateCodexPlugin(root = workspaceRoot) {
   const pluginRoot = path.join(root, 'plugins/codex');
+  const marketplace = readJson(path.join(root, MARKETPLACE_FILE));
   const manifest = readJson(path.join(pluginRoot, '.codex-plugin/plugin.json'));
   const contract = readJson(path.join(pluginRoot, 'kombai.package.json'));
+
+  assert(marketplace.name === 'kombai', 'Codex marketplace name must be kombai.');
+  assert(
+    marketplace.plugins?.length === 1 &&
+      marketplace.plugins[0].name === 'kombai' &&
+      marketplace.plugins[0].source?.source === 'local' &&
+      marketplace.plugins[0].source.path === './plugins/codex',
+    'Codex marketplace must point to the bundled plugin at ./plugins/codex.',
+  );
 
   assert(
     fs.readFileSync(path.join(pluginRoot, 'LICENSE'), 'utf8') === fs.readFileSync(path.join(root, 'LICENSE'), 'utf8'),
@@ -38,7 +49,7 @@ export function validateCodexPlugin(root = workspaceRoot) {
   assert(contract.schemaVersion === 'kombai-codex-plugin/v2', 'Unexpected Codex package contract schema.');
   assert(manifest.skills === './skills/', 'Codex manifest must point at ./skills/.');
 
-  for (const relative of PACKAGE_FILES) {
+  for (const relative of PLUGIN_FILES) {
     assert(fs.existsSync(path.join(pluginRoot, relative)), `Missing Codex package content: ${relative}`);
   }
   for (const field of ['composerIcon', 'logo']) {
@@ -100,14 +111,16 @@ export function packCodexPlugin(outputDir = path.join(os.tmpdir(), 'kombai-agent
   fs.mkdirSync(outputDir, { recursive: true });
   const archive = path.join(outputDir, `kombai-codex-plugin-${version}.zip`);
   fs.rmSync(archive, { force: true });
-  const cwd = path.join(root, 'plugins/codex');
+  const pluginRoot = path.join(root, 'plugins/codex');
   // Validation has checked that .mcp.json is there exactly when the canvas view is on.
-  const files = fs.existsSync(path.join(cwd, '.mcp.json')) ? [...PACKAGE_FILES, '.mcp.json'] : PACKAGE_FILES;
+  const pluginFiles = fs.existsSync(path.join(pluginRoot, '.mcp.json')) ? [...PLUGIN_FILES, '.mcp.json'] : PLUGIN_FILES;
+  // marketplace add needs the catalog and its source path to exist in the extracted archive.
+  const files = [MARKETPLACE_FILE, 'LICENSE', ...pluginFiles.map((file) => `plugins/codex/${file}`)];
   for (const [command, args] of [
     ['zip', ['-q', '-r', archive, ...files]],
     ['unzip', ['-tq', archive]],
   ]) {
-    const result = spawnSync(command, args, { cwd, encoding: 'utf8' });
+    const result = spawnSync(command, args, { cwd: root, encoding: 'utf8' });
     if (result.error) throw result.error;
     if (result.status !== 0) throw new Error(`${command} failed: ${result.stderr || result.stdout}`);
   }
