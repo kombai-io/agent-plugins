@@ -7,10 +7,12 @@ claude plugin marketplace add /absolute/path/to/agent-plugins
 claude plugin install kombai@kombai
 ```
 
-The plugin provides setup and recovery instructions. It does not include the Kombai MCP server. Install the Kombai desktop app and run its executable with `mcp install claude-code`, or enable Claude Code in the app's MCP settings. The app writes the user-level `kombai` MCP entry and installs its eight task skills. Verify registration with `claude mcp get kombai`; start a new Claude Code session if the tools do not appear in the current one.
+The plugin's `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@latest skill`) and follows what it prints: Claude Code designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
 
-For Kombai Dev, use the installed Dev executable. The user-level MCP entry can point to only one Kombai build at a time, so repeat registration when switching builds.
+Its `about-kombai` skill runs `npx -y @kombai/cli@latest skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 
-Authentication is completed in the Kombai app.
+`.mcp.json` registers one server, `kombai` (`npx -y @kombai/cli@latest mcp`), for Kombai's taste card: in Claude desktop's Code tab, which shows MCP App views, a taste run's design brief appears as a card in the chat. Claude Code in a terminal shows none, so the server lists nothing there. The CLI shows Claude Code no canvas view: the skill opens the canvas in the user's browser. This is the plugin's `cli.view` in `kombai.package.json`; see the repository README's "The canvas view".
+
+Signing in happens in the browser: the CLI opens Kombai's sign-in page and shows a match code to compare.
 
 Licensed under the [MIT License](LICENSE).

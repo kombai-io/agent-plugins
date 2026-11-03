@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { checkCliContract, checkSkills, stageTeamBuild } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -46,38 +47,18 @@ export function validateClaudeCodePlugin(root = workspaceRoot) {
   assert(manifest.name === 'kombai' && contract.name === manifest.name, 'Claude plugin names must be kombai.');
   assert(VERSION_RE.test(manifest.version), `Invalid Claude plugin version: ${manifest.version}`);
   assert(manifest.version === contract.version, 'Claude manifest and package contract versions must match.');
-  assert(VERSION_RE.test(contract.minimumKombaiVersion), 'Invalid minimum Kombai app version.');
-  assert(contract.schemaVersion === 'kombai-claude-code-plugin/v1', 'Unexpected Claude package contract schema.');
-  assert(contract.mcpServer === 'kombai' && contract.mcpTransport === 'stdio', 'Unexpected MCP contract.');
-  assert(
-    contract.localMcp?.owner === 'installed-kombai-desktop-app' &&
-      JSON.stringify(contract.localMcp.packagedInstallArgs) === JSON.stringify(['mcp', 'install', 'claude-code']),
-    'Claude plugin must register through the installed Kombai app.',
-  );
-  assert(
-    JSON.stringify(contract.localMcp.requiredTools) === JSON.stringify(['chat_start', 'chat_status', 'canvas_read']),
-    'Unexpected required MCP tools.',
-  );
+  assert(contract.schemaVersion === 'kombai-claude-code-plugin/v2', 'Unexpected Claude package contract schema.');
   for (const file of [
     'README.md',
     'kombai.package.json',
     '.claude-plugin/plugin.json',
-    'skills/kombai-workflow/SKILL.md',
+    'skills/work-with-kombai/SKILL.md',
+    'skills/about-kombai/SKILL.md',
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Claude plugin file: ${file}`);
   }
-  for (const forbidden of ['.mcp.json', 'mcp.json', '.app.json']) {
-    assert(
-      !fs.existsSync(path.join(pluginRoot, forbidden)),
-      `Local MCP config must not ship in the plugin: ${forbidden}`,
-    );
-  }
-  const skillRoot = path.join(pluginRoot, 'skills');
-  const skills = fs.readdirSync(skillRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory());
-  assert(skills.length === 1 && skills[0].name === 'kombai-workflow', 'Claude plugin must contain its workflow skill.');
-  const skill = fs.readFileSync(path.join(skillRoot, 'kombai-workflow/SKILL.md'), 'utf8');
-  assert(/^---\r?\n[\s\S]*?^name: kombai-workflow\r?$/m.test(skill), 'Claude workflow skill name is missing.');
-  assert(/^description: \S.+$/m.test(skill), 'Claude workflow skill description is missing.');
+  checkCliContract(pluginRoot, contract, 'Claude');
+  checkSkills(pluginRoot, 'Claude');
   return manifest.version;
 }
 
@@ -97,20 +78,33 @@ export function bumpClaudeCodeVersion(next, root = workspaceRoot) {
   return next;
 }
 
-export function packClaudeCodePlugin(outputDir = path.join(os.tmpdir(), 'kombai-agent-plugins'), root = workspaceRoot) {
+export function packClaudeCodePlugin(
+  outputDir = path.join(os.tmpdir(), 'kombai-agent-plugins'),
+  root = workspaceRoot,
+  { team = false } = {},
+) {
   const version = validateClaudeCodePlugin(root);
-  fs.mkdirSync(outputDir, { recursive: true });
-  const archive = path.join(outputDir, `kombai-claude-code-plugin-${version}.zip`);
-  fs.rmSync(archive, { force: true });
-  for (const [command, args] of [
-    ['zip', ['-q', '-r', archive, ...PACKAGE_FILES]],
-    ['unzip', ['-tq', archive]],
-  ]) {
-    const result = spawnSync(command, args, { cwd: root, encoding: 'utf8' });
-    if (result.error) throw result.error;
-    if (result.status !== 0) throw new Error(`${command} failed: ${result.stderr || result.stdout}`);
+  // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
+  const from = team
+    ? stageTeamBuild(root, PACKAGE_FILES, readJson(path.join(root, 'plugins/claude-code/kombai.package.json')))
+    : root;
+  try {
+    if (team) validateClaudeCodePlugin(from);
+    fs.mkdirSync(outputDir, { recursive: true });
+    const archive = path.join(outputDir, `kombai-claude-code-plugin-${version}${team ? '-team' : ''}.zip`);
+    fs.rmSync(archive, { force: true });
+    for (const [command, args] of [
+      ['zip', ['-q', '-r', archive, ...PACKAGE_FILES]],
+      ['unzip', ['-tq', archive]],
+    ]) {
+      const result = spawnSync(command, args, { cwd: from, encoding: 'utf8' });
+      if (result.error) throw result.error;
+      if (result.status !== 0) throw new Error(`${command} failed: ${result.stderr || result.stdout}`);
+    }
+    return archive;
+  } finally {
+    if (team) fs.rmSync(from, { recursive: true, force: true });
   }
-  return archive;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -128,8 +122,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       assert(value && extra.length === 0, 'Usage: bump <version>');
       result = bumpClaudeCodeVersion(value);
     } else if (command === 'pack') {
-      assert(extra.length === 0, 'Usage: pack [output-directory]');
-      result = packClaudeCodePlugin(value && path.resolve(value));
+      const args = [value, ...extra].filter((arg) => arg !== undefined);
+      const dirs = args.filter((arg) => arg !== '--team');
+      assert(dirs.length <= 1, 'Usage: pack [output-directory] [--team]');
+      result = packClaudeCodePlugin(dirs[0] && path.resolve(dirs[0]), undefined, { team: args.includes('--team') });
     } else {
       throw new Error('Usage: claude-code-plugin.mjs <validate|bump|pack>');
     }

@@ -1,22 +1,9 @@
 {
-  "schemaVersion": "kombai-cursor-plugin/v1",
+  "schemaVersion": "kombai-cursor-plugin/v2",
   "name": "kombai",
-  "version": "0.2.0",
-  "minimumKombaiVersion": "2.0.126",
-  "mcpServer": "kombai",
-  "mcpTransport": "stdio",
-  "localMcp": {
-    "owner": "installed-kombai-desktop-app",
-    "packagedInstallArgs": [
-      "mcp",
-      "install",
-      "cursor"
-    ],
-    "requiredTools": [
-      "chat_start",
-      "chat_status",
-      "canvas_read"
-    ],
-    "authentication": "sign-in-in-kombai-app"
+  "version": "0.4.0",
+  "cli": {
+    "package": "@kombai/cli@latest",
+    "view": false
   }
 }

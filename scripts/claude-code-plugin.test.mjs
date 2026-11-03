@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpClaudeCodeVersion, packClaudeCodePlugin, validateClaudeCodePlugin } from './claude-code-plugin.mjs';
+import { cliViewMcpConfig, RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE, TEAM_NPM_NOTE } from './cli-view.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -23,6 +24,31 @@ function fixture(run) {
     run(root);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
+  }
+}
+
+/** Unzip a team archive and check each stub runs the CLI's team build, with the GitHub Packages note. */
+function checkTeamArchive(archive, pluginDir) {
+  const extracted = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-team-unpacked-'));
+  try {
+    const result = spawnSync('unzip', ['-q', archive, '-d', extracted], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    const plugin = path.join(extracted, pluginDir);
+    const contract = JSON.parse(fs.readFileSync(path.join(plugin, 'kombai.package.json'), 'utf8'));
+    assert.equal(contract.cli.package, TEAM_CLI_PACKAGE);
+    for (const [skill, topic] of [
+      ['work-with-kombai', ''],
+      ['about-kombai', ' faq'],
+    ]) {
+      const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
+      assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
+      assert.ok(text.includes(`${TEAM_NPM_NOTE}\n- **The network is blocked**`), skill);
+      assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
+    }
+    return { extracted, plugin };
+  } catch (error) {
+    fs.rmSync(extracted, { recursive: true, force: true });
+    throw error;
   }
 }
 
@@ -56,7 +82,7 @@ test('Claude version bump and marketplace package are independent of Codex', () 
   });
 });
 
-test('Claude validation rejects mismatched versions and bundled MCP configuration', () => {
+test('Claude validation rejects mismatched versions and any MCP configuration but the CLI server', () => {
   fixture((root) => {
     const contractPath = path.join(root, 'plugins/claude-code/kombai.package.json');
     const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
@@ -67,6 +93,39 @@ test('Claude validation rejects mismatched versions and bundled MCP configuratio
     contract.version = originalVersion;
     fs.writeFileSync(contractPath, JSON.stringify(contract));
     fs.writeFileSync(path.join(root, 'plugins/claude-code/.mcp.json'), '{}');
-    assert.throws(() => validateClaudeCodePlugin(root), /Local MCP config must not ship/);
+    assert.throws(() => validateClaudeCodePlugin(root), /may only register the Kombai CLI view/);
+  });
+});
+
+test('the Claude Code plugin registers the CLI server for the taste card, and packs it', () => {
+  fixture((root) => {
+    const pluginRoot = path.join(root, 'plugins/claude-code');
+    const contract = JSON.parse(fs.readFileSync(path.join(pluginRoot, 'kombai.package.json'), 'utf8'));
+    assert.equal(contract.cli.view, true);
+    validateClaudeCodePlugin(root);
+    const archive = packClaudeCodePlugin(path.join(root, 'out'), root);
+    const packed = spawnSync('unzip', ['-p', archive, 'plugins/claude-code/.mcp.json'], { encoding: 'utf8' });
+    assert.equal(packed.status, 0, packed.stderr);
+    assert.deepEqual(JSON.parse(packed.stdout), cliViewMcpConfig(contract.cli.package));
+    fs.rmSync(path.join(pluginRoot, '.mcp.json'));
+    assert.throws(() => validateClaudeCodePlugin(root), /canvas view on, so it must ship \.mcp\.json/);
+  });
+});
+
+test('a Claude Code team pack runs the CLI team build, its server included', () => {
+  fixture((root) => {
+    const version = validateClaudeCodePlugin(root);
+    const archive = packClaudeCodePlugin(path.join(root, 'out'), root, { team: true });
+    assert.equal(path.basename(archive), `kombai-claude-code-plugin-${version}-team.zip`);
+    const { extracted, plugin } = checkTeamArchive(archive, 'plugins/claude-code');
+    try {
+      assert.deepEqual(
+        JSON.parse(fs.readFileSync(path.join(plugin, '.mcp.json'), 'utf8')),
+        cliViewMcpConfig(TEAM_CLI_PACKAGE),
+      );
+      assert.equal(validateClaudeCodePlugin(extracted), version);
+    } finally {
+      fs.rmSync(extracted, { recursive: true, force: true });
+    }
   });
 });
