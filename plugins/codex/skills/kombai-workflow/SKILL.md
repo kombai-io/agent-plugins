@@ -1,6 +1,6 @@
 ---
 name: kombai-workflow
-description: Design UI with Kombai on a Kombai canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding.
+description: Design UI with Kombai. Designs go on a Kombai canvas; design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding.
 ---
 
 Run `npx -y @kombai-io/cli@next skill` and follow what it prints; it is this skill's full text.
