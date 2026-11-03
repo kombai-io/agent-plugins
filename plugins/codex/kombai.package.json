@@ -1,7 +1,7 @@
 {
   "schemaVersion": "kombai-codex-plugin/v2",
   "name": "kombai",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "cli": {
     "package": "@kombai-io/cli@next",
     "view": true

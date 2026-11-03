@@ -8,6 +8,13 @@ Each plugin's `kombai-workflow` skill runs the Kombai CLI's team build
 (`npx -y @kombai-io/cli@next skill`), which prints the full instructions for designing on a hosted
 Kombai canvas. The CLI needs Node.js 20 or later and npm access to `@kombai-io` on GitHub Packages.
 
+When running in Codex's sandbox, the Codex plugin and standalone skill request approved
+execution outside it before the first `npx` call and for later CLI commands, using the execution
+tool's `sandbox_permissions: "require_escalated"` setting. npm may need network access before
+Kombai starts, and the CLI writes `~/.kombai`. Existing Codex installations need the updated
+plugin or standalone skill to receive this guidance; upgrading only the CLI does not replace
+the bootstrap skill.
+
 The only MCP server a plugin registers is the CLI's canvas view (`kombai-cli`), and only the Codex
 plugin registers it today; see [The canvas view](#the-canvas-view). This repository supplies the
 workflow skill and plugin packaging; it builds neither the CLI nor the desktop app.
@@ -26,8 +33,9 @@ npx skills add kombai-io/agent-plugins --skill kombai-workflow
 ```
 
 The CLI discovers [`skills/kombai-workflow/SKILL.md`](skills/kombai-workflow/SKILL.md)
-before the same-named skills inside the host plugins. It is the same CLI stub as the plugins'
-and works in any agent that can run `npx`. It registers no MCP server, so the agent opens the
+before the same-named skills inside the host plugins. It calls the same CLI and works in any
+agent that can run `npx`; its Codex permission guidance applies only when running in Codex.
+It registers no MCP server, so the agent opens the
 canvas in its own browser panel or the user's browser rather than in a view beside the chat.
 The existing plugin marketplaces and packages continue to use their host-specific skills under
 `plugins/`.
