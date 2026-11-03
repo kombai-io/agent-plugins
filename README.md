@@ -4,11 +4,11 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 [Claude Code](plugins/claude-code/README.md), and [Cursor](plugins/cursor/README.md) plugins,
 their local marketplaces, and release tooling.
 
-Each plugin's `work-with-kombai` skill runs the Kombai CLI's team build
-(`npx -y @kombai-io/cli@next skill`), which prints the full instructions for designing on a hosted
-Kombai canvas. The CLI needs Node.js 20 or later and npm access to `@kombai-io` on GitHub Packages.
+Each plugin's `work-with-kombai` skill runs the Kombai CLI
+(`npx -y @kombai/cli@latest skill`), which prints the full instructions for designing on a hosted
+Kombai canvas. The CLI needs Node.js 20 or later.
 
-A second skill, `about-kombai`, runs `npx -y @kombai-io/cli@next skill faq` and answers the user's
+A second skill, `about-kombai`, runs `npx -y @kombai/cli@latest skill faq` and answers the user's
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
 live, sharing, updates and support.
 

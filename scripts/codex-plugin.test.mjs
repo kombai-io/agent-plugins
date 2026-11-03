@@ -163,9 +163,9 @@ test('validation holds the skill and the view to the CLI the contract names', ()
   fixture((root) => {
     const contractPath = path.join(root, 'plugins/codex/kombai.package.json');
     const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
-    contract.cli.package = '@kombai/cli@latest';
+    contract.cli.package = '@kombai-io/cli@next';
     fs.writeFileSync(contractPath, JSON.stringify(contract));
-    assert.throws(() => validateCodexPlugin(root), /work-with-kombai skill must run @kombai\/cli@latest skill\./);
+    assert.throws(() => validateCodexPlugin(root), /work-with-kombai skill must run @kombai-io\/cli@next skill\./);
   });
 });
 
