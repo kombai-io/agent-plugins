@@ -4,11 +4,11 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 [Claude Code](plugins/claude-code/README.md), and [Cursor](plugins/cursor/README.md) plugins,
 their local marketplaces, and release tooling.
 
-Each plugin's `work-with-kombai` skill runs the Kombai CLI's team build
-(`npx -y @kombai-io/cli@next skill`), which prints the full instructions for designing on a hosted
-Kombai canvas. The CLI needs Node.js 20 or later and npm access to `@kombai-io` on GitHub Packages.
+Each plugin's `work-with-kombai` skill runs the Kombai CLI
+(`npx -y @kombai/cli@latest skill`), which prints the full instructions for designing on a hosted
+Kombai canvas. The CLI needs Node.js 20 or later.
 
-A second skill, `about-kombai`, runs `npx -y @kombai-io/cli@next skill faq` and answers the user's
+A second skill, `about-kombai`, runs `npx -y @kombai/cli@latest skill faq` and answers the user's
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
 live, sharing, updates and support.
 
@@ -147,6 +147,17 @@ and plugin directories. Unzip the Claude Code artifact before registering its ex
 as a local marketplace. For Cursor, copy
 the extracted `plugins/cursor` directory to Cursor's local plugin folder for testing. Workflow artifacts do not publish marketplace
 listings or GitHub releases.
+
+### Team builds
+
+Colleagues trying a CLI beta before it reaches npm use a team build of each plugin: the same
+plugin, running the CLI's team build (`@kombai-io/cli@next` on GitHub Packages, from
+vscode-assistant's `cli-v<version>-beta.N` tags) with the stubs' note on reaching GitHub Packages.
+Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
+(`<host>` is `codex`, `claude-code` or `cursor`): it writes `kombai-<host>-plugin-<version>-team.zip`
+from a staged copy, so the source always names `@kombai/cli@latest`. A team ZIP installs like the
+public one and has the same plugin name, so a machine has one or the other. The team CLI needs a
+GitHub token with `read:packages` in `~/.npmrc` (the stubs say how).
 
 ## Repository and license
 

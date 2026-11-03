@@ -1,8 +1,8 @@
 # Kombai for Cursor
 
-This plugin's `work-with-kombai` skill runs the Kombai CLI's team build (`npx -y @kombai-io/cli@next skill`) and follows what it prints: Cursor designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later, and npm access to `@kombai-io` on GitHub Packages.
+This plugin's `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@latest skill`) and follows what it prints: Cursor designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
 
-Its `about-kombai` skill runs `npx -y @kombai-io/cli@next skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
+Its `about-kombai` skill runs `npx -y @kombai/cli@latest skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 
 The plugin registers no MCP server: the skill opens the canvas in Cursor's browser panel or the user's browser. The CLI's canvas view is off for Cursor (`cli.view` in `kombai.package.json`) until Cursor shows MCP App views; the repository README's "The canvas view" says how to turn it on.
 

@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkCliContract, checkSkills } from './cli-view.mjs';
+import { checkCliContract, checkSkills, stageTeamBuild } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -107,25 +107,36 @@ export function bumpCodexVersion(next, root = workspaceRoot) {
   return next;
 }
 
-export function packCodexPlugin(outputDir = path.join(os.tmpdir(), 'kombai-agent-plugins'), root = workspaceRoot) {
+export function packCodexPlugin(
+  outputDir = path.join(os.tmpdir(), 'kombai-agent-plugins'),
+  root = workspaceRoot,
+  { team = false } = {},
+) {
   const version = validateCodexPlugin(root);
-  fs.mkdirSync(outputDir, { recursive: true });
-  const archive = path.join(outputDir, `kombai-codex-plugin-${version}.zip`);
-  fs.rmSync(archive, { force: true });
   const pluginRoot = path.join(root, 'plugins/codex');
   // Validation has checked that .mcp.json is there exactly when the canvas view is on.
   const pluginFiles = fs.existsSync(path.join(pluginRoot, '.mcp.json')) ? [...PLUGIN_FILES, '.mcp.json'] : PLUGIN_FILES;
   // marketplace add needs the catalog and its source path to exist in the extracted archive.
   const files = [MARKETPLACE_FILE, 'LICENSE', ...pluginFiles.map((file) => `plugins/codex/${file}`)];
-  for (const [command, args] of [
-    ['zip', ['-q', '-r', archive, ...files]],
-    ['unzip', ['-tq', archive]],
-  ]) {
-    const result = spawnSync(command, args, { cwd: root, encoding: 'utf8' });
-    if (result.error) throw result.error;
-    if (result.status !== 0) throw new Error(`${command} failed: ${result.stderr || result.stdout}`);
+  // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
+  const from = team ? stageTeamBuild(root, files, readJson(path.join(pluginRoot, 'kombai.package.json'))) : root;
+  try {
+    if (team) validateCodexPlugin(from);
+    fs.mkdirSync(outputDir, { recursive: true });
+    const archive = path.join(outputDir, `kombai-codex-plugin-${version}${team ? '-team' : ''}.zip`);
+    fs.rmSync(archive, { force: true });
+    for (const [command, args] of [
+      ['zip', ['-q', '-r', archive, ...files]],
+      ['unzip', ['-tq', archive]],
+    ]) {
+      const result = spawnSync(command, args, { cwd: from, encoding: 'utf8' });
+      if (result.error) throw result.error;
+      if (result.status !== 0) throw new Error(`${command} failed: ${result.stderr || result.stdout}`);
+    }
+    return archive;
+  } finally {
+    if (team) fs.rmSync(from, { recursive: true, force: true });
   }
-  return archive;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -143,8 +154,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       assert(value && extra.length === 0, 'Usage: bump <version>');
       result = bumpCodexVersion(value);
     } else if (command === 'pack') {
-      assert(extra.length === 0, 'Usage: pack [output-directory]');
-      result = packCodexPlugin(value && path.resolve(value));
+      const args = [value, ...extra].filter((arg) => arg !== undefined);
+      const dirs = args.filter((arg) => arg !== '--team');
+      assert(dirs.length <= 1, 'Usage: pack [output-directory] [--team]');
+      result = packCodexPlugin(dirs[0] && path.resolve(dirs[0]), undefined, { team: args.includes('--team') });
     } else {
       throw new Error('Usage: codex-plugin.mjs <validate|bump|pack>');
     }
