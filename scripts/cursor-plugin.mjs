@@ -54,7 +54,7 @@ export function validateCursorPlugin(root = workspaceRoot) {
     'README.md',
     'kombai.package.json',
     '.cursor-plugin/plugin.json',
-    'skills/kombai-workflow/SKILL.md',
+    'skills/work-with-kombai/SKILL.md',
     'assets/logo.png',
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Cursor plugin file: ${file}`);
@@ -62,10 +62,15 @@ export function validateCursorPlugin(root = workspaceRoot) {
   checkCliContract(pluginRoot, contract, 'Cursor');
   const skillRoot = path.join(pluginRoot, 'skills');
   const skills = fs.readdirSync(skillRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory());
-  assert(skills.length === 1 && skills[0].name === 'kombai-workflow', 'Cursor plugin must contain its workflow skill.');
-  const skill = fs.readFileSync(path.join(skillRoot, 'kombai-workflow/SKILL.md'), 'utf8');
-  assert(/^---\r?\n[\s\S]*?^name: kombai-workflow\r?$/m.test(skill), 'Cursor workflow skill name is missing.');
-  assert(/^description: \S.+$/m.test(skill), 'Cursor workflow skill description is missing.');
+  assert(
+    JSON.stringify(skills.map((entry) => entry.name).sort()) === JSON.stringify(['faq-with-kombai', 'work-with-kombai']),
+    'Cursor plugin must contain its workflow and FAQ skills.',
+  );
+  for (const name of ['work-with-kombai', 'faq-with-kombai']) {
+    const skill = fs.readFileSync(path.join(skillRoot, name, 'SKILL.md'), 'utf8');
+    assert(new RegExp(`^---\\r?\\n[\\s\\S]*?^name: ${name}\\r?$`, 'm').test(skill), `Cursor ${name} skill name is missing.`);
+    assert(/^description: \S.+$/m.test(skill), `Cursor ${name} skill description is missing.`);
+  }
   return manifest.version;
 }
 

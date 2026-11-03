@@ -52,17 +52,22 @@ export function validateClaudeCodePlugin(root = workspaceRoot) {
     'README.md',
     'kombai.package.json',
     '.claude-plugin/plugin.json',
-    'skills/kombai-workflow/SKILL.md',
+    'skills/work-with-kombai/SKILL.md',
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Claude plugin file: ${file}`);
   }
   checkCliContract(pluginRoot, contract, 'Claude');
   const skillRoot = path.join(pluginRoot, 'skills');
   const skills = fs.readdirSync(skillRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory());
-  assert(skills.length === 1 && skills[0].name === 'kombai-workflow', 'Claude plugin must contain its workflow skill.');
-  const skill = fs.readFileSync(path.join(skillRoot, 'kombai-workflow/SKILL.md'), 'utf8');
-  assert(/^---\r?\n[\s\S]*?^name: kombai-workflow\r?$/m.test(skill), 'Claude workflow skill name is missing.');
-  assert(/^description: \S.+$/m.test(skill), 'Claude workflow skill description is missing.');
+  assert(
+    JSON.stringify(skills.map((entry) => entry.name).sort()) === JSON.stringify(['faq-with-kombai', 'work-with-kombai']),
+    'Claude plugin must contain its workflow and FAQ skills.',
+  );
+  for (const name of ['work-with-kombai', 'faq-with-kombai']) {
+    const skill = fs.readFileSync(path.join(skillRoot, name, 'SKILL.md'), 'utf8');
+    assert(new RegExp(`^---\\r?\\n[\\s\\S]*?^name: ${name}\\r?$`, 'm').test(skill), `Claude ${name} skill name is missing.`);
+    assert(/^description: \S.+$/m.test(skill), `Claude ${name} skill description is missing.`);
+  }
   return manifest.version;
 }
 

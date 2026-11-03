@@ -56,7 +56,7 @@ test('a Codex version bump updates its release files without changing the worksp
 test('the extracted Codex archive is a self-contained marketplace', () => {
   fixture((root) => {
     const version = validateCodexPlugin(root);
-    const originalSkill = fs.readFileSync(path.join(root, 'plugins/codex/skills/kombai-workflow/SKILL.md'), 'utf8');
+    const originalSkill = fs.readFileSync(path.join(root, 'plugins/codex/skills/work-with-kombai/SKILL.md'), 'utf8');
     fs.writeFileSync(path.join(root, 'plugins/codex/development-only.txt'), 'Do not package this file.');
     const archive = packCodexPlugin(path.join(root, 'out'), root);
     const extracted = path.join(path.dirname(root), 'unpacked');
@@ -75,7 +75,7 @@ test('the extracted Codex archive is a self-contained marketplace', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(pluginRoot, '.codex-plugin/plugin.json'), 'utf8'));
     assert.equal(manifest.name, entry.name);
     assert.equal(manifest.version, version);
-    const skillFile = path.resolve(pluginRoot, manifest.skills, 'kombai-workflow/SKILL.md');
+    const skillFile = path.resolve(pluginRoot, manifest.skills, 'work-with-kombai/SKILL.md');
     assert.equal(fs.readFileSync(skillFile, 'utf8'), originalSkill);
     assert.equal(validateCodexPlugin(extracted), version);
     assert.equal(fs.existsSync(path.join(pluginRoot, 'development-only.txt')), false);
@@ -163,9 +163,9 @@ test('validation holds the skill and the view to the CLI the contract names', ()
   fixture((root) => {
     const contractPath = path.join(root, 'plugins/codex/kombai.package.json');
     const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
-    contract.cli.package = '@kombai/cli@latest';
+    contract.cli.package = '@kombai/cli@next';
     fs.writeFileSync(contractPath, JSON.stringify(contract));
-    assert.throws(() => validateCodexPlugin(root), /workflow skill must run @kombai\/cli@latest/);
+    assert.throws(() => validateCodexPlugin(root), /workflow skill must run @kombai\/cli@next/);
   });
 });
 
@@ -181,6 +181,6 @@ test('the packed plugin carries the CLI view', () => {
     const archive = packCodexPlugin(path.join(root, 'out'), root);
     const packed = spawnSync('unzip', ['-p', archive, 'plugins/codex/.mcp.json'], { encoding: 'utf8' });
     assert.equal(packed.status, 0, packed.stderr);
-    assert.deepEqual(Object.keys(JSON.parse(packed.stdout).mcpServers), ['kombai-cli']);
+    assert.deepEqual(Object.keys(JSON.parse(packed.stdout).mcpServers), ['Kombai']);
   });
 });

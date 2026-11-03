@@ -3,7 +3,7 @@
   "name": "kombai",
   "version": "0.3.3",
   "cli": {
-    "package": "@kombai-io/cli@next",
+    "package": "@kombai/cli@latest",
     "view": false
   }
 }

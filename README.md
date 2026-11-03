@@ -4,9 +4,9 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 [Claude Code](plugins/claude-code/README.md), and [Cursor](plugins/cursor/README.md) plugins,
 their local marketplaces, and release tooling.
 
-Each plugin's `kombai-workflow` skill runs the Kombai CLI's team build
-(`npx -y @kombai-io/cli@next skill`), which prints the full instructions for designing on a hosted
-Kombai canvas. The CLI needs Node.js 20 or later and npm access to `@kombai-io` on GitHub Packages.
+Each plugin's `work-with-kombai` skill runs the Kombai CLI's team build
+(`npx -y @kombai/cli@latest skill`), which prints the full instructions for designing on a hosted
+Kombai canvas. The CLI needs Node.js 20 or later, and it installs from npm as `@kombai/cli`.
 
 When running in Codex's sandbox, the Codex plugin and standalone skill request approved
 execution outside it before the first `npx` call and for later CLI commands, using the execution
@@ -15,7 +15,7 @@ Kombai starts, and the CLI writes `~/.kombai`. Existing Codex installations need
 plugin or standalone skill to receive this guidance; upgrading only the CLI does not replace
 the bootstrap skill.
 
-The only MCP server a plugin registers is the CLI's canvas view (`kombai-cli`), and only the Codex
+The only MCP server a plugin registers is the CLI's canvas view (`Kombai`), and only the Codex
 plugin registers it today; see [The canvas view](#the-canvas-view). This repository supplies the
 workflow skill and plugin packaging; it builds neither the CLI nor the desktop app.
 
@@ -29,10 +29,10 @@ Codex and Claude Code use the plugin selector `kombai@kombai`; Cursor uses its C
 For a platform-independent workflow skill, use Vercel's `skills` CLI:
 
 ```sh
-npx skills add kombai-io/agent-plugins --skill kombai-workflow
+npx skills add kombai-io/agent-plugins --skill work-with-kombai
 ```
 
-The CLI discovers [`skills/kombai-workflow/SKILL.md`](skills/kombai-workflow/SKILL.md)
+The CLI discovers [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md)
 before the same-named skills inside the host plugins. It calls the same CLI and works in any
 agent that can run `npx`; its Codex permission guidance applies only when running in Codex.
 It registers no MCP server, so the agent opens the
@@ -44,7 +44,7 @@ The existing plugin marketplaces and packages continue to use their host-specifi
 
 `kombai mcp` serves a view of the live hosted canvas beside the agent's chat, and Kombai's cards
 in it (a taste run's design brief, and the plans when taste is out of credits), as MCP Apps
-(server `kombai-cli`, run as `npx -y <cli.package> mcp`). A host shows them only if it renders
+(server `Kombai`, run as `npx -y <cli.package> mcp`). A host shows them only if it renders
 MCP App views, and the CLI decides what each host is listed (`VIEW_HOSTS` and `cardsFor` in
 vscode-assistant's `packages/cli/src/mcp/client-gate.js`): Codex desktop gets the view and both
 cards, and Claude desktop's Code tab the taste card. So the Codex and Claude Code plugins have
