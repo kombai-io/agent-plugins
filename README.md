@@ -8,6 +8,13 @@ Each plugin's `kombai-workflow` skill runs the Kombai CLI's team build
 (`npx -y @kombai-io/cli@next skill`), which prints the full instructions for designing on a hosted
 Kombai canvas. The CLI needs Node.js 20 or later and npm access to `@kombai-io` on GitHub Packages.
 
+When a shell is sandboxed, the bootstrap skill requests approved execution outside it before
+the first `npx` call and for later CLI commands. npm may need network access before Kombai starts,
+and the CLI writes `~/.kombai`. In Codex, the skill specifies the execution tool's
+`sandbox_permissions: "require_escalated"` setting; other hosts use their own approval mechanism.
+Existing installations need the updated plugin or standalone skill to receive this guidance;
+upgrading only the CLI does not replace the bootstrap skill.
+
 The only MCP server a plugin registers is the CLI's canvas view (`kombai-cli`), and only the Codex
 plugin registers it today; see [The canvas view](#the-canvas-view). This repository supplies the
 workflow skill and plugin packaging; it builds neither the CLI nor the desktop app.
