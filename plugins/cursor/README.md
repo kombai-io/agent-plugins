@@ -2,11 +2,6 @@
 
 This plugin's `kombai-workflow` skill runs the Kombai CLI's team build (`npx -y @kombai-io/cli@next skill`) and follows what it prints: Cursor designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later, and npm access to `@kombai-io` on GitHub Packages.
 
-With a sandboxed shell, the skill requests approved execution outside it through the host's
-normal approval mechanism before the first `npx` call and for later CLI commands. npm may need
-network access before Kombai starts, and the CLI writes `~/.kombai`. Update the installed plugin
-to receive this bootstrap guidance; updating only the CLI does not change the installed skill.
-
 The plugin registers no MCP server: the skill opens the canvas in Cursor's browser panel or the user's browser. The CLI's canvas view is off for Cursor (`cli.view` in `kombai.package.json`) until Cursor shows MCP App views; the repository README's "The canvas view" says how to turn it on.
 
 To try this plugin before marketplace submission, copy the `plugins/cursor` directory to `~/.cursor/plugins/local/kombai`. Keep its `.cursor-plugin/plugin.json`, `skills/`, `assets/`, and `LICENSE` together. Reload Cursor, then check Customize for the Kombai plugin and its `kombai-workflow` skill. Cursor ignores symlinks that point outside `~/.cursor/plugins/local`.

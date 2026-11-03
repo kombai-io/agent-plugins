@@ -3,10 +3,10 @@ name: kombai-workflow
 description: Design UI with Kombai. Designs go on a Kombai canvas; design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding.
 ---
 
-In a sandbox, request approved execution outside it **before the first command below** and for
-every later Kombai CLI command. In Codex, use `sandbox_permissions: "require_escalated"` on the
-execution tool call; in other clients, use their normal approval mechanism. The commands need
-network access and write `~/.kombai`; `npx` may contact the package registry before Kombai starts.
+When running in Codex's sandbox, request approved execution outside it **before the first
+command below** and for every later Kombai CLI command. Use
+`sandbox_permissions: "require_escalated"` on the execution tool call. The commands need network
+access and write `~/.kombai`; `npx` may contact the package registry before Kombai starts.
 Do not try the restricted command first. If this chat cannot approve the required access,
 explain the restriction and wait for the user to change its permissions; do not retry inside
 the sandbox.
@@ -24,4 +24,4 @@ If that command fails before it prints anything:
 - **`CLI_NODE_TOO_OLD`.** The same steps upgrade Node; with nvm, `nvm install --lts` then `nvm alias default lts/*`. If the error comes back after an upgrade, an older `node` is first on PATH: show the user `which -a node` (`where node` on Windows).
 - **Windows PowerShell says running scripts is disabled.** Run `npx.cmd` in place of `npx`.
 - **npm answers 401 or 404.** This build is on GitHub Packages. The user's `~/.npmrc` needs `@kombai-io:registry=https://npm.pkg.github.com` and `//npm.pkg.github.com/:_authToken=<a GitHub token with read:packages>`. Ask them to add it; do not retry in a loop.
-- **The network is blocked** (a sandboxed shell). Request approved execution outside the sandbox as above; do not retry inside it. Node is not missing.
+- **The network is blocked** (a sandboxed shell). Ask for network access the way your client does; Node is not missing.

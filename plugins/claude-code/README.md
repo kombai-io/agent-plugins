@@ -9,11 +9,6 @@ claude plugin install kombai@kombai
 
 The plugin's `kombai-workflow` skill runs the Kombai CLI's team build (`npx -y @kombai-io/cli@next skill`) and follows what it prints: Claude Code designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later, and npm access to `@kombai-io` on GitHub Packages.
 
-With a sandboxed shell, the skill requests approved execution outside it through the host's
-normal approval mechanism before the first `npx` call and for later CLI commands. npm may need
-network access before Kombai starts, and the CLI writes `~/.kombai`. Update the installed plugin
-to receive this bootstrap guidance; updating only the CLI does not change the installed skill.
-
 `.mcp.json` registers one server, `kombai-cli` (`npx -y @kombai-io/cli@next mcp`), for Kombai's taste card: in Claude desktop's Code tab, which shows MCP App views, a taste run's design brief appears as a card in the chat. Claude Code in a terminal shows none, so the server lists nothing there. The CLI shows Claude Code no canvas view: the skill opens the canvas in the user's browser. This is the plugin's `cli.view` in `kombai.package.json`; see the repository README's "The canvas view".
 
 Signing in happens in the browser: the CLI opens Kombai's sign-in page and shows a match code to compare.
