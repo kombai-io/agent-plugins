@@ -15,8 +15,9 @@ In the Codex app, Kombai's view shows the canvas beside the chat: this plugin's 
 no MCP tool up front, so find it inside exec with `ALL_TOOLS.filter((t) => t.name.endsWith('canvas_app'))`. Call it
 with the canvas id right after `kombai canvas create`, before you write any design, or when you first use a canvas
 that isn't already open beside the chat. It is the only way to show a canvas here: no browser, no in-app browser,
-and no canvas link unless the user asks for one. If no `canvas_app` tool exists, the view is not connected in this
-chat: tell the user to turn the Kombai plugin on or start a new chat, and show no link instead.
+and no canvas or design link in a reply (the commands print none here; a user who wants one copies it from the
+view: the canvas's Share, or a design's Copy link). If no `canvas_app` tool exists, the view is not connected in
+this chat: tell the user to turn the Kombai plugin on or start a new chat, and show no link instead.
 
 Run `npx -y @kombai/cli@latest skill` and follow what it prints; it is this skill's full text.
 
