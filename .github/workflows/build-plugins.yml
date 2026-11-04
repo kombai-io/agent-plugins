@@ -33,6 +33,36 @@ on:
         description: 'Optional Cursor plugin version for this build (leave blank to use the committed version)'
         default: ''
         required: false
+      build-vscode-plugin:
+        type: boolean
+        description: 'Build VS Code plugin'
+        default: false
+        required: false
+      vscode-plugin-version:
+        type: string
+        description: 'Optional VS Code plugin version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
+      build-antigravity-plugin:
+        type: boolean
+        description: 'Build Antigravity plugin'
+        default: false
+        required: false
+      antigravity-plugin-version:
+        type: string
+        description: 'Optional Antigravity plugin version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
+      build-gemini-cli-plugin:
+        type: boolean
+        description: 'Build Gemini CLI extension'
+        default: false
+        required: false
+      gemini-cli-plugin-version:
+        type: string
+        description: 'Optional Gemini CLI extension version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
       team-build:
         type: boolean
         description: 'Team build: the plugins run the newest CLI beta (@kombai/cli@next on npm, on dev), for colleagues'
@@ -151,5 +181,116 @@ jobs:
         with:
           name: kombai-cursor-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
           path: ${{ runner.temp }}/kombai-cursor-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-vscode-plugin:
+    if: ${{ inputs.build-vscode-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+
+      - name: Apply VS Code plugin version
+        if: ${{ inputs.vscode-plugin-version != '' }}
+        env:
+          VSCODE_PLUGIN_VERSION: ${{ inputs.vscode-plugin-version }}
+        run: node scripts/vscode-plugin.mjs bump "$VSCODE_PLUGIN_VERSION"
+
+      - name: Test VS Code plugin release checks
+        run: node --test scripts/vscode-plugin.test.mjs
+
+      - name: Validate VS Code plugin
+        id: plugin-version
+        run: node scripts/vscode-plugin.mjs validate --github-output
+
+      - name: Package VS Code plugin
+        run: node scripts/vscode-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+
+      - name: Upload VS Code plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-vscode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-vscode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-antigravity-plugin:
+    if: ${{ inputs.build-antigravity-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+
+      - name: Apply Antigravity plugin version
+        if: ${{ inputs.antigravity-plugin-version != '' }}
+        env:
+          ANTIGRAVITY_PLUGIN_VERSION: ${{ inputs.antigravity-plugin-version }}
+        run: node scripts/antigravity-plugin.mjs bump "$ANTIGRAVITY_PLUGIN_VERSION"
+
+      - name: Test Antigravity plugin release checks
+        run: node --test scripts/antigravity-plugin.test.mjs
+
+      - name: Validate Antigravity plugin
+        id: plugin-version
+        run: node scripts/antigravity-plugin.mjs validate --github-output
+
+      - name: Package Antigravity plugin
+        run: node scripts/antigravity-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+
+      - name: Upload Antigravity plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-antigravity-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-antigravity-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-gemini-cli-plugin:
+    if: ${{ inputs.build-gemini-cli-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+
+      - name: Apply Gemini CLI extension version
+        if: ${{ inputs.gemini-cli-plugin-version != '' }}
+        env:
+          GEMINI_CLI_PLUGIN_VERSION: ${{ inputs.gemini-cli-plugin-version }}
+        run: node scripts/gemini-cli-plugin.mjs bump "$GEMINI_CLI_PLUGIN_VERSION"
+
+      - name: Test Gemini CLI extension release checks
+        run: node --test scripts/gemini-cli-plugin.test.mjs
+
+      - name: Validate Gemini CLI extension
+        id: plugin-version
+        run: node scripts/gemini-cli-plugin.mjs validate --github-output
+
+      - name: Package Gemini CLI extension
+        run: node scripts/gemini-cli-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+
+      - name: Upload Gemini CLI extension
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-gemini-cli-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-gemini-cli-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0

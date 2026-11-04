@@ -1,8 +1,10 @@
 # Kombai agent plugins
 
 This standalone repository contains the [Codex](plugins/codex/README.md),
-[Claude Code](plugins/claude-code/README.md), and [Cursor](plugins/cursor/README.md) plugins,
-their local marketplaces, and release tooling.
+[Claude Code](plugins/claude-code/README.md), [Cursor](plugins/cursor/README.md),
+[VS Code](plugins/vscode/README.md) and [Antigravity](plugins/antigravity/README.md) plugins, the
+[Gemini CLI](plugins/gemini-cli/README.md) extension, their marketplaces where the host has one,
+and release tooling.
 
 Each plugin's `work-with-kombai` skill runs the Kombai CLI
 (`npx -y @kombai/cli@latest skill`), which prints the full instructions for designing on a hosted
@@ -19,6 +21,16 @@ Kombai starts, and the CLI writes `~/.kombai`. Existing Codex installations need
 plugin or standalone skill to receive this guidance; upgrading only the CLI does not replace
 the bootstrap skill.
 
+The skills differ between hosts only in that sandbox guidance, which each host's validator checks:
+
+| Host | What the skill says about the sandbox |
+| --- | --- |
+| Codex (and the standalone skill) | request `sandbox_permissions: "require_escalated"` before the first command |
+| VS Code | set `requestUnsandboxedExecution: true` on the terminal tool call when VS Code's terminal sandbox is on |
+| Antigravity | request to run outside Antigravity's sandbox from the first try; a headless `agy -p` run needs the user's permission rules |
+| Gemini CLI | when `$SANDBOX` is set and a command fails, ask the user to restart without the sandbox |
+| Claude Code, Cursor | nothing beyond "ask for network access the way your client does" |
+
 The only MCP server a plugin registers is the CLI's canvas view (`kombai`), and only the Codex
 plugin registers it today; see [The canvas view](#the-canvas-view). This repository supplies the
 workflow skill and plugin packaging; it builds neither the CLI nor the desktop app.
@@ -26,7 +38,20 @@ workflow skill and plugin packaging; it builds neither the CLI nor the desktop a
 The Codex marketplace is [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json).
 The Claude Code marketplace is [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
 The Cursor marketplace is [`.cursor-plugin/marketplace.json`](.cursor-plugin/marketplace.json).
-Codex and Claude Code use the plugin selector `kombai@kombai`; Cursor uses its Customize plugin UI.
+The VS Code marketplace is [`.github/plugin/marketplace.json`](.github/plugin/marketplace.json).
+Codex and Claude Code use the plugin selector `kombai@kombai`; Cursor uses its Customize plugin UI;
+VS Code installs from **Chat: Install Plugin from Source** or the Extensions view's `@agentPlugins`.
+
+VS Code reads a repository's first marketplace file in the order `marketplace.json`,
+`.plugin/marketplace.json`, `.github/plugin/marketplace.json`, `.claude-plugin/marketplace.json`,
+so it uses the VS Code marketplace, not the Claude Code one; the VS Code validator fails if a file
+earlier in that order appears.
+
+Antigravity and Gemini CLI have no marketplace a repository can host. Antigravity installs from
+the plugin folder's GitHub URL (`agy plugin install https://github.com/kombai-io/agent-plugins/tree/main/plugins/antigravity`);
+Gemini CLI installs only an extension whose `gemini-extension.json` is at the root of a
+repository, folder or archive, so it installs `plugins/gemini-cli` from a checkout or the Build
+Plugins ZIP.
 
 ## Install with the skills CLI
 
@@ -53,9 +78,15 @@ in it (a taste run's design brief, and the plans when taste is out of credits), 
 MCP App views, and the CLI decides what each host is listed (`VIEW_HOSTS` and `cardsFor` in
 vscode-assistant's `packages/cli/src/mcp/client-gate.js`): Codex desktop gets the view and both
 cards, and Claude desktop's Code tab the taste card. So the Codex and Claude Code plugins have
-`cli.view` on, which registers the server; Cursor's is off. Validation checks each plugin
-against its contract: `.mcp.json` ships exactly when `cli.view` is on, with exactly the CLI
-server in it (`scripts/cli-view.mjs`).
+`cli.view` on, which registers the server; Cursor's, VS Code's, Antigravity's and Gemini CLI's
+are off. Validation checks each plugin against its contract: `.mcp.json` ships exactly when
+`cli.view` is on, with exactly the CLI server in it (`scripts/cli-view.mjs`).
+
+VS Code already shows MCP App views (it declares `io.modelcontextprotocol/ui` and sends
+`clientInfo.name` "Visual Studio Code"), so it needs only the CLI side and `cli.view`. Antigravity
+reads a plugin's MCP servers from `mcp_config.json` and Gemini CLI from `gemini-extension.json`'s
+`mcpServers`, which validation does not know yet; their validators require `cli.view` off until
+it does.
 
 ### Adding a host to the canvas view
 
@@ -87,6 +118,9 @@ pnpm run check
 pnpm run pack:codex ./dist
 pnpm run pack:claude-code ./dist
 pnpm run pack:cursor ./dist
+pnpm run pack:vscode ./dist
+pnpm run pack:antigravity ./dist
+pnpm run pack:gemini-cli ./dist
 ```
 
 With Claude Code installed, also validate its native metadata:
@@ -109,7 +143,15 @@ claude plugin install kombai@kombai
 If an existing local marketplace points into the desktop app's old package directory,
 replace that marketplace source with this repository's path before reinstalling the plugin.
 For Cursor, use **From GitHub Repository** in Customize or copy `plugins/cursor` to
-`~/.cursor/plugins/local/kombai` and reload. See each plugin README for its setup.
+`~/.cursor/plugins/local/kombai` and reload. For the other hosts, install the plugin folder:
+
+```sh
+# VS Code: run "Chat: Install Plugin from Source" with /absolute/path/to/agent-plugins/plugins/vscode
+agy plugin install /absolute/path/to/agent-plugins/plugins/antigravity
+gemini extensions install /absolute/path/to/agent-plugins/plugins/gemini-cli
+```
+
+See each plugin README for its setup.
 
 ## Versions and compatibility
 
@@ -121,6 +163,9 @@ the changed plugin manifest and `kombai.package.json` together:
 pnpm run version:codex 0.1.1
 pnpm run version:claude-code 0.1.1
 pnpm run version:cursor 0.1.1
+pnpm run version:vscode 0.1.1
+pnpm run version:antigravity 0.1.1
+pnpm run version:gemini-cli 0.1.1
 ```
 
 The scripts require an increasing `major.minor.patch` version. Each plugin's
@@ -132,7 +177,7 @@ and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling check
 
 **Validate Plugins** runs the release-script tests and all plugin validators on pushes and
 pull requests. **Build Plugins** is manually triggered and provides independent Codex,
-Claude Code, and Cursor build checkboxes. Select at least one. Each selected job
+Claude Code, Cursor, VS Code, Antigravity and Gemini CLI build checkboxes. Select at least one. Each selected job
 runs its tests and validation before packaging and uploading its ZIP. No local command is required.
 
 Each build checkbox has an optional version input. Leave it blank to package the committed
@@ -145,8 +190,12 @@ Unzip it and pass the extracted root to `codex plugin marketplace add`, then ins
 `kombai@kombai`. The Claude Code and Cursor ZIPs contain their respective marketplace manifests
 and plugin directories. Unzip the Claude Code artifact before registering its extracted directory
 as a local marketplace. For Cursor, copy
-the extracted `plugins/cursor` directory to Cursor's local plugin folder for testing. Workflow artifacts do not publish marketplace
-listings or GitHub releases.
+the extracted `plugins/cursor` directory to Cursor's local plugin folder for testing. The VS Code
+ZIP contains `.github/plugin/marketplace.json` and `plugins/vscode/`; install the extracted
+`plugins/vscode` with **Chat: Install Plugin from Source**. The Antigravity and Gemini CLI ZIPs
+hold the plugin folder itself at their root (the manifest at the top), so the extracted directory
+goes straight to `agy plugin install` or `gemini extensions install`. Workflow artifacts do not
+publish marketplace listings or GitHub releases.
 
 ### Team builds
 
@@ -154,7 +203,7 @@ Colleagues trying a CLI beta before it is released use a team build of each plug
 plugin, running the newest beta, `@kombai/cli@next` on npm (from vscode-assistant's
 `cli-v<version>-beta.N` tags), which talks to dev unless `kombai config env` says otherwise.
 Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
-(`<host>` is `codex`, `claude-code` or `cursor`): it writes `kombai-<host>-plugin-<version>-team.zip`
+(`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity` or `gemini-cli`): it writes `kombai-<host>-plugin-<version>-team.zip`
 from a staged copy, so the source always names `@kombai/cli@latest`. A team ZIP installs like the
 public one and has the same plugin name, so a machine has one or the other. It needs no setup beyond
 the public one's.
