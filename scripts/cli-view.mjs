@@ -84,15 +84,11 @@ export function checkSkills(pluginRoot, host) {
   }
 }
 
-// The team build of a plugin, for colleagues trying a CLI beta before it reaches npm: the same plugin, running the
-// CLI's team build from GitHub Packages (`cli-v<version>-beta.N` tags in vscode-assistant). `pack --team` zips a
-// staged copy, so the source always names the release.
+// The team build of a plugin, for colleagues trying a CLI beta before it is released: the same plugin, running the
+// newest beta from npm's `next` tag (`cli-v<version>-beta.N` tags in vscode-assistant), which talks to dev.
+// `pack --team` zips a staged copy, so the source always names the release.
 export const RELEASE_CLI_PACKAGE = '@kombai/cli@latest';
-export const TEAM_CLI_PACKAGE = '@kombai-io/cli@next';
-export const TEAM_NPM_NOTE =
-  "- **npm answers 401 or 404.** This build is on GitHub Packages. The user's `~/.npmrc` needs " +
-  '`@kombai-io:registry=https://npm.pkg.github.com` and `//npm.pkg.github.com/:_authToken=<a GitHub token with ' +
-  'read:packages>`. Ask them to add it; do not retry in a loop.';
+export const TEAM_CLI_PACKAGE = '@kombai/cli@next';
 
 function filesUnder(dir) {
   return fs
@@ -103,9 +99,8 @@ function filesUnder(dir) {
 }
 
 /**
- * Copy `files` (paths under `root`) into a new directory as the team build: TEAM_CLI_PACKAGE in place of
- * RELEASE_CLI_PACKAGE everywhere, and each skill gets TEAM_NPM_NOTE before its network bullet. The caller removes
- * the returned directory.
+ * Copy `files` (paths under `root`) into a new directory as the team build, with TEAM_CLI_PACKAGE in place of
+ * RELEASE_CLI_PACKAGE everywhere. The caller removes the returned directory.
  */
 export function stageTeamBuild(root, files, contract) {
   assert(
@@ -117,13 +112,7 @@ export function stageTeamBuild(root, files, contract) {
   for (const file of filesUnder(stage)) {
     if (!/\.(md|json)$/.test(file)) continue;
     const text = fs.readFileSync(file, 'utf8');
-    if (!text.includes(RELEASE_CLI_PACKAGE)) continue;
-    let team = text.replaceAll(RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE);
-    if (path.basename(file) === 'SKILL.md') {
-      team = team.replace(/^- \*\*The network is blocked\*\*/m, `${TEAM_NPM_NOTE}\n$&`);
-      assert(team.includes(TEAM_NPM_NOTE), `${path.relative(stage, file)} has no network bullet to put the note before.`);
-    }
-    fs.writeFileSync(file, team);
+    if (text.includes(RELEASE_CLI_PACKAGE)) fs.writeFileSync(file, text.replaceAll(RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE));
   }
   return stage;
 }
