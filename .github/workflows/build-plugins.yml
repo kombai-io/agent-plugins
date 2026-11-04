@@ -35,7 +35,7 @@ on:
         required: false
       team-build:
         type: boolean
-        description: 'Team build: the plugins run the CLI team build (@kombai-io/cli@next on GitHub Packages), for colleagues'
+        description: 'Team build: the plugins run the newest CLI beta (@kombai/cli@next on npm, on dev), for colleagues'
         default: false
         required: false
 

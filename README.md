@@ -150,14 +150,14 @@ listings or GitHub releases.
 
 ### Team builds
 
-Colleagues trying a CLI beta before it reaches npm use a team build of each plugin: the same
-plugin, running the CLI's team build (`@kombai-io/cli@next` on GitHub Packages, from
-vscode-assistant's `cli-v<version>-beta.N` tags) with the stubs' note on reaching GitHub Packages.
+Colleagues trying a CLI beta before it is released use a team build of each plugin: the same
+plugin, running the newest beta, `@kombai/cli@next` on npm (from vscode-assistant's
+`cli-v<version>-beta.N` tags), which talks to dev unless `kombai config env` says otherwise.
 Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
 (`<host>` is `codex`, `claude-code` or `cursor`): it writes `kombai-<host>-plugin-<version>-team.zip`
 from a staged copy, so the source always names `@kombai/cli@latest`. A team ZIP installs like the
-public one and has the same plugin name, so a machine has one or the other. The team CLI needs a
-GitHub token with `read:packages` in `~/.npmrc` (the stubs say how).
+public one and has the same plugin name, so a machine has one or the other. It needs no setup beyond
+the public one's.
 
 ## Repository and license
 

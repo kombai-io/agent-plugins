@@ -19,12 +19,12 @@ codex plugin marketplace add /absolute/path/to/agent-plugins --json
 codex plugin add kombai@kombai --json
 ```
 
-To install a packaged build, unzip `kombai-codex-plugin-0.4.0.zip` into a directory you will keep.
+To install a packaged build, unzip `kombai-codex-plugin-0.4.1.zip` into a directory you will keep.
 The extracted root contains `.agents/plugins/marketplace.json`, which points to the bundled
 `plugins/codex` directory. Register the extracted root, then install the plugin:
 
 ```sh
-codex plugin marketplace add /absolute/path/to/kombai-codex-plugin-0.4.0 --json
+codex plugin marketplace add /absolute/path/to/kombai-codex-plugin-0.4.1 --json
 codex plugin add kombai@kombai --json
 ```
 

@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpClaudeCodeVersion, packClaudeCodePlugin, validateClaudeCodePlugin } from './claude-code-plugin.mjs';
-import { cliViewMcpConfig, RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE, TEAM_NPM_NOTE } from './cli-view.mjs';
+import { cliViewMcpConfig, RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE } from './cli-view.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -27,7 +27,7 @@ function fixture(run) {
   }
 }
 
-/** Unzip a team archive and check each stub runs the CLI's team build, with the GitHub Packages note. */
+/** Unzip a team archive and check each stub runs the CLI's newest beta from npm. */
 function checkTeamArchive(archive, pluginDir) {
   const extracted = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-team-unpacked-'));
   try {
@@ -42,7 +42,7 @@ function checkTeamArchive(archive, pluginDir) {
     ]) {
       const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
       assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
-      assert.ok(text.includes(`${TEAM_NPM_NOTE}\n- **The network is blocked**`), skill);
+      assert.ok(!text.includes('GitHub Packages'), skill);
       assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
     }
     return { extracted, plugin };
