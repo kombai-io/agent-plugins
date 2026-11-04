@@ -26,3 +26,9 @@ jobs:
         run: node scripts/claude-code-plugin.mjs validate
       - name: Validate Cursor plugin
         run: node scripts/cursor-plugin.mjs validate
+      - name: Validate VS Code plugin
+        run: node scripts/vscode-plugin.mjs validate
+      - name: Validate Antigravity plugin
+        run: node scripts/antigravity-plugin.mjs validate
+      - name: Validate Gemini CLI extension
+        run: node scripts/gemini-cli-plugin.mjs validate

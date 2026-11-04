@@ -1,0 +1,26 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "kombai",
+  "displayName": "Kombai",
+  "version": "0.1.0",
+  "description": "Kombai is an AI design engineer with built-in taste. Use the Kombai plugin to design a new page or product UI, or improve an existing screen.",
+  "logo": "assets/logo.png",
+  "suggestedPrompts": [
+    "Design a standout UI for my website",
+    "Explore design directions on canvas",
+    "Redesign this section for my app"
+  ],
+  "author": {
+    "name": "Kombai",
+    "url": "https://kombai.com/"
+  },
+  "homepage": "https://kombai.com/",
+  "repository": "https://github.com/kombai-io/agent-plugins",
+  "license": "MIT",
+  "keywords": [
+    "kombai",
+    "design",
+    "ui",
+    "canvas"
+  ]
+}

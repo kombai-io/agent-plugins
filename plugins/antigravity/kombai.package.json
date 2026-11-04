@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "kombai-antigravity-plugin/v2",
+  "name": "kombai",
+  "version": "0.1.0",
+  "cli": {
+    "package": "@kombai/cli@latest",
+    "view": false
+  }
+}
