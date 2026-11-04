@@ -10,7 +10,7 @@ and for later Kombai CLI commands, using the execution tool's
 starts, and the CLI writes `~/.kombai`. Update the installed plugin to receive this bootstrap
 guidance; updating only the CLI does not change the installed skill.
 
-`.mcp.json` registers one server, `kombai` (`npx -y @kombai/cli@latest mcp`), which shows the hosted canvas beside the Codex desktop chat. Codex in a terminal gets no view; the skill opens the canvas in the browser instead. This is the plugin's `cli.view` in `kombai.package.json`; see the repository README's "The canvas view".
+`.mcp.json` registers one server, `kombai` (`npx -y @kombai/cli@latest mcp`), which shows the hosted canvas beside the Codex desktop chat. There the view is the only way the skill shows a canvas: never a browser or a link, and the `work-with-kombai` skill tells the agent to find `canvas_app` in `ALL_TOOLS` and call it right after creating a canvas. Codex in a terminal gets no view; the skill opens the canvas in the browser instead. This is the plugin's `cli.view` in `kombai.package.json`; see the repository README's "The canvas view".
 
 For local development, point Codex at this package's marketplace root, then install its plugin:
 
