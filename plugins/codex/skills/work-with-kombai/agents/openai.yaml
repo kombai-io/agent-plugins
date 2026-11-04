@@ -1,4 +1,4 @@
 interface:
   display_name: "Work with Kombai"
   short_description: "Design UI with Kombai."
-  default_prompt: "$work-with-kombai Design a playful website for a robotic ice-cream shop with expressive characters, kinetic typography, & delightful interactions."
+  default_prompt: "$work-with-kombai Design a standout UI for my website"
