@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkCliContract, checkSkills, stageTeamBuild, STRAY_FILE } from './cli-view.mjs';
+import { checkCliContract, checkSkills, CODEX_SETUP_SKILL, stageTeamBuild, STRAY_FILE } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -65,7 +65,18 @@ export function validateCodexPlugin(root = workspaceRoot) {
     assert(manifest.mcpServers === undefined, 'Codex manifest must not name mcpServers while the canvas view is off.');
   }
 
-  checkSkills(pluginRoot, 'Codex');
+  checkSkills(pluginRoot, 'Codex', [CODEX_SETUP_SKILL]);
+  // Setup right after install adds Kombai's view, so the user's first design chat has it from its first message.
+  assert(
+    manifest.onboardingSkill === `./skills/${CODEX_SETUP_SKILL}/SKILL.md`,
+    `Codex manifest must set onboardingSkill to ./skills/${CODEX_SETUP_SKILL}/SKILL.md.`,
+  );
+  assert(
+    fs
+      .readFileSync(path.join(pluginRoot, 'skills', CODEX_SETUP_SKILL, 'SKILL.md'), 'utf8')
+      .includes(`npx -y ${contract.cli.package} mcp install codex`),
+    `Codex ${CODEX_SETUP_SKILL} skill must run ${contract.cli.package} mcp install codex.`,
+  );
   const skillsRoot = path.join(pluginRoot, 'skills');
   const skills = fs.readdirSync(skillsRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory());
   assert(skills.length > 0, 'Codex plugin must contain at least one skill.');

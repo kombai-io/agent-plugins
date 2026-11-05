@@ -1,0 +1,5 @@
+interface:
+  display_name: "Set up Kombai"
+  short_description: "Add Kombai's canvas view to Codex."
+policy:
+  allow_implicit_invocation: false

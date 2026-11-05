@@ -100,7 +100,9 @@ plugin has it off too: OpenAI's plugin directory drops a plugin's local MCP conf
 plugin ships skills only (with `requires_local_executor` set), and the first time its skill finds no
 `canvas_app` it runs `npx -y <cli.package> mcp install codex` without asking, which writes the
 same server into the user's `config.toml`. A running Codex task never picks up a new MCP server, so
-the view appears from the next task. Validation checks each plugin against its contract: `.mcp.json` ships exactly when
+the view appears from the next task. To make that the user's first design chat, the Codex plugin's
+onboarding skill (`set-up-kombai`, the manifest's `onboardingSkill`, which Codex runs when the user
+sets the plugin up after installing it) runs the same install before any design chat starts. Validation checks each plugin against its contract: `.mcp.json` ships exactly when
 `cli.view` is on, with exactly the CLI server in it (`scripts/cli-view.mjs`).
 
 VS Code already shows MCP App views: it declares `io.modelcontextprotocol/ui` and sends its

@@ -295,3 +295,45 @@ test('a team build starts only from the release plugin', () => {
     );
   });
 });
+
+test("the Codex plugin's setup runs an onboarding skill that adds Kombai's view right after install", () => {
+  fixture((root) => {
+    validateCodexPlugin(root);
+    const pluginRoot = path.join(root, 'plugins/codex');
+    const manifest = JSON.parse(fs.readFileSync(path.join(pluginRoot, '.codex-plugin/plugin.json'), 'utf8'));
+    assert.equal(manifest.onboardingSkill, './skills/set-up-kombai/SKILL.md');
+    const setup = fs.readFileSync(path.join(pluginRoot, 'skills/set-up-kombai/SKILL.md'), 'utf8');
+    assert.match(setup, /^---\nname: set-up-kombai\n/);
+    assert.ok(setup.includes(`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex`));
+    // Run by the setup, not picked for ordinary requests.
+    const agent = fs.readFileSync(path.join(pluginRoot, 'skills/set-up-kombai/agents/openai.yaml'), 'utf8');
+    assert.match(agent, /allow_implicit_invocation: false/);
+    const archive = packCodexPlugin(path.join(root, 'out'), root);
+    const listing = spawnSync('unzip', ['-Z1', archive], { encoding: 'utf8' });
+    assert.ok(listing.stdout.split('\n').includes('plugins/codex/skills/set-up-kombai/SKILL.md'));
+  });
+});
+
+test('validation holds the onboarding skill to the manifest and to the CLI the contract names', () => {
+  fixture((root) => {
+    const manifestPath = path.join(root, 'plugins/codex/.codex-plugin/plugin.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    delete manifest.onboardingSkill;
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+    assert.throws(() => validateCodexPlugin(root), /onboardingSkill/);
+  });
+  fixture((root) => {
+    const setupPath = path.join(root, 'plugins/codex/skills/set-up-kombai/SKILL.md');
+    fs.writeFileSync(setupPath, fs.readFileSync(setupPath, 'utf8').replaceAll('mcp install codex', 'mcp'));
+    assert.throws(() => validateCodexPlugin(root), /set-up-kombai skill must run/);
+  });
+});
+
+test("a team pack's onboarding skill installs with the team CLI", () => {
+  fixture((root) => {
+    const archive = packCodexPlugin(path.join(root, 'out'), root, { team: true });
+    const setup = spawnSync('unzip', ['-p', archive, 'plugins/codex/skills/set-up-kombai/SKILL.md'], { encoding: 'utf8' });
+    assert.ok(setup.stdout.includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install codex`));
+    assert.ok(!setup.stdout.includes(RELEASE_CLI_PACKAGE));
+  });
+});
