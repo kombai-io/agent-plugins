@@ -15,7 +15,7 @@
     "codex"
   ],
   "skills": "./skills/",
-  "onboardingSkill": "./skills/set-up-kombai/SKILL.md",
+  "onboardingSkill": "./skills/get-started-with-kombai/SKILL.md",
   "requires_local_executor": true,
   "interface": {
     "displayName": "Kombai",
@@ -35,9 +35,9 @@
     "composerIcon": "./assets/icon.png",
     "logo": "./assets/logo.png",
     "defaultPrompt": [
+      "Get started and show me what to try",
       "Design a standout UI for my website",
-      "Explore design directions on canvas",
-      "Redesign this section for my app"
+      "Explore design directions on canvas"
     ]
   }
 }

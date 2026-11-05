@@ -77,10 +77,11 @@ export function skillGuidance(text) {
 
 /**
  * The Codex plugin's onboarding skill (its manifest's `onboardingSkill`): Codex runs it when the user sets the plugin
- * up after installing it, so it adds Kombai's view (`kombai mcp install codex`) before the user's first design chat,
- * which then has the view from its first message. Codex only.
+ * up after installing it, and from its Try now (the manifest's first `defaultPrompt` asks for it); the user can run it again. Where Kombai's view isn't set up it adds it (`kombai mcp
+ * install codex`) before the user's first design chat, which then has the view from its first message; where the
+ * chat has the view it shows the CLI's starters card. Codex only.
  */
-export const CODEX_SETUP_SKILL = 'set-up-kombai';
+export const CODEX_SETUP_SKILL = 'get-started-with-kombai';
 
 /**
  * Check that a plugin ships exactly the workflow and FAQ skills, plus the host's own `extra` ones, each named in its

@@ -301,16 +301,28 @@ test("the Codex plugin's setup runs an onboarding skill that adds Kombai's view 
     validateCodexPlugin(root);
     const pluginRoot = path.join(root, 'plugins/codex');
     const manifest = JSON.parse(fs.readFileSync(path.join(pluginRoot, '.codex-plugin/plugin.json'), 'utf8'));
-    assert.equal(manifest.onboardingSkill, './skills/set-up-kombai/SKILL.md');
-    const setup = fs.readFileSync(path.join(pluginRoot, 'skills/set-up-kombai/SKILL.md'), 'utf8');
-    assert.match(setup, /^---\nname: set-up-kombai\n/);
+    assert.equal(manifest.onboardingSkill, './skills/get-started-with-kombai/SKILL.md');
+    const setup = fs.readFileSync(path.join(pluginRoot, 'skills/get-started-with-kombai/SKILL.md'), 'utf8');
+    assert.match(setup, /^---\nname: get-started-with-kombai\n/);
     assert.ok(setup.includes(`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex`));
-    // Run by the setup, not picked for ordinary requests.
-    const agent = fs.readFileSync(path.join(pluginRoot, 'skills/set-up-kombai/agents/openai.yaml'), 'utf8');
-    assert.match(agent, /allow_implicit_invocation: false/);
+    // The user can run it again: where the chat has Kombai's view it ends on the starters card, else on links that
+    // each open a new chat with Kombai mentioned and the prompt filled in.
+    assert.ok(setup.includes('`starters_card`'));
+    const links = [...setup.matchAll(/\]\((codex:\/\/threads\/new\?prompt=[^)]+)\)/g)].map((m) => new URL(m[1]));
+    assert.equal(links.length, 3);
+    for (const link of links) {
+      assert.deepEqual([...link.searchParams.keys()], ['prompt']);
+      assert.match(link.searchParams.get('prompt'), /^\[@Kombai\]\(plugin:\/\/kombai@kombai\) \S/);
+    }
+    const agent = fs.readFileSync(path.join(pluginRoot, 'skills/get-started-with-kombai/agents/openai.yaml'), 'utf8');
+    assert.match(agent, /display_name: "Get started with Kombai"/);
+    // Codex's Try now, on the toast after an install, starts a chat with the plugin's first default prompt after
+    // Kombai's mention: that prompt asks for the onboarding, which picks it up by its description.
+    assert.equal(manifest.interface.defaultPrompt[0], 'Get started and show me what to try');
+    assert.match(setup, /^description: .*get started with it, or see what to try/m);
     const archive = packCodexPlugin(path.join(root, 'out'), root);
     const listing = spawnSync('unzip', ['-Z1', archive], { encoding: 'utf8' });
-    assert.ok(listing.stdout.split('\n').includes('plugins/codex/skills/set-up-kombai/SKILL.md'));
+    assert.ok(listing.stdout.split('\n').includes('plugins/codex/skills/get-started-with-kombai/SKILL.md'));
   });
 });
 
@@ -323,16 +335,21 @@ test('validation holds the onboarding skill to the manifest and to the CLI the c
     assert.throws(() => validateCodexPlugin(root), /onboardingSkill/);
   });
   fixture((root) => {
-    const setupPath = path.join(root, 'plugins/codex/skills/set-up-kombai/SKILL.md');
+    const setupPath = path.join(root, 'plugins/codex/skills/get-started-with-kombai/SKILL.md');
     fs.writeFileSync(setupPath, fs.readFileSync(setupPath, 'utf8').replaceAll('mcp install codex', 'mcp'));
-    assert.throws(() => validateCodexPlugin(root), /set-up-kombai skill must run/);
+    assert.throws(() => validateCodexPlugin(root), /get-started-with-kombai skill must run/);
+  });
+  fixture((root) => {
+    const setupPath = path.join(root, 'plugins/codex/skills/get-started-with-kombai/SKILL.md');
+    fs.writeFileSync(setupPath, fs.readFileSync(setupPath, 'utf8').replaceAll('`starters_card`', 'the card'));
+    assert.throws(() => validateCodexPlugin(root), /get-started-with-kombai skill must show starters_card/);
   });
 });
 
 test("a team pack's onboarding skill installs with the team CLI", () => {
   fixture((root) => {
     const archive = packCodexPlugin(path.join(root, 'out'), root, { team: true });
-    const setup = spawnSync('unzip', ['-p', archive, 'plugins/codex/skills/set-up-kombai/SKILL.md'], { encoding: 'utf8' });
+    const setup = spawnSync('unzip', ['-p', archive, 'plugins/codex/skills/get-started-with-kombai/SKILL.md'], { encoding: 'utf8' });
     assert.ok(setup.stdout.includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install codex`));
     assert.ok(!setup.stdout.includes(RELEASE_CLI_PACKAGE));
   });
