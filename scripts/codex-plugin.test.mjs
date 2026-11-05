@@ -312,12 +312,14 @@ test("the Codex plugin's setup runs an onboarding skill that adds Kombai's view 
     assert.ok(setup.includes(`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex`));
     // The user can run it again. The branch is whether this chat has Kombai's view: then the starters card, or links
     // where the chat's CLI has no card yet; else the setup, then links that each open a new chat with Kombai mentioned
-    // and a prompt filled in. An `already` setup with no view in a chat started after it is a server that isn't
-    // starting: no links to another chat without the view.
+    // and a prompt filled in. A turned-off entry gets no links to another chat without the view.
     const flat = setup.replace(/\s+/g, ' ');
     assert.ok(flat.includes('**If `canvas_app` is there**'));
     assert.ok(flat.includes('If `starters_card` is there too'));
-    assert.ok(flat.includes("If it answered `already` and this chat started after Kombai's view was set up"));
+    // A turned-off entry is the CLI's own answer (`disabled: true`), not a guess about when this chat started.
+    assert.ok(flat.includes('If it answered with `disabled: true`'));
+    assert.ok(!flat.includes('this chat started after'));
+    assert.ok(!flat.includes("what the install's `next` says"));
     // The id comes from the skill's own install path, so the links name the plugin the user has, however installed.
     assert.ok(flat.includes("Kombai's plugin id in this Codex is `kombai@<marketplace>`"));
     assert.ok(flat.includes('the folder after `plugins/cache/` in this skill\'s own path'));

@@ -17,11 +17,11 @@ Kombai's plugin id in this Codex is `kombai@<marketplace>`, where `<marketplace>
 `plugins/cache/` in this skill's own path: `~/.codex/plugins/cache/openai-curated-remote/kombai/…` gives
 `kombai@openai-curated-remote`.
 
-The prompts to try, each a title and the request a new chat starts with:
+The prompts to try, each a title and the request a new chat starts with (the same ones as the CLI's starters card):
 
-- Design a landing page for a coffee brand: design a landing page for a specialty coffee brand
-- Explore three directions for a pricing page: explore three design directions for a SaaS pricing page
-- Design a dashboard for a fitness app: design an analytics dashboard for a fitness app
+- Coffee landing page: design a landing page for a specialty coffee brand
+- Pricing page directions: explore three design directions for a SaaS pricing page
+- Fitness dashboard: design an analytics dashboard for a fitness app
 
 To show them as links, build each in exec as `codex://threads/new?prompt=` followed by
 `encodeURIComponent('[@Kombai](plugin://<id>) ' + request)` with Kombai's plugin id, then `(` and `)` as `%28` and
@@ -43,9 +43,8 @@ Then follow one of the two paths below.
 
 1. Run `npx -y @kombai/cli@latest mcp install codex`. It adds Kombai's canvas view to Codex: Kombai's MCP server, in
    the user's own Codex config. It answers `added` or `replaced` (set up now) or `already` (set up before).
-2. If it answered `already` and this chat started after Kombai's view was set up, the view should be in this chat
-   and isn't: its server isn't starting. Tell the user what the install's `next` says, show no links, and stop. A
-   chat that started before the setup (in another chat, or earlier in this one) just doesn't have it yet.
+2. If it answered with `disabled: true`, Kombai's view is turned off in the user's Codex config (`enabled = false`),
+   so no chat gets it: tell the user the canvas can't be shown until they turn it back on, show no links, and stop.
 3. Run `npx -y @kombai/cli@latest whoami`. If the user isn't signed in, sign them in as
    `npx -y @kombai/cli@latest skill sign-in` says.
 4. Tell the user in one line that Kombai is ready and that a new chat shows its canvas beside the chat. This chat
