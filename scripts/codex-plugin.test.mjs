@@ -194,9 +194,9 @@ test('validation holds the skill and the view to the CLI the contract names', ()
   fixture((root) => {
     const contractPath = path.join(root, 'plugins/codex/kombai.package.json');
     const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
-    contract.cli.package = '@kombai-io/cli@next';
+    contract.cli.package = '@kombai/cli@beta';
     fs.writeFileSync(contractPath, JSON.stringify(contract));
-    assert.throws(() => validateCodexPlugin(root), /work-with-kombai skill must run @kombai-io\/cli@next skill\./);
+    assert.throws(() => validateCodexPlugin(root), /work-with-kombai skill must run @kombai\/cli@beta skill\./);
   });
 });
 
@@ -216,7 +216,7 @@ test('the packed plugin carries the CLI view', () => {
   });
 });
 
-test('a team pack runs the CLI beta from npm next, and the source stays on the release', () => {
+test('a team pack runs the CLI beta from npm beta, and the source stays on the release', () => {
   fixture((root) => {
     const version = validateCodexPlugin(root);
     const archive = packCodexPlugin(path.join(root, 'out'), root, { team: true });
