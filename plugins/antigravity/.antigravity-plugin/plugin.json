@@ -2,7 +2,7 @@
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "kombai",
   "displayName": "Kombai",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Kombai is an AI design engineer with built-in taste. Use the Kombai plugin to design a new page or product UI, or improve an existing screen.",
   "logo": "assets/logo.png",
   "suggestedPrompts": [

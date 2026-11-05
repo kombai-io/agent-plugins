@@ -65,7 +65,7 @@ on:
         required: false
       team-build:
         type: boolean
-        description: 'Team build: the plugins run the newest CLI beta (@kombai/cli@next on npm, on dev), for colleagues'
+        description: 'Team build: the plugins run the newest CLI beta (@kombai/cli@beta on npm, on preprod), for colleagues'
         default: false
         required: false
 
