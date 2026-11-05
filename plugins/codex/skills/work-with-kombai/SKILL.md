@@ -18,7 +18,7 @@ that isn't already open beside the chat. It is the only way to show a canvas her
 and no canvas link unless the user asks for one. If no `canvas_app` tool exists, the view is not connected in this
 chat: tell the user to turn the Kombai plugin on or start a new chat, and show no link instead.
 
-Run `npx -y @kombai/cli@0.1.3 skill` and follow what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@latest skill` and follow what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 

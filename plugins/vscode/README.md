@@ -2,9 +2,9 @@
 
 This plugin is for GitHub Copilot's agent in VS Code, which installs agent plugins (VS Code 1.113 or later; `chat.plugins.enabled` is on by default in current versions).
 
-Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.1.3 skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
+Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@latest skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
 
-Its `about-kombai` skill runs `npx -y @kombai/cli@0.1.3 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
+Its `about-kombai` skill runs `npx -y @kombai/cli@latest skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 
 **Installed kombai in VS Code from this repository before this plugin existed (0.1.0)?** VS Code installed the Claude Code plugin (`plugins/claude-code`) then, and keeps loading it after updates. Run **Chat: Update Plugins**, uninstall every kombai entry in the Extensions view (`@agentPlugins`), then install kombai again. Installing it without uninstalling first adds a second copy that stays disabled, and turning that copy on switches the old one off only in the current workspace.
 
@@ -36,7 +36,7 @@ A standalone skill with the same name replaces the plugin's in the agent's skill
 
 When VS Code's terminal sandbox is on (`chat.agent.sandbox.enabled`, or `chat.agent.sandbox.enabledWindows` on Windows; both are off by default), it blocks the network and writes outside the workspace, and the CLI needs both: it downloads from npm and writes `~/.kombai`. The skills therefore ask to run each Kombai command with `requestUnsandboxedExecution`. VS Code asks the user before running one outside the sandbox, unless the user's approval settings already approve it (an auto-approve permission level, or a matching terminal auto-approve rule). If `chat.agent.sandbox.allowUnsandboxedCommands` is off, VS Code cannot run commands outside the sandbox, and the skills ask the user to turn that setting on or the sandbox off.
 
-The skill opens the canvas in VS Code's Integrated Browser or the user's browser.
+The plugin registers no MCP server. VS Code shows MCP App views, but the CLI has no canvas view for VS Code yet, so `cli.view` is off in `kombai.package.json`; the repository README's "The canvas view" says how to turn it on. The skill opens the canvas in VS Code's Integrated Browser or the user's browser.
 
 Signing in happens in a browser, and the agent shows a match code to compare. The agent opens Kombai's sign-in page in a VS Code Integrated Browser tab (VS Code asks first unless you have allowed the tool); sign in to Kombai there and approve. Tabs the agent opens don't share your own browser's sign-ins, so to use your browser instead, ask the agent for the link. Without that tab, the CLI opens the page in your browser.
 
