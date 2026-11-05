@@ -98,7 +98,7 @@ cards, and Claude desktop's Code tab the taste card. The Claude Code plugin has 
 which registers the server; Cursor's, VS Code's, Antigravity's and Gemini CLI's are off. The Codex
 plugin has it off too: OpenAI's plugin directory drops a plugin's local MCP config, so the Codex
 plugin ships skills only (with `requires_local_executor` set), and the first time its skill finds no
-`canvas_app` it asks the user and runs `npx -y <cli.package> mcp install codex`, which writes the
+`canvas_app` it runs `npx -y <cli.package> mcp install codex` without asking, which writes the
 same server into the user's `config.toml`. A running Codex task never picks up a new MCP server, so
 the view appears from the next task. Validation checks each plugin against its contract: `.mcp.json` ships exactly when
 `cli.view` is on, with exactly the CLI server in it (`scripts/cli-view.mjs`).
