@@ -5,14 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import {
-  bumpCodexVersion,
-  packCodexPlugin,
-  RELEASE_PLUGIN_ID,
-  SOURCE_PLUGIN_ID,
-  TEAM_PLUGIN_ID,
-  validateCodexPlugin,
-} from './codex-plugin.mjs';
+import { bumpCodexVersion, packCodexPlugin, validateCodexPlugin } from './codex-plugin.mjs';
 import {
   cliViewMcpConfig,
   RELEASE_CLI_PACKAGE,
@@ -132,8 +125,7 @@ test('the extracted Codex archive is a self-contained marketplace', () => {
     assert.equal(manifest.name, entry.name);
     assert.equal(manifest.version, version);
     const skillFile = path.resolve(pluginRoot, manifest.skills, 'work-with-kombai/SKILL.md');
-    // The pack names the plugin by the id a directory install gets; the skill is otherwise the repository's own.
-    assert.equal(fs.readFileSync(skillFile, 'utf8'), originalSkill.replaceAll(SOURCE_PLUGIN_ID, RELEASE_PLUGIN_ID));
+    assert.equal(fs.readFileSync(skillFile, 'utf8'), originalSkill);
     assert.equal(validateCodexPlugin(extracted), version);
     assert.equal(fs.existsSync(path.join(pluginRoot, 'development-only.txt')), false);
   });
@@ -258,7 +250,9 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
     // The install's answer says how to move the work to a new task without the user asking twice.
     assert.ok(skill.stdout.replace(/\s+/g, ' ').includes('then follow its `next` to move the work to a new task'));
     // The new task's prompt starts with Kombai's mention, which needs the plugin's id in Codex.
-    assert.ok(skill.stdout.replace(/\s+/g, ' ').includes(`Kombai's plugin id in this Codex is \`${RELEASE_PLUGIN_ID}\``));
+    // It reads the plugin's id from its own install path, since one ZIP installs under different marketplaces.
+    assert.ok(skill.stdout.replace(/\s+/g, ' ').includes("Kombai's plugin id in this Codex is `kombai@<marketplace>`"));
+    assert.ok(!skill.stdout.includes('kombai@kombai'));
     assert.ok(skill.stdout.replace(/\s+/g, ' ').includes('a link that opens it with the request filled in'));
     assert.ok(skill.stdout.indexOf('mcp install codex') < skill.stdout.indexOf(`Run \`npx -y ${RELEASE_CLI_PACKAGE} skill\``));
   });
@@ -316,15 +310,22 @@ test("the Codex plugin's setup runs an onboarding skill that adds Kombai's view 
     const setup = fs.readFileSync(path.join(pluginRoot, 'skills/get-started-with-kombai/SKILL.md'), 'utf8');
     assert.match(setup, /^---\nname: get-started-with-kombai\n/);
     assert.ok(setup.includes(`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex`));
-    // The user can run it again: where the chat has Kombai's view it ends on the starters card, else on links that
-    // each open a new chat with Kombai mentioned and the prompt filled in.
-    assert.ok(setup.includes('`starters_card`'));
-    const links = [...setup.matchAll(/\]\((codex:\/\/threads\/new\?prompt=[^)]+)\)/g)].map((m) => new URL(m[1]));
-    assert.equal(links.length, 3);
-    for (const link of links) {
-      assert.deepEqual([...link.searchParams.keys()], ['prompt']);
-      assert.match(link.searchParams.get('prompt'), /^\[@Kombai\]\(plugin:\/\/kombai@kombai\) \S/);
-    }
+    // The user can run it again. The branch is whether this chat has Kombai's view: then the starters card, or links
+    // where the chat's CLI has no card yet; else the setup, then links that each open a new chat with Kombai mentioned
+    // and a prompt filled in. An `already` setup with no view in a chat started after it is a server that isn't
+    // starting: no links to another chat without the view.
+    const flat = setup.replace(/\s+/g, ' ');
+    assert.ok(flat.includes('**If `canvas_app` is there**'));
+    assert.ok(flat.includes('If `starters_card` is there too'));
+    assert.ok(flat.includes("If it answered `already` and this chat started after Kombai's view was set up"));
+    // The id comes from the skill's own install path, so the links name the plugin the user has, however installed.
+    assert.ok(flat.includes("Kombai's plugin id in this Codex is `kombai@<marketplace>`"));
+    assert.ok(flat.includes('the folder after `plugins/cache/` in this skill\'s own path'));
+    assert.ok(!setup.includes('kombai@kombai') && !setup.includes('kombai%40kombai'));
+    assert.ok(flat.includes('`codex://threads/new?prompt=`'));
+    assert.ok(flat.includes("`encodeURIComponent('[@Kombai](plugin://<id>) ' + request)`"));
+    // No starter depends on a project: a new-chat link can carry only its prompt.
+    assert.ok(!/this project/i.test(setup));
     const agent = fs.readFileSync(path.join(pluginRoot, 'skills/get-started-with-kombai/agents/openai.yaml'), 'utf8');
     assert.match(agent, /display_name: "Get started with Kombai"/);
     // Codex's Try now, on the toast after an install, starts a chat with the plugin's first default prompt after
@@ -363,41 +364,5 @@ test("a team pack's onboarding skill installs with the team CLI", () => {
     const setup = spawnSync('unzip', ['-p', archive, 'plugins/codex/skills/get-started-with-kombai/SKILL.md'], { encoding: 'utf8' });
     assert.ok(setup.stdout.includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install codex`));
     assert.ok(!setup.stdout.includes(RELEASE_CLI_PACKAGE));
-  });
-});
-
-test("each Codex pack names the plugin by the id its install gets, in text and in the new-chat links", () => {
-  fixture((root) => {
-    const skills = ['get-started-with-kombai', 'work-with-kombai'].map((name) => `plugins/codex/skills/${name}/SKILL.md`);
-    const sources = skills.map((file) => fs.readFileSync(path.join(root, file), 'utf8'));
-    // The repository's own marketplace installs the plugin as kombai@kombai, and its skills say so.
-    assert.equal(SOURCE_PLUGIN_ID, 'kombai@kombai');
-    assert.ok(sources.every((text) => text.includes(SOURCE_PLUGIN_ID)));
-    assert.ok(sources[0].includes(encodeURIComponent(SOURCE_PLUGIN_ID)));
-    // Codex's directory installs it as kombai@openai-curated-remote; a workspace's own plugin as
-    // kombai@workspace-directory.
-    for (const [team, id] of [
-      [false, RELEASE_PLUGIN_ID],
-      [true, TEAM_PLUGIN_ID],
-    ]) {
-      const archive = packCodexPlugin(path.join(root, team ? 'team' : 'release'), root, { team });
-      const packed = skills.map(
-        (file) => spawnSync('unzip', ['-p', archive, file], { encoding: 'utf8' }).stdout,
-      );
-      for (const text of packed) {
-        assert.ok(text.includes(id), id);
-        assert.ok(!text.includes(SOURCE_PLUGIN_ID) && !text.includes(encodeURIComponent(SOURCE_PLUGIN_ID)));
-      }
-      // The links carry the id URL-encoded inside the prompt, brackets and all.
-      const encoded = encodeURIComponent(`[@Kombai](plugin://${id})`).replace('(', '%28').replace(')', '%29');
-      assert.ok(packed[0].includes(encoded), encoded);
-    }
-    assert.equal(RELEASE_PLUGIN_ID, 'kombai@openai-curated-remote');
-    assert.equal(TEAM_PLUGIN_ID, 'kombai@workspace-directory');
-    // Packing leaves the repository's own skills as they were.
-    assert.deepEqual(
-      skills.map((file) => fs.readFileSync(path.join(root, file), 'utf8')),
-      sources,
-    );
   });
 });

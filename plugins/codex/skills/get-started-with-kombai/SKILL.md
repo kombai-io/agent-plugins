@@ -13,36 +13,46 @@ the sandbox.
 
 The user can run this as often as they like. Do each step without asking first, and do no design work here.
 
-Kombai's plugin id in this Codex is `kombai@kombai`.
+Kombai's plugin id in this Codex is `kombai@<marketplace>`, where `<marketplace>` is the folder after
+`plugins/cache/` in this skill's own path: `~/.codex/plugins/cache/openai-curated-remote/kombai/…` gives
+`kombai@openai-curated-remote`.
 
-First look for Kombai's `starters_card` tool in this chat: in exec,
-`ALL_TOOLS.filter((t) => t.name.startsWith('mcp__kombai'))`. Then follow one of the two paths below.
+The prompts to try, each a title and the request a new chat starts with:
 
-**If `starters_card` is there**, Kombai's view is set up and this chat has it:
+- Design a landing page for a coffee brand: design a landing page for a specialty coffee brand
+- Explore three directions for a pricing page: explore three design directions for a SaaS pricing page
+- Design a dashboard for a fitness app: design an analytics dashboard for a fitness app
+
+To show them as links, build each in exec as `codex://threads/new?prompt=` followed by
+`encodeURIComponent('[@Kombai](plugin://<id>) ' + request)` with Kombai's plugin id, then `(` and `)` as `%28` and
+`%29`. End your reply with **Try one in a new chat:** and the links as a list, each `[title](link)`. Each opens a new
+chat with Kombai mentioned and its request filled in.
+
+First look for Kombai's tools in this chat: in exec, `ALL_TOOLS.filter((t) => t.name.startsWith('mcp__kombai'))`.
+Then follow one of the two paths below.
+
+**If `canvas_app` is there**, Kombai's view is set up and this chat has it:
 
 1. Run `npx -y @kombai/cli@latest whoami`. If the user isn't signed in, sign them in as
    `npx -y @kombai/cli@latest skill sign-in` says.
-2. Call `starters_card` with `plugin` set to Kombai's plugin id above. It shows prompts to try, each with a Try
-   button that opens a new chat with the prompt filled in.
-3. End your turn with one line, such as "Pick one to try." Don't list the prompts in text.
+2. If `starters_card` is there too, call it with `plugin` set to Kombai's plugin id, and end your turn with one
+   line, such as "Pick one to try." Don't list the prompts in text. If it isn't (an older Kombai CLI), show the
+   prompts as links instead.
 
 **If it isn't there**, set Kombai's view up:
 
 1. Run `npx -y @kombai/cli@latest mcp install codex`. It adds Kombai's canvas view to Codex: Kombai's MCP server, in
    the user's own Codex config. It answers `added` or `replaced` (set up now) or `already` (set up before).
-2. Run `npx -y @kombai/cli@latest whoami`. If the user isn't signed in, sign them in as
+2. If it answered `already` and this chat started after Kombai's view was set up, the view should be in this chat
+   and isn't: its server isn't starting. Tell the user what the install's `next` says, show no links, and stop. A
+   chat that started before the setup (in another chat, or earlier in this one) just doesn't have it yet.
+3. Run `npx -y @kombai/cli@latest whoami`. If the user isn't signed in, sign them in as
    `npx -y @kombai/cli@latest skill sign-in` says.
-3. Tell the user in one line that Kombai is ready and that a new chat shows its canvas beside the chat. This chat
-   can't, because Codex gives a chat only the MCP servers it had when it started. Then end your reply with this list,
-   copied exactly, links unchanged. Each link opens a new chat with Kombai mentioned and its prompt filled in:
-
-   **Try one in a new chat:**
-   - [Design a landing page for a coffee brand](codex://threads/new?prompt=%5B%40Kombai%5D%28plugin%3A%2F%2Fkombai%40kombai%29%20design%20a%20landing%20page%20for%20a%20specialty%20coffee%20brand)
-   - [Explore three directions for a pricing page](codex://threads/new?prompt=%5B%40Kombai%5D%28plugin%3A%2F%2Fkombai%40kombai%29%20explore%20three%20design%20directions%20for%20a%20SaaS%20pricing%20page)
-   - [Redesign a screen in this project](codex://threads/new?prompt=%5B%40Kombai%5D%28plugin%3A%2F%2Fkombai%40kombai%29%20redesign%20the%20main%20screen%20of%20this%20project)
+4. Tell the user in one line that Kombai is ready and that a new chat shows its canvas beside the chat. This chat
+   can't, because Codex gives a chat only the MCP servers it had when it started. Then show the prompts as links.
 
    If the user asked for a design earlier in this chat, follow the install's `next` to move it to a new task instead
-   of showing the list.
+   of showing the links.
 
 If a command fails before it prints anything:
 
