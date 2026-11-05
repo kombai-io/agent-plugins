@@ -8,14 +8,14 @@ outside the sandbox **from the first try**, and the same for every later Kombai 
 sandbox has no network, and Kombai writes `~/.kombai`. `npx` may contact the package registry before
 Kombai starts. Do not try the sandboxed command first. If the request is refused, or this session
 cannot ask (a headless `agy -p` run), do not retry inside the sandbox: explain the restriction and
-ask the user to allow Kombai's commands with the Allow rules `command(npx -y @kombai/cli@latest)`
+ask the user to allow Kombai's commands with the Allow rules `command(npx -y @kombai/cli@0.1.3)`
 and `command(kombai)` (`unsandboxed(...)` on business and enterprise accounts; on Windows, where
-commands run as `npx.cmd`, also `command(npx.cmd -y @kombai/cli@latest)`) in Antigravity's
+commands run as `npx.cmd`, also `command(npx.cmd -y @kombai/cli@0.1.3)`) in Antigravity's
 permission settings; for agy, with `/permissions` or under `permissions.allow` in
 `~/.gemini/antigravity-cli/settings.json`. They can also answer the approval prompt with "always
-allow" for commands that start with `npx -y @kombai/cli@latest`.
+allow" for commands that start with `npx -y @kombai/cli@0.1.3`.
 
-Run `npx -y @kombai/cli@latest skill` and follow what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.1.3 skill` and follow what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 
