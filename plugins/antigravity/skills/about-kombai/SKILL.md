@@ -5,11 +5,15 @@ description: Answer the user's questions about Kombai itself (what it is, which 
 
 When Antigravity runs terminal commands in its sandbox, request to run the first command below
 outside the sandbox **from the first try**, and the same for every later Kombai CLI command: the
-sandbox has no network, and Kombai writes `~/.kombai`. `npx` may contact the package registry
-before Kombai starts. Do not try the sandboxed command first. If the request is refused, or this
-session cannot ask (a headless `agy -p` run), explain the restriction and ask the user to allow
-Kombai's commands in Antigravity's terminal permissions or to run the command in their own
-terminal; do not retry inside the sandbox.
+sandbox has no network, and Kombai writes `~/.kombai`. `npx` may contact the package registry before
+Kombai starts. Do not try the sandboxed command first. If the request is refused, or this session
+cannot ask (a headless `agy -p` run), do not retry inside the sandbox: explain the restriction and
+ask the user to allow Kombai's commands with the Allow rules `command(npx -y @kombai/cli@latest)`
+and `command(kombai)` (`unsandboxed(...)` on business and enterprise accounts; on Windows, where
+commands run as `npx.cmd`, also `command(npx.cmd -y @kombai/cli@latest)`) in Antigravity's
+permission settings; for agy, with `/permissions` or under `permissions.allow` in
+`~/.gemini/antigravity-cli/settings.json`. They can also answer the approval prompt with "always
+allow" for commands that start with `npx -y @kombai/cli@latest`.
 
 Run `npx -y @kombai/cli@latest skill faq` and answer from what it prints; it is this skill's full text.
 

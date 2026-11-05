@@ -1,0 +1,104 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { ANTIGRAVITY_SANDBOX } from './antigravity-plugin.mjs';
+import { FAQ_SKILL, skillGuidance, WORKFLOW_SKILL } from './cli-view.mjs';
+import { GEMINI_SANDBOX } from './gemini-cli-plugin.mjs';
+import { VSCODE_UNSANDBOXED } from './vscode-plugin.mjs';
+
+// Every copy of the two skills: the standalone one at the repository root (`npx skills add`) and each plugin's. This
+// reads the whole repository, so it is a test and not part of a plugin's validation, which also runs on one unpacked
+// plugin.
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const CODEX_ESCALATION = 'sandbox_permissions: "require_escalated"';
+// Each copy and the sandbox guidance it carries (null: none beyond the generic network bullet).
+const COPIES = {
+  '.': CODEX_ESCALATION,
+  'plugins/codex': CODEX_ESCALATION,
+  'plugins/claude-code': null,
+  'plugins/cursor': null,
+  'plugins/vscode': VSCODE_UNSANDBOXED,
+  'plugins/antigravity': ANTIGRAVITY_SANDBOX,
+  'plugins/gemini-cli': GEMINI_SANDBOX,
+};
+const MARKERS = [...new Set(Object.values(COPIES).filter(Boolean))];
+// The one copy with more of its own: the Codex app shows the canvas beside the chat, through canvas_app.
+const CODEX_WORKFLOW = `plugins/codex/${WORKFLOW_SKILL}`;
+const NETWORK_BULLET = /^- \*\*The network is blocked\*\*.*$/m;
+const GENERIC_BULLET =
+  '- **The network is blocked** (a sandboxed shell). Ask for network access the way your client does; Node is not missing.';
+const DESCRIPTION = /^description: .+\n/m;
+
+// A skill in four parts: its frontmatter; its host guidance (between the frontmatter and the line that runs the CLI);
+// its network bullet, which is the host's too; and the body every copy shares (from that line on, less the bullet).
+function parts(copy, skill) {
+  const text = fs.readFileSync(path.join(root, copy, 'skills', skill, 'SKILL.md'), 'utf8');
+  const frontmatter = text.match(/^---\n[\s\S]*?\n---\n/)?.[0];
+  const bullet = text.match(NETWORK_BULLET)?.[0];
+  const guidance = skillGuidance(text);
+  assert.ok(frontmatter && bullet && guidance, `${copy}/${skill}: frontmatter, guidance and network bullet`);
+  return {
+    text,
+    frontmatter,
+    guidance: guidance.slice(frontmatter.length).trim(),
+    bullet,
+    body: text.slice(guidance.length).replace(NETWORK_BULLET, ''),
+  };
+}
+
+test('every plugin has a row in the skill copies table', () => {
+  const plugins = fs.readdirSync(path.join(root, 'plugins')).filter((name) => !name.startsWith('.')).sort();
+  assert.deepEqual(plugins.map((name) => `plugins/${name}`), Object.keys(COPIES).filter((copy) => copy !== '.').sort());
+});
+
+for (const skill of [WORKFLOW_SKILL, FAQ_SKILL]) {
+  test(`every copy of ${skill} shares the standalone text outside its host guidance`, () => {
+    const standalone = parts('.', skill);
+    for (const copy of Object.keys(COPIES)) {
+      const own = parts(copy, skill);
+      assert.equal(own.body, standalone.body, `${copy}/${skill}: body`);
+      if (`${copy}/${skill}` === CODEX_WORKFLOW) {
+        assert.equal(own.frontmatter.replace(DESCRIPTION, ''), standalone.frontmatter.replace(DESCRIPTION, ''), copy);
+      } else {
+        assert.equal(own.frontmatter, standalone.frontmatter, `${copy}/${skill}: frontmatter`);
+      }
+      assert.equal(own.text.includes('canvas_app'), `${copy}/${skill}` === CODEX_WORKFLOW, `${copy}/${skill}: canvas_app`);
+    }
+  });
+
+  test(`every copy of ${skill} carries its own host's sandbox guidance and no other host's`, () => {
+    const standalone = parts('.', skill);
+    // The standalone skill runs in any agent, so its network bullet is the generic one.
+    assert.equal(standalone.bullet, GENERIC_BULLET, `${skill}: standalone network bullet`);
+    for (const [copy, marker] of Object.entries(COPIES)) {
+      const own = parts(copy, skill);
+      for (const other of MARKERS) {
+        assert.equal(own.text.includes(other), other === marker, `${copy}/${skill}: ${other}`);
+      }
+      if (marker === null) {
+        // "Nothing beyond 'ask for network access the way your client does'".
+        assert.equal(own.guidance, '', `${copy}/${skill}: guidance`);
+        assert.equal(own.bullet, GENERIC_BULLET, `${copy}/${skill}: network bullet`);
+      } else {
+        // Before the first command, not only in a later bullet.
+        assert.ok(own.guidance.includes(marker), `${copy}/${skill}: guidance before the first command`);
+        if (copy !== '.') assert.notEqual(own.bullet, GENERIC_BULLET, `${copy}/${skill}: network bullet`);
+      }
+      if (marker === CODEX_ESCALATION) {
+        const guidance = own.guidance
+          .split('\n\n')
+          .filter((paragraph) => !paragraph.includes('canvas_app'))
+          .join('\n\n');
+        assert.equal(guidance, standalone.guidance, `${copy}/${skill}: Codex guidance`);
+      }
+    }
+  });
+}
+
+test("each copy's two skills share one network bullet", () => {
+  for (const copy of Object.keys(COPIES)) {
+    assert.equal(parts(copy, WORKFLOW_SKILL).bullet, parts(copy, FAQ_SKILL).bullet, copy);
+  }
+});

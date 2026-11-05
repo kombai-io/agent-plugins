@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkCliContract, checkSkills, stageTeamBuild } from './cli-view.mjs';
+import { assertPackOutside, checkCliContract, checkSkills, stageTeamBuild, STRAY_FILE } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -83,6 +83,8 @@ export function packClaudeCodePlugin(
   root = workspaceRoot,
   { team = false } = {},
 ) {
+  outputDir = path.resolve(outputDir);
+  assertPackOutside(outputDir, root, PACKAGE_FILES);
   const version = validateClaudeCodePlugin(root);
   // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
   const from = team
@@ -94,7 +96,7 @@ export function packClaudeCodePlugin(
     const archive = path.join(outputDir, `kombai-claude-code-plugin-${version}${team ? '-team' : ''}.zip`);
     fs.rmSync(archive, { force: true });
     for (const [command, args] of [
-      ['zip', ['-q', '-r', archive, ...PACKAGE_FILES]],
+      ['zip', ['-q', '-r', archive, ...PACKAGE_FILES, '-x', `*${STRAY_FILE}`]],
       ['unzip', ['-tq', archive]],
     ]) {
       const result = spawnSync(command, args, { cwd: from, encoding: 'utf8' });

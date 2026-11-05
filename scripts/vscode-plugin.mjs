@@ -3,17 +3,55 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkCliContract, checkSkills, FAQ_SKILL, stageTeamBuild, WORKFLOW_SKILL } from './cli-view.mjs';
+import {
+  assertPackOutside,
+  checkCliContract,
+  checkPluginFiles,
+  checkSkills,
+  FAQ_SKILL,
+  readPluginFile,
+  skillGuidance,
+  stageTeamBuild,
+  STRAY_FILE,
+  WORKFLOW_SKILL,
+} from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const PACKAGE_FILES = ['.github/plugin', 'plugins/vscode', 'LICENSE'];
 // VS Code reads the first of these marketplace files that has a `plugins` array, so a file earlier in the list would
 // hide `.github/plugin/marketplace.json` (and, with it gone, VS Code falls through to the Claude Code marketplace).
+// GitHub Copilot CLI reads the same files in the same order.
 const VSCODE_EARLIER_MARKETPLACES = ['marketplace.json', '.plugin/marketplace.json'];
-// VS Code takes a plugin's format from the first manifest it finds: `.plugin/plugin.json`, then
-// `.claude-plugin/plugin.json`, then the Copilot-format `plugin.json` this plugin uses.
+// VS Code (1.136) picks a plugin's format in this order: a root `plugin.json` whose `$schema` is an agent-plugins.org
+// plugin schema (Agent Plugin format), then `.plugin/plugin.json` (Open Plugin), then `.claude-plugin/plugin.json` or
+// any `.claude` folder in the plugin's path (Claude), and otherwise the Copilot-format root `plugin.json` this plugin
+// uses (1.143 adds `.github/plugin/plugin.json` as a later fallback). So the manifest carries no `$schema` (checked
+// below), and neither of these files may exist. The `.claude` path rule depends on where VS Code installs the plugin.
 const VSCODE_EARLIER_MANIFESTS = ['.plugin/plugin.json', '.claude-plugin/plugin.json'];
+// VS Code reads a Copilot-format manifest's commands, agents, rules, hooks and mcpServers keys too, and an inline
+// hooks or mcpServers object replaces hooks.json or .mcp.json. The skills are the whole plugin; the canvas view, when
+// on, ships as .mcp.json, which VS Code reads by default.
+const MANIFEST_KEYS = new Set([
+  'name',
+  'version',
+  'description',
+  'author',
+  'homepage',
+  'repository',
+  'license',
+  'keywords',
+  'skills',
+]);
+// Everything the plugin folder holds. VS Code also loads commands/, agents/, rules/ and hooks.json from it by default.
+const PLUGIN_FILES = [
+  'LICENSE',
+  'README.md',
+  'kombai.package.json',
+  'plugin.json',
+  `skills/${WORKFLOW_SKILL}/SKILL.md`,
+  `skills/${FAQ_SKILL}/SKILL.md`,
+];
 // VS Code's terminal sandbox blocks the network and writes outside the workspace; the skill asks for this way out.
 export const VSCODE_UNSANDBOXED = 'requestUnsandboxedExecution: true';
 
@@ -37,13 +75,8 @@ function compareVersion(left, right) {
 export function validateVsCodePlugin(root = workspaceRoot) {
   const pluginRoot = path.join(root, 'plugins/vscode');
   const marketplace = readJson(path.join(root, '.github/plugin/marketplace.json'));
-  const manifest = readJson(path.join(pluginRoot, 'plugin.json'));
-  const contract = readJson(path.join(pluginRoot, 'kombai.package.json'));
-
-  assert(
-    fs.readFileSync(path.join(pluginRoot, 'LICENSE'), 'utf8') === fs.readFileSync(path.join(root, 'LICENSE'), 'utf8'),
-    'Plugin license must match the repository LICENSE.',
-  );
+  const manifest = JSON.parse(readPluginFile(pluginRoot, 'plugin.json', 'VS Code plugin'));
+  const contract = JSON.parse(readPluginFile(pluginRoot, 'kombai.package.json', 'VS Code plugin'));
 
   assert(marketplace.name === 'kombai' && marketplace.owner?.name === 'Kombai', 'Invalid VS Code marketplace.');
   assert(
@@ -58,26 +91,29 @@ export function validateVsCodePlugin(root = workspaceRoot) {
   for (const file of VSCODE_EARLIER_MANIFESTS) {
     assert(!fs.existsSync(path.join(pluginRoot, file)), `${file} would change how VS Code reads the plugin.`);
   }
-  assert(manifest.name === 'kombai' && contract.name === manifest.name, 'VS Code plugin names must be kombai.');
+  assert(manifest && typeof manifest === 'object' && !Array.isArray(manifest), 'VS Code manifest must be a JSON object.');
   assert(manifest.$schema === undefined, 'VS Code manifest must stay in the Copilot format (no $schema).');
+  for (const key of Object.keys(manifest)) {
+    assert(MANIFEST_KEYS.has(key), `VS Code manifest must not set ${key}.`);
+  }
+  assert(manifest.name === 'kombai' && contract.name === manifest.name, 'VS Code plugin names must be kombai.');
   assert(manifest.license === 'MIT' && manifest.skills === 'skills/', 'VS Code manifest license and skills must be set.');
   assert(VERSION_RE.test(manifest.version), `Invalid VS Code plugin version: ${manifest.version}`);
   assert(manifest.version === contract.version, 'VS Code manifest and package contract versions must match.');
   assert(contract.schemaVersion === 'kombai-vscode-plugin/v2', 'Unexpected VS Code package contract schema.');
-  for (const file of [
-    'README.md',
-    'kombai.package.json',
-    'plugin.json',
-    `skills/${WORKFLOW_SKILL}/SKILL.md`,
-    `skills/${FAQ_SKILL}/SKILL.md`,
-  ]) {
-    assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing VS Code plugin file: ${file}`);
-  }
+  checkPluginFiles(pluginRoot, PLUGIN_FILES, 'VS Code plugin');
+  assert(
+    fs.readFileSync(path.join(pluginRoot, 'LICENSE'), 'utf8') === fs.readFileSync(path.join(root, 'LICENSE'), 'utf8'),
+    'Plugin license must match the repository LICENSE.',
+  );
   checkCliContract(pluginRoot, contract, 'VS Code');
   checkSkills(pluginRoot, 'VS Code');
   for (const name of [WORKFLOW_SKILL, FAQ_SKILL]) {
     const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');
-    assert(skill.includes(VSCODE_UNSANDBOXED), `VS Code ${name} skill must ask to run outside VS Code's terminal sandbox.`);
+    assert(
+      skillGuidance(skill).includes(VSCODE_UNSANDBOXED),
+      `VS Code ${name} skill must ask to run outside VS Code's terminal sandbox before the first command.`,
+    );
   }
   return manifest.version;
 }
@@ -103,6 +139,8 @@ export function packVsCodePlugin(
   root = workspaceRoot,
   { team = false } = {},
 ) {
+  outputDir = path.resolve(outputDir);
+  assertPackOutside(outputDir, root, PACKAGE_FILES);
   const version = validateVsCodePlugin(root);
   // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
   const from = team
@@ -114,7 +152,7 @@ export function packVsCodePlugin(
     const archive = path.join(outputDir, `kombai-vscode-plugin-${version}${team ? '-team' : ''}.zip`);
     fs.rmSync(archive, { force: true });
     for (const [command, args] of [
-      ['zip', ['-q', '-r', archive, ...PACKAGE_FILES]],
+      ['zip', ['-q', '-r', archive, ...PACKAGE_FILES, '-x', `*${STRAY_FILE}`]],
       ['unzip', ['-tq', archive]],
     ]) {
       const result = spawnSync(command, args, { cwd: from, encoding: 'utf8' });
