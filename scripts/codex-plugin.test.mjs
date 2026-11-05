@@ -238,6 +238,8 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
       encoding: 'utf8',
     });
     assert.ok(skill.stdout.includes(`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex`));
+    // The skill changes the user's Codex config only after the user says yes.
+    assert.ok(skill.stdout.replace(/\s+/g, ' ').includes(`Ask the user once; on yes, run \`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex\``));
   });
 });
 

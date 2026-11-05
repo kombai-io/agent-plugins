@@ -16,9 +16,9 @@ no MCP tool up front, so find it inside exec with `ALL_TOOLS.filter((t) => t.nam
 with the canvas id right after `kombai canvas create`, before you write any design, or when you first use a canvas
 that isn't already open beside the chat. It is the only way to show a canvas here: no browser, no in-app browser,
 and no canvas link unless the user asks for one. If no `canvas_app` tool exists, Kombai's view isn't set up in Codex
-yet. Ask the user once, then run `npx -y @kombai/cli@latest mcp install codex` (outside the sandbox, like every
-Kombai command) and continue in a new task, as `npx -y @kombai/cli@latest skill opening` says. Show no link
-instead.
+yet. Ask the user once; on yes, run `npx -y @kombai/cli@latest mcp install codex` (outside the sandbox, like
+every Kombai command) and continue in a new task, as `npx -y @kombai/cli@latest skill opening` says. On no, show
+no link instead.
 
 Run `npx -y @kombai/cli@latest skill` and follow what it prints; it is this skill's full text.
 
