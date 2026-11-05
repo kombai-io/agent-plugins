@@ -247,6 +247,8 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
     // Setting the view up is the skill's first instruction after the sandbox note, before even `kombai skill`.
     const afterSandbox = skill.stdout.split('\n\n').slice(2).join('\n\n');
     assert.ok(afterSandbox.startsWith("**First, before anything else, even `npx"), afterSandbox.slice(0, 120));
+    // The install's answer says how to move the work to a new task without the user asking twice.
+    assert.ok(skill.stdout.replace(/\s+/g, ' ').includes('then follow its `next` to move the work to a new task'));
     assert.ok(skill.stdout.indexOf('mcp install codex') < skill.stdout.indexOf(`Run \`npx -y ${RELEASE_CLI_PACKAGE} skill\``));
   });
 });
