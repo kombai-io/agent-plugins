@@ -125,6 +125,40 @@ export function bumpCodexVersion(next, root = workspaceRoot) {
   return next;
 }
 
+/**
+ * Kombai's plugin id in Codex, as the repository's own marketplace installs it (`kombai@kombai`). The skills name it:
+ * the mention a new chat's prompt starts with, in text and URL-encoded inside the new-chat links. A pack swaps in the
+ * id its install gets, read from Codex's hosted plugins: `kombai@openai-curated-remote` from OpenAI's directory, and
+ * `kombai@workspace-directory` for a workspace's own plugin, as the team build is shared.
+ */
+export const SOURCE_PLUGIN_ID = 'kombai@kombai';
+export const RELEASE_PLUGIN_ID = 'kombai@openai-curated-remote';
+export const TEAM_PLUGIN_ID = 'kombai@workspace-directory';
+
+/** Every spelling of `from` the skills hold, swapped for `to`, in the staged copy's skill files. */
+function bakePluginId(stage, from, to) {
+  const skillsRoot = path.join(stage, 'plugins/codex/skills');
+  for (const entry of fs.readdirSync(skillsRoot, { recursive: true })) {
+    const file = path.join(skillsRoot, String(entry));
+    if (!file.endsWith('.md') || !fs.statSync(file).isFile()) continue;
+    const text = fs.readFileSync(file, 'utf8');
+    const baked = text.replaceAll(from, to).replaceAll(encodeURIComponent(from), encodeURIComponent(to));
+    if (baked !== text) fs.writeFileSync(file, baked);
+  }
+}
+
+/** A copy of `files` from `root`, without the stray Finder files. */
+function stageFiles(root, files) {
+  const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-plugin-release-'));
+  for (const file of files) {
+    fs.cpSync(path.join(root, file), path.join(stage, file), {
+      recursive: true,
+      filter: (from) => path.basename(from) !== STRAY_FILE,
+    });
+  }
+  return stage;
+}
+
 export function packCodexPlugin(
   outputDir = path.join(os.tmpdir(), 'kombai-agent-plugins'),
   root = workspaceRoot,
@@ -137,10 +171,14 @@ export function packCodexPlugin(
   const pluginFiles = fs.existsSync(path.join(pluginRoot, '.mcp.json')) ? [...PLUGIN_FILES, '.mcp.json'] : PLUGIN_FILES;
   // marketplace add needs the catalog and its source path to exist in the extracted archive.
   const files = [MARKETPLACE_FILE, 'LICENSE', ...pluginFiles.map((file) => `plugins/codex/${file}`)];
-  // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
-  const from = team ? stageTeamBuild(root, files, readJson(path.join(pluginRoot, 'kombai.package.json'))) : root;
+  // Each build zips a staged copy that names the plugin by the id its install gets; the team build's also runs the
+  // CLI's team build (cli-view.mjs).
+  const from = team
+    ? stageTeamBuild(root, files, readJson(path.join(pluginRoot, 'kombai.package.json')))
+    : stageFiles(root, files);
   try {
-    if (team) validateCodexPlugin(from);
+    bakePluginId(from, SOURCE_PLUGIN_ID, team ? TEAM_PLUGIN_ID : RELEASE_PLUGIN_ID);
+    validateCodexPlugin(from);
     fs.mkdirSync(outputDir, { recursive: true });
     const archive = path.join(outputDir, `kombai-codex-plugin-${version}${team ? '-team' : ''}.zip`);
     fs.rmSync(archive, { force: true });
@@ -154,7 +192,7 @@ export function packCodexPlugin(
     }
     return archive;
   } finally {
-    if (team) fs.rmSync(from, { recursive: true, force: true });
+    fs.rmSync(from, { recursive: true, force: true });
   }
 }
 
