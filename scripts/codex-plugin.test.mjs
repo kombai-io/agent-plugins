@@ -244,8 +244,10 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
         .replace(/\s+/g, ' ')
         .includes(`set it up without asking, with \`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex\``),
     );
-    // It looks for the view before any other Kombai command, so no design work happens in a chat that can't show it.
-    assert.ok(skill.stdout.replace(/\s+/g, ' ').includes('Look for it first, before any other Kombai command.'));
+    // Setting the view up is the skill's first instruction after the sandbox note, before even `kombai skill`.
+    const afterSandbox = skill.stdout.split('\n\n').slice(2).join('\n\n');
+    assert.ok(afterSandbox.startsWith("**First, before anything else, even `npx"), afterSandbox.slice(0, 120));
+    assert.ok(skill.stdout.indexOf('mcp install codex') < skill.stdout.indexOf(`Run \`npx -y ${RELEASE_CLI_PACKAGE} skill\``));
   });
 });
 
