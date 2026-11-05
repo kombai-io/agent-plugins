@@ -22,7 +22,7 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-/** The `.mcp.json` that registers the view, for a plugin whose skill runs `cliPackage` (`@kombai/cli@latest`). */
+/** The `.mcp.json` that registers the view, for a plugin whose skill runs `cliPackage` (`@kombai/cli@0.1.3`). */
 export function cliViewMcpConfig(cliPackage) {
   return { mcpServers: { [CLI_VIEW_SERVER]: { command: 'npx', args: ['-y', cliPackage, 'mcp'] } } };
 }
@@ -97,7 +97,7 @@ export function checkSkills(pluginRoot, host) {
 // The team build of a plugin, for colleagues trying a CLI beta before it is released: the same plugin, running the
 // newest beta from npm's `beta` tag (vscode-assistant's Publish CLI `beta` action, run from `preprod`), which
 // talks to preprod. `pack --team` zips a staged copy, so the source always names the release.
-export const RELEASE_CLI_PACKAGE = '@kombai/cli@latest';
+export const RELEASE_CLI_PACKAGE = '@kombai/cli@0.1.3';
 export const TEAM_CLI_PACKAGE = '@kombai/cli@beta';
 
 function filesUnder(dir) {
