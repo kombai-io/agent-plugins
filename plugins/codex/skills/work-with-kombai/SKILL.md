@@ -11,12 +11,14 @@ Do not try the restricted command first. If this chat cannot approve the require
 explain the restriction and wait for the user to change its permissions; do not retry inside
 the sandbox.
 
-In the Codex app, Kombai's view shows the canvas beside the chat: this plugin's `canvas_app` tool. Codex lists
+In the Codex app, Kombai's view shows the canvas beside the chat: Kombai's `canvas_app` tool. Codex lists
 no MCP tool up front, so find it inside exec with `ALL_TOOLS.filter((t) => t.name.endsWith('canvas_app'))`. Call it
 with the canvas id right after `kombai canvas create`, before you write any design, or when you first use a canvas
 that isn't already open beside the chat. It is the only way to show a canvas here: no browser, no in-app browser,
-and no canvas link unless the user asks for one. If no `canvas_app` tool exists, the view is not connected in this
-chat: tell the user to turn the Kombai plugin on or start a new chat, and show no link instead.
+and no canvas link unless the user asks for one. If no `canvas_app` tool exists, Kombai's view isn't set up in Codex
+yet. Ask the user once, then run `npx -y @kombai/cli@latest mcp install codex` (outside the sandbox, like every
+Kombai command) and continue in a new task, as `npx -y @kombai/cli@latest skill opening` says. Show no link
+instead.
 
 Run `npx -y @kombai/cli@latest skill` and follow what it prints; it is this skill's full text.
 

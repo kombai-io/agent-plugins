@@ -48,6 +48,8 @@ export function validateCodexPlugin(root = workspaceRoot) {
   assert(manifest.version === contract.version, 'Codex manifest and package contract versions must match.');
   assert(contract.schemaVersion === 'kombai-codex-plugin/v2', 'Unexpected Codex package contract schema.');
   assert(manifest.skills === './skills/', 'Codex manifest must point at ./skills/.');
+  // The skills run the Kombai CLI on the user's computer, which OpenAI's directory lists as desktop-only.
+  assert(manifest.requires_local_executor === true, 'Codex manifest must set requires_local_executor to true.');
 
   for (const relative of PLUGIN_FILES) {
     assert(fs.existsSync(path.join(pluginRoot, relative)), `Missing Codex package content: ${relative}`);
