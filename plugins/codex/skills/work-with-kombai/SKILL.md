@@ -15,8 +15,10 @@ the sandbox.
 `canvas_app` tool. Codex lists no MCP tool up front, so search inside exec with
 `ALL_TOOLS.filter((t) => t.name.endsWith('canvas_app'))`. If it doesn't exist, Kombai's view isn't set up in Codex
 yet: set it up without asking, with `npx -y @kombai/cli@latest mcp install codex` (outside the sandbox, like every
-Kombai command), tell the user in one line, then follow its `next` to move the work to a new task: one offer, and
-on yes a new task that carries the request. Do no design work in this task first: it can't show the canvas.
+Kombai command), tell the user in one line, then follow its `next` to move the work to a new task: one offer, with
+a link that opens it with the request filled in, and on yes a new task that carries the request. Kombai's plugin id
+in this Codex is `kombai@kombai`: the new task's prompt starts with its mention. Do no design work in this task
+first: it can't show the canvas.
 
 Once `canvas_app` exists, it is the only way to show a canvas here: call it with the canvas id right after
 `kombai canvas create`, before you write any design, or when you first use a canvas that isn't already open beside

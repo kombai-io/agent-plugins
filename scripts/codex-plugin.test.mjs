@@ -249,6 +249,9 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
     assert.ok(afterSandbox.startsWith("**First, before anything else, even `npx"), afterSandbox.slice(0, 120));
     // The install's answer says how to move the work to a new task without the user asking twice.
     assert.ok(skill.stdout.replace(/\s+/g, ' ').includes('then follow its `next` to move the work to a new task'));
+    // The new task's prompt starts with Kombai's mention, which needs the plugin's id in Codex.
+    assert.ok(skill.stdout.replace(/\s+/g, ' ').includes("Kombai's plugin id in this Codex is `kombai@kombai`"));
+    assert.ok(skill.stdout.replace(/\s+/g, ' ').includes('a link that opens it with the request filled in'));
     assert.ok(skill.stdout.indexOf('mcp install codex') < skill.stdout.indexOf(`Run \`npx -y ${RELEASE_CLI_PACKAGE} skill\``));
   });
 });
