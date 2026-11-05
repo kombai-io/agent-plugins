@@ -95,10 +95,10 @@ export function checkSkills(pluginRoot, host) {
 }
 
 // The team build of a plugin, for colleagues trying a CLI beta before it is released: the same plugin, running the
-// newest beta from npm's `next` tag (`cli-v<version>-beta.N` tags in vscode-assistant), which talks to dev.
-// `pack --team` zips a staged copy, so the source always names the release.
+// newest beta from npm's `beta` tag (vscode-assistant's Publish CLI `beta` action, run from `preprod`), which
+// talks to preprod. `pack --team` zips a staged copy, so the source always names the release.
 export const RELEASE_CLI_PACKAGE = '@kombai/cli@latest';
-export const TEAM_CLI_PACKAGE = '@kombai/cli@next';
+export const TEAM_CLI_PACKAGE = '@kombai/cli@beta';
 
 function filesUnder(dir) {
   return fs
