@@ -7,10 +7,10 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 and release tooling.
 
 Each plugin's `work-with-kombai` skill runs the Kombai CLI
-(`npx -y @kombai/cli@0.1.3 skill`), which prints the full instructions for designing on a hosted
+(`npx -y @kombai/cli@latest skill`), which prints the full instructions for designing on a hosted
 Kombai canvas. The CLI needs Node.js 20 or later.
 
-A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.1.3 skill faq` and answers the user's
+A second skill, `about-kombai`, runs `npx -y @kombai/cli@latest skill faq` and answers the user's
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
 live, sharing, updates and support.
 
@@ -37,7 +37,10 @@ validators check their host's guidance too:
 | Gemini CLI | the workflow skill checks `$SANDBOX` before the first command and, if it is set, asks the user to restart without the sandbox; the FAQ skill does the same after a command fails. With tool sandboxing, both pass `additional_permissions` on the first command |
 | Claude Code, Cursor | nothing beyond "ask for network access the way your client does" |
 
-This repository supplies the workflow skills and plugin packaging; it builds neither the CLI nor the desktop app.
+The only MCP server a plugin registers is the CLI's canvas view (`kombai`), and only the plugins
+with `cli.view` on, Codex and Claude Code today, register it; see
+[The canvas view](#the-canvas-view). This repository supplies the workflow skill and plugin
+packaging; it builds neither the CLI nor the desktop app.
 
 The Codex marketplace is [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json).
 The Claude Code marketplace is [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
@@ -76,11 +79,57 @@ npx skills add kombai-io/agent-plugins --skill about-kombai
 The CLI discovers [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md) and
 [`skills/about-kombai/SKILL.md`](skills/about-kombai/SKILL.md) before the same-named skills inside the host plugins. It calls the same CLI and works in any
 agent that can run `npx`; its Codex permission guidance applies only when running in Codex.
-The agent opens the canvas in its own browser panel or the user's browser.
+It registers no MCP server, so the agent opens the
+canvas in its own browser panel or the user's browser rather than in a view beside the chat.
 The existing plugin marketplaces and packages continue to use their host-specific skills under
 `plugins/`, but in VS Code and Gemini CLI a standalone copy with the same name replaces the
 plugin's skill, and in Antigravity it sits beside it; each of those plugin READMEs says where such
 copies come from.
+
+## The canvas view
+
+`kombai mcp` serves a view of the live hosted canvas beside the agent's chat, and Kombai's cards
+in it (a taste run's design brief, and the plans when taste is out of credits), as MCP Apps
+(server `kombai`, run as `npx -y <cli.package> mcp`). A host shows them only if it renders
+MCP App views, and the CLI decides what each host is listed (`VIEW_HOSTS` and `cardsFor` in
+vscode-assistant's `packages/cli/src/mcp/client-gate.js`): Codex desktop gets the view and both
+cards, and Claude desktop's Code tab the taste card. So the Codex and Claude Code plugins have
+`cli.view` on, which registers the server; Cursor's, VS Code's, Antigravity's and Gemini CLI's
+are off. Validation checks each plugin against its contract: `.mcp.json` ships exactly when
+`cli.view` is on, with exactly the CLI server in it (`scripts/cli-view.mjs`).
+
+VS Code already shows MCP App views: it declares `io.modelcontextprotocol/ui` and sends its
+product name as `clientInfo.name` ("Visual Studio Code" on Stable, "Visual Studio Code - Insiders"
+on Insiders), and the CLI matches that name exactly, so a VS Code row must cover both. It needs
+only the CLI side and `cli.view`: VS Code reads the plugin's `.mcp.json` by default, and the VS
+Code validator forbids a manifest `mcpServers` key, which would replace that file. Antigravity
+reads a plugin's MCP servers from `mcp_config.json` and Gemini CLI from `gemini-extension.json`'s
+`mcpServers`, which validation does not know yet; their validators require `cli.view` off until
+it does. The repository ships other hosts' manifests, and the VS Code plugin's is a root
+`plugin.json`, so the Antigravity plugin keeps its manifest in `.antigravity-plugin/plugin.json`,
+which Antigravity reads before a root `plugin.json`.
+
+### Adding a host to the canvas view
+
+When another host (Cursor, VS Code, …) can show MCP App views:
+
+1. Set `cli.view` to `true` in that plugin's `kombai.package.json`.
+2. Add the plugin's `.mcp.json`; validation gives its exact content (`cliViewMcpConfig`). Check
+   the host's plugin format first: Codex also points its manifest's `mcpServers` at the file,
+   and validation knows only `.mcp.json`, so a host that reads another file needs
+   `scripts/cli-view.mjs` taught its format. For Antigravity (`mcp_config.json`) and Gemini CLI
+   (`gemini-extension.json`'s `mcpServers`), teach `checkCliContract` the file, then lift the
+   `cli.view` guard in `scripts/antigravity-plugin.mjs` or `scripts/gemini-cli-plugin.mjs` and
+   allow that file or key there.
+3. Bump that plugin's version and release it.
+
+Claude Code's plugin already registers the server, so giving Claude Code the view is a CLI-side
+change only.
+
+The CLI, the hosted canvas page and the backend each need a change for the new host too;
+vscode-assistant's `agent-docs/peripheral-packages/cli.md` lists them under "Adding a host to
+the view". The two sides can ship in either order: until the CLI has a row for the host, the
+registered server lists no tools.
 
 ## Local development
 
@@ -151,7 +200,8 @@ pnpm run version:gemini-cli 0.1.1
 
 The scripts require an increasing `major.minor.patch` version. Each plugin's
 `kombai.package.json` names the CLI its workflow skill runs (`cli.package`) and whether the
-plugin registers the canvas view (`cli.view`). Validation checks that the skill runs that CLI and that each plugin's canvas-view configuration matches `cli.view`. The scripts do not read a sibling checkout.
+plugin registers the canvas view (`cli.view`). Validation checks that the skill runs that CLI
+and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling checkout.
 
 ## CI and packaging
 
@@ -192,7 +242,7 @@ plugin, running the newest beta, `@kombai/cli@beta` on npm (vscode-assistant's P
 otherwise. No plugin build runs the alphas from `dev` (`@kombai/cli@alpha`).
 Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
 (`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity` or `gemini-cli`): it writes `kombai-<host>-plugin-<version>-team.zip`
-from a staged copy, so the source always names `@kombai/cli@0.1.3`. A team ZIP installs like the
+from a staged copy, so the source always names `@kombai/cli@latest`. A team ZIP installs like the
 public one and has the same plugin name, so a machine has one or the other. In VS Code the two
 install side by side, because VS Code keys a local folder by its path, not by name: uninstall (or
 disable) the public kombai from `@agentPlugins` before installing the team folder, and remove the
