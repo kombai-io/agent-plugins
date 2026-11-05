@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkCliContract, checkSkills, stageTeamBuild } from './cli-view.mjs';
+import { checkCliContract, checkSkills, stageTeamBuild, STRAY_FILE } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -112,6 +112,7 @@ export function packCodexPlugin(
   root = workspaceRoot,
   { team = false } = {},
 ) {
+  outputDir = path.resolve(outputDir);
   const version = validateCodexPlugin(root);
   const pluginRoot = path.join(root, 'plugins/codex');
   // Validation has checked that .mcp.json is there exactly when the canvas view is on.
@@ -126,7 +127,7 @@ export function packCodexPlugin(
     const archive = path.join(outputDir, `kombai-codex-plugin-${version}${team ? '-team' : ''}.zip`);
     fs.rmSync(archive, { force: true });
     for (const [command, args] of [
-      ['zip', ['-q', '-r', archive, ...files]],
+      ['zip', ['-q', '-r', archive, ...files, '-x', `*${STRAY_FILE}`]],
       ['unzip', ['-tq', archive]],
     ]) {
       const result = spawnSync(command, args, { cwd: from, encoding: 'utf8' });

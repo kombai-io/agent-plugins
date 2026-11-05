@@ -21,19 +21,26 @@ Kombai starts, and the CLI writes `~/.kombai`. Existing Codex installations need
 plugin or standalone skill to receive this guidance; upgrading only the CLI does not replace
 the bootstrap skill.
 
-The skills differ between hosts only in that sandbox guidance, which each host's validator checks:
+The skills differ between hosts in that sandbox guidance (the paragraphs before the line that runs
+`npx`, and the "The network is blocked" bullet); the Codex workflow skill also has its own
+description and a paragraph on showing the canvas beside the chat. `scripts/skills.test.mjs`
+checks that every copy shares the rest of the standalone skill's text, that each carries its own
+host's guidance before the first command and no other host's, and that the Claude Code and Cursor
+copies have no guidance beyond the generic bullet. The VS Code, Antigravity and Gemini CLI
+validators check their host's guidance too:
 
 | Host | What the skill says about the sandbox |
 | --- | --- |
 | Codex (and the standalone skill) | request `sandbox_permissions: "require_escalated"` before the first command |
-| VS Code | set `requestUnsandboxedExecution: true` on the terminal tool call when VS Code's terminal sandbox is on |
-| Antigravity | request to run outside Antigravity's sandbox from the first try; a headless `agy -p` run needs the user's permission rules |
-| Gemini CLI | when `$SANDBOX` is set and a command fails, ask the user to restart without the sandbox |
+| VS Code | set `requestUnsandboxedExecution: true` (never `requestAllowNetwork`) on the terminal tool call when VS Code's terminal sandbox is on |
+| Antigravity | request to run outside Antigravity's sandbox from the first try; a headless `agy -p` run needs `command(...)` allow rules unless its permission mode approves the commands |
+| Gemini CLI | the workflow skill checks `$SANDBOX` before the first command and, if it is set, asks the user to restart without the sandbox; the FAQ skill does the same after a command fails. With tool sandboxing, both pass `additional_permissions` on the first command |
 | Claude Code, Cursor | nothing beyond "ask for network access the way your client does" |
 
-The only MCP server a plugin registers is the CLI's canvas view (`kombai`), and only the Codex
-plugin registers it today; see [The canvas view](#the-canvas-view). This repository supplies the
-workflow skill and plugin packaging; it builds neither the CLI nor the desktop app.
+The only MCP server a plugin registers is the CLI's canvas view (`kombai`), and only the plugins
+with `cli.view` on, Codex and Claude Code today, register it; see
+[The canvas view](#the-canvas-view). This repository supplies the workflow skill and plugin
+packaging; it builds neither the CLI nor the desktop app.
 
 The Codex marketplace is [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json).
 The Claude Code marketplace is [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
@@ -44,14 +51,21 @@ VS Code installs from **Chat: Install Plugin from Source** or the Extensions vie
 
 VS Code reads a repository's first marketplace file in the order `marketplace.json`,
 `.plugin/marketplace.json`, `.github/plugin/marketplace.json`, `.claude-plugin/marketplace.json`,
-so it uses the VS Code marketplace, not the Claude Code one; the VS Code validator fails if a file
-earlier in that order appears.
+so new installs use the VS Code marketplace, not the Claude Code one; the VS Code validator fails
+if a file earlier in that order appears. GitHub Copilot CLI checks the same files in the same
+order, so `copilot plugin install kombai@kombai` from this marketplace installs `plugins/vscode`
+too. A VS Code install made before the VS Code plugin existed keeps loading `plugins/claude-code`
+after updates; the [VS Code README](plugins/vscode/README.md) says how to move it over.
 
-Antigravity and Gemini CLI have no marketplace a repository can host. Antigravity installs from
-the plugin folder's GitHub URL (`agy plugin install https://github.com/kombai-io/agent-plugins/tree/main/plugins/antigravity`);
-Gemini CLI installs only an extension whose `gemini-extension.json` is at the root of a
-repository, folder or archive, so it installs `plugins/gemini-cli` from a checkout or the Build
-Plugins ZIP.
+Antigravity and Gemini CLI have no marketplace a repository can host. Antigravity's only
+marketplace is Google's curated catalog (`antigravity-plugins-official`) of Google and partner
+plugins, which lists Kombai only once Google accepts it; until then Antigravity installs from the
+plugin folder's GitHub URL (`agy plugin install https://github.com/kombai-io/agent-plugins/tree/main/plugins/antigravity`).
+Gemini CLI installs an extension from a folder or a git repository whose root holds
+`gemini-extension.json`, and not from a `.zip`, so it installs `plugins/gemini-cli` from a checkout
+or the folder in an unzipped Build Plugins ZIP; `gemini skills install
+https://github.com/kombai-io/agent-plugins --path plugins/gemini-cli/skills` installs just the two
+skills straight from GitHub.
 
 ## Install with the skills CLI
 
@@ -68,7 +82,9 @@ agent that can run `npx`; its Codex permission guidance applies only when runnin
 It registers no MCP server, so the agent opens the
 canvas in its own browser panel or the user's browser rather than in a view beside the chat.
 The existing plugin marketplaces and packages continue to use their host-specific skills under
-`plugins/`.
+`plugins/`, but in VS Code and Gemini CLI a standalone copy with the same name replaces the
+plugin's skill, and in Antigravity it sits beside it; each of those plugin READMEs says where such
+copies come from.
 
 ## The canvas view
 
@@ -82,22 +98,33 @@ cards, and Claude desktop's Code tab the taste card. So the Codex and Claude Cod
 are off. Validation checks each plugin against its contract: `.mcp.json` ships exactly when
 `cli.view` is on, with exactly the CLI server in it (`scripts/cli-view.mjs`).
 
-VS Code already shows MCP App views (it declares `io.modelcontextprotocol/ui` and sends
-`clientInfo.name` "Visual Studio Code"), so it needs only the CLI side and `cli.view`. Antigravity
+VS Code already shows MCP App views: it declares `io.modelcontextprotocol/ui` and sends its
+product name as `clientInfo.name` ("Visual Studio Code" on Stable, "Visual Studio Code - Insiders"
+on Insiders), and the CLI matches that name exactly, so a VS Code row must cover both. It needs
+only the CLI side and `cli.view`: VS Code reads the plugin's `.mcp.json` by default, and the VS
+Code validator forbids a manifest `mcpServers` key, which would replace that file. Antigravity
 reads a plugin's MCP servers from `mcp_config.json` and Gemini CLI from `gemini-extension.json`'s
 `mcpServers`, which validation does not know yet; their validators require `cli.view` off until
-it does.
+it does. The repository ships other hosts' manifests, and the VS Code plugin's is a root
+`plugin.json`, so the Antigravity plugin keeps its manifest in `.antigravity-plugin/plugin.json`,
+which Antigravity reads before a root `plugin.json`.
 
 ### Adding a host to the canvas view
 
-When another host (Claude Code, Cursor, …) can show MCP App views:
+When another host (Cursor, VS Code, …) can show MCP App views:
 
 1. Set `cli.view` to `true` in that plugin's `kombai.package.json`.
 2. Add the plugin's `.mcp.json`; validation gives its exact content (`cliViewMcpConfig`). Check
    the host's plugin format first: Codex also points its manifest's `mcpServers` at the file,
    and validation knows only `.mcp.json`, so a host that reads another file needs
-   `scripts/cli-view.mjs` taught its format.
+   `scripts/cli-view.mjs` taught its format. For Antigravity (`mcp_config.json`) and Gemini CLI
+   (`gemini-extension.json`'s `mcpServers`), teach `checkCliContract` the file, then lift the
+   `cli.view` guard in `scripts/antigravity-plugin.mjs` or `scripts/gemini-cli-plugin.mjs` and
+   allow that file or key there.
 3. Bump that plugin's version and release it.
+
+Claude Code's plugin already registers the server, so giving Claude Code the view is a CLI-side
+change only.
 
 The CLI, the hosted canvas page and the backend each need a change for the new host too;
 vscode-assistant's `agent-docs/peripheral-packages/cli.md` lists them under "Adding a host to
@@ -146,10 +173,13 @@ For Cursor, use **From GitHub Repository** in Customize or copy `plugins/cursor`
 `~/.cursor/plugins/local/kombai` and reload. For the other hosts, install the plugin folder:
 
 ```sh
-# VS Code: run "Chat: Install Plugin from Source" with /absolute/path/to/agent-plugins/plugins/vscode
+# VS Code 1.128 or later: run "Chat: Install Plugin from Source" with /absolute/path/to/agent-plugins/plugins/vscode
 agy plugin install /absolute/path/to/agent-plugins/plugins/antigravity
 gemini extensions install /absolute/path/to/agent-plugins/plugins/gemini-cli
 ```
+
+VS Code uses a local plugin folder where it is (it adds the path to `chat.pluginLocations`), so
+keep the folder in place while it is installed.
 
 See each plugin README for its setup.
 
@@ -185,17 +215,24 @@ version. A supplied higher version changes the plugin manifest and contract in t
 checkout only; it does not commit or push changes. For releases installed from Git, commit
 that version change before publishing the revision.
 
+GitHub wraps each workflow artifact in a ZIP of its own, so the file downloaded from the run page,
+`kombai-<host>-plugin-<version>[-team].zip`, holds the plugin ZIP of the same name. Unzip the
+download into a folder of its own first (`gh run download <run-id> -n <artifact name>` does that
+step for you); the sentences below are about that inner ZIP.
+
 The Codex ZIP contains `.agents/plugins/marketplace.json` and the plugin under `plugins/codex/`.
 Unzip it and pass the extracted root to `codex plugin marketplace add`, then install
 `kombai@kombai`. The Claude Code and Cursor ZIPs contain their respective marketplace manifests
 and plugin directories. Unzip the Claude Code artifact before registering its extracted directory
 as a local marketplace. For Cursor, copy
 the extracted `plugins/cursor` directory to Cursor's local plugin folder for testing. The VS Code
-ZIP contains `.github/plugin/marketplace.json` and `plugins/vscode/`; install the extracted
-`plugins/vscode` with **Chat: Install Plugin from Source**. The Antigravity and Gemini CLI ZIPs
-hold the plugin folder itself at their root (the manifest at the top), so the extracted directory
-goes straight to `agy plugin install` or `gemini extensions install`. Workflow artifacts do not
-publish marketplace listings or GitHub releases.
+ZIP contains `.github/plugin/marketplace.json` and `plugins/vscode/`; unzip it somewhere it can
+stay, then install the extracted `plugins/vscode` with **Chat: Install Plugin from Source** (VS
+Code 1.128 or later), which uses the folder in place. The Antigravity and Gemini CLI ZIPs each
+hold one folder named after the archive (`kombai-antigravity-plugin-<version>`,
+`kombai-gemini-cli-plugin-<version>`, with `-team` for a team build) with the plugin's contents
+in it, so that folder goes straight to `agy plugin install` or `gemini extensions install`.
+Workflow artifacts do not publish marketplace listings or GitHub releases.
 
 ### Team builds
 
@@ -205,8 +242,10 @@ plugin, running the newest beta, `@kombai/cli@next` on npm (from vscode-assistan
 Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
 (`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity` or `gemini-cli`): it writes `kombai-<host>-plugin-<version>-team.zip`
 from a staged copy, so the source always names `@kombai/cli@latest`. A team ZIP installs like the
-public one and has the same plugin name, so a machine has one or the other. It needs no setup beyond
-the public one's.
+public one and has the same plugin name, so a machine has one or the other. In VS Code the two
+install side by side, because VS Code keys a local folder by its path, not by name: uninstall (or
+disable) the public kombai from `@agentPlugins` before installing the team folder, and remove the
+folder from `chat.pluginLocations` before going back. It needs no setup beyond the public one's.
 
 ## Repository and license
 

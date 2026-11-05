@@ -1,7 +1,7 @@
 {
   "schemaVersion": "kombai-vscode-plugin/v2",
   "name": "kombai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "cli": {
     "package": "@kombai/cli@latest",
     "view": false
