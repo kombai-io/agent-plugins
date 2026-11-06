@@ -1,15 +1,28 @@
 ---
 name: get-started-with-kombai
-description: Kombai's onboarding in Claude Code. Sets up Kombai's MCP server if this Claude Code doesn't have it yet (it shows Kombai's taste card in the Claude desktop app), checks the user is signed in, and shows prompts to try in a new session. Use right after the Kombai plugin is installed, and whenever the user asks to set Kombai up, get started with it, or see what to try. Not for design requests; those are work-with-kombai's.
+description: Kombai's onboarding in Claude Code. Sets up Kombai's MCP server if this Claude Code doesn't have it yet (it shows Kombai's design-brief cards in the Claude desktop app), checks the user is signed in, and shows prompts to try. Use right after the Kombai plugin is installed, and whenever the user asks to set Kombai up, get started with it, or see what to try. Not for design requests; those are work-with-kombai's.
 ---
 
 The user can run this as often as they like. Do each step without asking first, and do no design work here.
 
-The prompts to try, each the request a new session starts with (the same ones as Kombai's onboarding in Codex):
+Every path below ends with a short message and then the prompts to try. Put each prompt in a code block of its own,
+word for word, so the user can copy it (Claude shows a Copy button on a code block). Each starts with
+`/kombai:work-with-kombai`, which runs Kombai's skill from the first message of the session it is pasted into. They are
+the same three as Kombai's onboarding in Codex:
 
-- Design a standout UI for my website
-- Explore design directions on canvas
-- Redesign this section for my app
+```
+/kombai:work-with-kombai Design a standout UI for my website
+```
+
+```
+/kombai:work-with-kombai Explore design directions on canvas
+```
+
+```
+/kombai:work-with-kombai Redesign this section for my app
+```
+
+Show no link: Claude's chat opens none to a new session.
 
 First look among your tools for one whose name ends in `taste_card` (Claude may list Kombai's tools by name only).
 Then follow one of the two paths below.
@@ -18,23 +31,22 @@ Then follow one of the two paths below.
 
 1. Run `npx -y @kombai/cli@latest whoami`. If the user isn't signed in, sign them in as
    `npx -y @kombai/cli@latest skill sign-in` says.
-2. Tell the user in one line that Kombai is ready, then end with **Try one:** and the prompts as a list.
+2. End with "Kombai is ready. Ask for one of these here, or for anything else you want designed:" and the prompts.
 
 **If it isn't there**, set Kombai's server up:
 
 1. Run `npx -y @kombai/cli@latest mcp install claude-code`. It adds Kombai's MCP server to the user's own Claude Code
    config. It answers `added` or `replaced` (set up now) or `already` (set up before).
 2. If it answered `claudeDesktop: false`, this is Claude Code in a terminal or an IDE, which shows no Kombai card:
-   run step 3, tell the user in one line that Kombai is ready and that they can ask for a design right here, end
-   with **Try one:** and the prompts as a list, and stop.
-   If it answered `disabled: true` or `notStarting: true`, no session gets Kombai's card for now: run step 3, tell the
-   user in one line why, as the answer says, and that designs work without the card, end with **Try one:** and the
-   prompts as a list, and stop.
+   run step 3, end with "Kombai is ready. Ask for a design right here, for example:" and the prompts, and stop.
+   If it answered `disabled: true` or `notStarting: true`, no session gets Kombai's cards for now: run step 3, end
+   with "Kombai is ready, but its design-brief cards can't show in Claude yet: <why, in a few words, from the
+   answer>. Ask for a design right here, for example:" and the prompts, and stop.
 3. Run `npx -y @kombai/cli@latest whoami`. If the user isn't signed in, sign them in as
    `npx -y @kombai/cli@latest skill sign-in` says.
-4. Tell the user in one line that Kombai is ready and that a new session shows Kombai's taste card, which this one
-   can't: Claude Code gives a session only the MCP servers it had when it started. Then end with
-   **Try one in a new session:** and the prompts as a list.
+4. End with "Kombai is ready. Start a new session in this folder to use it: new sessions show Kombai's design-brief
+   cards, which this one can't load. Copy a prompt to begin:" and the prompts. (Claude Code gives a session only the
+   MCP servers it had when it started.)
 
 If the user asked for a design earlier in this session, carry on with it here instead of listing the prompts: the
 canvas opens in the browser either way.

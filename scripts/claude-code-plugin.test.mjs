@@ -152,15 +152,23 @@ test("the Claude Code plugin's get-started skill sets Kombai's server up before 
     // not starting.
     for (const answer of ['`claudeDesktop: false`', '`disabled: true`', '`notStarting: true`']) assert.ok(flat.includes(answer), answer);
     assert.ok(flat.includes(`npx -y ${RELEASE_CLI_PACKAGE} whoami`));
-    // The same three prompts as Codex's onboarding and the CLI's starters card, as text: Claude has no link that opens
-    // a new chat.
+    // The same three prompts as Codex's onboarding and the CLI's starters card, each in a code block of its own, which
+    // Claude draws with a Copy button: Claude's chat opens no link to a new session, so the user copies one there.
     for (const prompt of [
       'Design a standout UI for my website',
       'Explore design directions on canvas',
       'Redesign this section for my app',
     ])
-      assert.ok(text.includes(`- ${prompt}`), prompt);
-    assert.ok(flat.includes('a new session'));
+      // Each starts with the workflow skill's command, Claude's counterpart of Codex's @Kombai mention, so a pasted prompt
+      // runs Kombai's skill from its first message.
+      assert.ok(text.includes(`\n\`\`\`\n/kombai:work-with-kombai ${prompt}\n\`\`\`\n`), prompt);
+    // The user hears what to do in their words: where to start the new session, and why this one can't show the card.
+    assert.ok(flat.includes('Start a new session in this folder to use it'));
+    assert.ok(flat.includes("which this one can't load"));
+    assert.ok(flat.includes('Copy a prompt to begin'));
+    // Where the card can't show (a terminal, or a server off or not starting), the user designs right here.
+    assert.ok(flat.includes('Ask for a design right here'));
+    for (const link of ['claude://', 'Reply with', '](']) assert.ok(!text.includes(link), link);
     for (const codexOnly of ['codex://', 'canvas_app', 'starters_card', 'sandbox_permissions'])
       assert.ok(!text.includes(codexOnly), codexOnly);
   });
