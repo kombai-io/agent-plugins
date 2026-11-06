@@ -17,16 +17,16 @@ Kombai's plugin id in this Codex is `kombai@<marketplace>`, where `<marketplace>
 `plugins/cache/` in this skill's own path: `~/.codex/plugins/cache/openai-curated-remote/kombai/…` gives
 `kombai@openai-curated-remote`.
 
-The prompts to try, each a title and the request a new chat starts with (the same ones as the CLI's starters card):
+The prompts to try, each the request a new chat starts with (the same ones as the CLI's starters card):
 
-- Coffee landing page: design a landing page for a specialty coffee brand
-- Pricing page directions: explore three design directions for a SaaS pricing page
-- Fitness dashboard: design an analytics dashboard for a fitness app
+- Design a standout UI for my website
+- Explore design directions on canvas
+- Redesign this section for my app
 
 To show them as links, build each in exec as `codex://threads/new?prompt=` followed by
-`encodeURIComponent('[@Kombai](plugin://<id>) ' + request)` with Kombai's plugin id, then `(` and `)` as `%28` and
-`%29`. End your reply with **Try one in a new chat:** and the links as a list, each `[title](link)`. Each opens a new
-chat with Kombai mentioned and its request filled in.
+`encodeURIComponent('[@Kombai](plugin://<id>) ' + prompt)` with Kombai's plugin id, then `(` and `)` as `%28` and
+`%29`. End your reply with **Try one in a new chat:** and the links as a list, each `[@Kombai <prompt>](link)`, so a
+link reads as what it puts in the new chat's message box, unsent, with Kombai mentioned. Give a link no other title.
 
 First look for Kombai's tools in this chat: in exec, `ALL_TOOLS.filter((t) => t.name.startsWith('mcp__kombai'))`.
 Then follow one of the two paths below.

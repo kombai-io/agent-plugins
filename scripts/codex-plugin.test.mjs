@@ -325,14 +325,28 @@ test("the Codex plugin's setup runs an onboarding skill that adds Kombai's view 
     assert.ok(flat.includes('the folder after `plugins/cache/` in this skill\'s own path'));
     assert.ok(!setup.includes('kombai@kombai') && !setup.includes('kombai%40kombai'));
     assert.ok(flat.includes('`codex://threads/new?prompt=`'));
-    assert.ok(flat.includes("`encodeURIComponent('[@Kombai](plugin://<id>) ' + request)`"));
+    assert.ok(flat.includes("`encodeURIComponent('[@Kombai](plugin://<id>) ' + prompt)`"));
+    // The three prompts, the same as the CLI's starters card, each link's text what it pastes: no title of its own.
+    for (const prompt of [
+      'Design a standout UI for my website',
+      'Explore design directions on canvas',
+      'Redesign this section for my app',
+    ]) {
+      assert.ok(setup.includes(`\n- ${prompt}\n`), prompt);
+    }
+    assert.ok(flat.includes('each `[@Kombai <prompt>](link)`'));
+    assert.ok(!flat.includes('[title](link)'));
     // No starter depends on a project: a new-chat link can carry only its prompt.
     assert.ok(!/this project/i.test(setup));
     const agent = fs.readFileSync(path.join(pluginRoot, 'skills/get-started-with-kombai/agents/openai.yaml'), 'utf8');
     assert.match(agent, /display_name: "Get started with Kombai"/);
     // Codex's Try now, on the toast after an install, starts a chat with the plugin's first default prompt after
     // Kombai's mention: that prompt asks for the onboarding, which picks it up by its description.
-    assert.equal(manifest.interface.defaultPrompt[0], 'Get started and show me what to try');
+    assert.deepEqual(manifest.interface.defaultPrompt, [
+      'Get started with Kombai and tell me what to try',
+      'Explore design directions on canvas',
+      'Redesign this section for my app',
+    ]);
     assert.match(setup, /^description: .*get started with it, or see what to try/m);
     const archive = packCodexPlugin(path.join(root, 'out'), root);
     const listing = spawnSync('unzip', ['-Z1', archive], { encoding: 'utf8' });
