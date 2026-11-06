@@ -5,7 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { PINNABLE, releasePinned, unpinnedReferences } from './pin-release.mjs';
+import { npmRegistryWith, PINNABLE, releasePinned, unpinnedReferences } from './pin-release.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -43,9 +43,9 @@ function fakeNpm({
   };
 }
 
-/** Every .md and .json file in an archive, as one text. */
+/** Every file in an archive but its images, as one text. */
 function archiveText(archive) {
-  const result = spawnSync('unzip', ['-p', archive, '*.md', '*.json'], {
+  const result = spawnSync('unzip', ['-p', archive, '-x', '*.png'], {
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   });
@@ -59,24 +59,45 @@ function archiveFile(archive, file) {
   return result.stdout;
 }
 
-test('unpinnedReferences finds every CLI package that names no exact version', () => {
+test('unpinnedReferences finds every CLI package that is not exactly the pinned one, in any text file', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-pin-refs-'));
   try {
     fs.writeFileSync(
       path.join(dir, 'SKILL.md'),
       'Run `npx -y @kombai/cli@latest skill`, `npx -y @kombai/cli@beta x`, `npx -y @kombai/cli skill`, ' +
-        '`npx -y @kombai-io/cli@next mcp` and `npx -y @kombai/cli@0.1.4 skill`.',
+        '`npx -y @kombai-io/cli@next mcp`, `npx -y @kombai/cli@0.2.0-beta.1 x`, `npx -y @kombai/cli@0.1.3 x`, ' +
+        '`npx -y @kombai-io/cli@0.1.4 x` and `npx -y @kombai/cli@0.1.4 skill`; see @kombai/cli@0.1.4.',
     );
     fs.writeFileSync(path.join(dir, 'kombai.package.json'), JSON.stringify({ cli: { package: '@kombai/cli@0.1.4' } }));
-    const found = unpinnedReferences(dir).map((ref) => ref.match);
-    assert.deepEqual(found, ['@kombai/cli@latest', '@kombai/cli@beta', '@kombai/cli', '@kombai-io/cli@next']);
+    // A host's own metadata (Codex's agents/openai.yaml) is text too; an image is not read.
+    fs.writeFileSync(path.join(dir, 'openai.yaml'), 'default_prompt: "Run npx -y @kombai/cli@latest skill"\n');
+    fs.writeFileSync(path.join(dir, 'logo.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x40, 0x6b]));
+    const found = unpinnedReferences(dir, '0.1.4').map((ref) => `${path.basename(ref.file)}: ${ref.match}`);
+    // In file order, by name.
+    assert.deepEqual(found, [
+      'openai.yaml: @kombai/cli@latest',
+      'SKILL.md: @kombai/cli@latest',
+      'SKILL.md: @kombai/cli@beta',
+      'SKILL.md: @kombai/cli',
+      'SKILL.md: @kombai-io/cli@next',
+      'SKILL.md: @kombai/cli@0.2.0-beta.1',
+      'SKILL.md: @kombai/cli@0.1.3',
+      'SKILL.md: @kombai-io/cli@0.1.4',
+    ]);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
 
+/** The script's folders in the system temp folder, so a test can tell it left none. */
+const pinTemps = () => fs.readdirSync(os.tmpdir()).filter((name) => /^kombai-pin-(stage|pack)-/.test(name));
+
 test("pins npm's latest CLI into a copy, packs each directory plugin, and leaves the source alone", () => {
   fixture((root, temp) => {
+    const before = pinTemps();
+    // A host's own text file names the CLI too: it is pinned like the skills.
+    const yaml = path.join(root, 'plugins/codex/skills/get-started-with-kombai/agents/openai.yaml');
+    fs.appendFileSync(yaml, '# runs npx -y @kombai/cli@latest skill\n');
     const npm = fakeNpm();
     const out = path.join(temp, 'out');
     const result = releasePinned({ root, outputDir: out, npm });
@@ -92,6 +113,10 @@ test("pins npm's latest CLI into a copy, packs each directory plugin, and leaves
       const text = archiveText(archive);
       // Nothing in the archive runs a floating tag: reviewers see one exact CLI.
       assert.doesNotMatch(text, /@kombai(-io)?\/cli(?!@0\.1\.4\b)/, host);
+      if (host === 'codex') {
+        const shipped = archiveFile(archive, 'plugins/codex/skills/get-started-with-kombai/agents/openai.yaml');
+        assert.ok(shipped.includes('npx -y @kombai/cli@0.1.4 skill'));
+      }
       assert.ok(text.includes('npx -y @kombai/cli@0.1.4 skill'), host);
       assert.ok(text.includes(`npx -y @kombai/cli@0.1.4 mcp install ${host}`), host);
       const contract = JSON.parse(archiveFile(archive, `plugins/${host}/kombai.package.json`));
@@ -103,8 +128,57 @@ test("pins npm's latest CLI into a copy, packs each directory plugin, and leaves
       assert.ok(skill.includes('npx -y @kombai/cli@latest skill'), host);
     }
     assert.deepEqual(npm.asked, ['0.1.4']);
-    assert.ok(!fs.readdirSync(temp).some((name) => name.startsWith('kombai-pin-stage')), 'no stage left in the fixture');
+    assert.deepEqual(pinTemps(), before, 'no staged copy or pack folder left behind');
   });
+});
+
+test('a pack that fails leaves no ZIP from the run and no temp folder', () => {
+  fixture((root, temp) => {
+    const before = pinTemps();
+    const out = path.join(temp, 'out');
+    // Codex packs first; the Claude Code plugin then fails its own validation (no MCP config may ship).
+    fs.writeFileSync(path.join(root, 'plugins/claude-code/mcp.json'), '{}');
+    assert.throws(() => releasePinned({ root, outputDir: out, npm: fakeNpm() }), /mcp\.json/);
+    assert.ok(!fs.existsSync(out) || fs.readdirSync(out).length === 0, 'no Codex ZIP beside an older run');
+    assert.deepEqual(pinTemps(), before);
+    // Staging that fails (a plugin that names no release tag) cleans up too.
+    const contract = path.join(root, 'plugins/codex/kombai.package.json');
+    fs.writeFileSync(contract, fs.readFileSync(contract, 'utf8').replace('@kombai/cli@latest', '@kombai/cli@beta'));
+    fs.rmSync(path.join(root, 'plugins/claude-code/mcp.json'));
+    assert.throws(() => releasePinned({ root, outputDir: out, npm: fakeNpm() }), /must name @kombai\/cli@latest/);
+    assert.deepEqual(pinTemps(), before);
+  });
+});
+
+test("reads the CLI's usage line however it brackets the clients", () => {
+  fixture((root, temp) => {
+    for (const help of ['Usage: kombai mcp install [codex|claude-code]', 'kombai mcp install <codex|claude-code>']) {
+      const result = releasePinned({ root, outputDir: path.join(temp, 'out'), npm: fakeNpm({ help }) });
+      assert.equal(result.archives.length, 2, help);
+    }
+  });
+});
+
+test('tells a network failure from a version npm does not have', () => {
+  const answers = (status, stdout, stderr) => () => ({ status, stdout, stderr });
+  // npm view: E404 is "not on npm"; anything else is npm failing, and says why.
+  assert.equal(npmRegistryWith(answers(0, '0.1.4\n', '')).versionExists('0.1.4'), true);
+  assert.equal(npmRegistryWith(answers(0, '', '')).versionExists('0.1.9'), false);
+  assert.equal(npmRegistryWith(answers(1, '', 'npm error code E404\n')).versionExists('0.1.9'), false);
+  assert.throws(
+    () => npmRegistryWith(answers(1, '', 'npm error code ENOTFOUND\nnpm error network')).versionExists('0.1.4'),
+    /npm view @kombai\/cli@0\.1\.4 failed: npm error code ENOTFOUND/,
+  );
+  assert.throws(() => npmRegistryWith(answers(1, '', 'npm error code EAI_AGAIN')).latestVersion(), /EAI_AGAIN/);
+  // npx: npm failing to fetch the CLI is no answer from the CLI; the CLI refusing the command is one.
+  assert.throws(
+    () => npmRegistryWith(answers(1, '', 'npm error code ENOTFOUND')).installHelp('0.1.4'),
+    /npx couldn't run @kombai\/cli@0\.1\.4: npm error code ENOTFOUND/,
+  );
+  assert.match(
+    npmRegistryWith(answers(1, '{"error":{"code":"CLI_UNKNOWN_COMMAND"}}', '')).installHelp('0.1.3'),
+    /CLI_UNKNOWN_COMMAND/,
+  );
 });
 
 test('takes the version it is given, and refuses a tag, a prerelease or one npm does not have', () => {

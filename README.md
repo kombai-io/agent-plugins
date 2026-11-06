@@ -285,20 +285,24 @@ Kombai CLI version. The source keeps naming `@kombai/cli@latest` (pinning it in 
 reverted); `pnpm run release:pinned` pins a copy (`scripts/pin-release.mjs`):
 
 1. It takes the CLI version given with `--cli 0.1.4`, else the one npm's `latest` names now, and refuses a tag, a
-   prerelease or a version npm doesn't have.
+   prerelease or a version npm doesn't have. A failing npm or npx (no network, say) is reported as itself, not as a
+   missing version.
 2. It checks that version's `mcp install` takes the client each plugin's get-started skill runs it for (`codex`,
    `claude-code`), so no ZIP pins a CLI older than its skills. It checks before it copies anything, so a refused
    version packs nothing.
-3. It copies the repository, puts `@kombai/cli@<version>` in place of `@kombai/cli@latest` in each plugin's .md and
-   .json files, packs each with the plugin's own `pack` (which validates it), and checks no archive names a tag.
-4. It writes `dist/pinned/kombai-<host>-plugin-<plugin version>-cli-<version>.zip` (`--out <dir>` for elsewhere) and
-   prints the version and the paths.
+3. It copies the repository (the working folder as it is, so run it on a clean checkout of `main`), puts
+   `@kombai/cli@<version>` in place of `@kombai/cli@latest` in every text file of each plugin, packs each with the
+   plugin's own `pack` (which validates it), and checks that every Kombai CLI the archive names is exactly
+   `@kombai/cli@<version>`: no tag, no other version, no internal package.
+4. Only when every plugin packed does it write `dist/pinned/kombai-<host>-plugin-<plugin version>-cli-<version>.zip`
+   (`--out <dir>` for elsewhere) and print the version and the paths, so a failed run adds no ZIP beside older ones.
 
 By default it packs the Codex and Claude Code plugins; `--hosts all`, or a list such as `--hosts codex,cursor`, picks
 others. Run it after vscode-assistant's Publish CLI has put the CLI the plugins need on npm `latest`, and upload the
 ZIPs it prints. A directory takes a version once, so bump the plugin (`pnpm run version:<host> <next>`, committed)
-before submitting again with another CLI. After the first command, the CLI's own text tells the agent to run
-`npx -y @kombai/cli@latest <command>`; pinning that too is a CLI change in vscode-assistant.
+before submitting again with another CLI. Two things the pinned CLI still floats, both CLI changes in vscode-assistant:
+after the first command, its text tells the agent to run `npx -y @kombai/cli@latest <command>`; and the MCP server
+entry `mcp install codex|claude-code` writes into the user's own config runs `npx -y @kombai/cli@latest mcp`.
 
 ## Repository and license
 
