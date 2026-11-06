@@ -168,6 +168,14 @@ test("the Claude Code plugin's get-started skill sets Kombai's server up before 
     assert.ok(flat.includes('Copy a prompt to begin'));
     // Where the card can't show (a terminal, or a server off or not starting), the user designs right here.
     assert.ok(flat.includes('Ask for a design right here'));
+    // A server turned off is so for this folder only (`/mcp disable` is per project), and one not starting may start in
+    // a new session once its first download is done: the user hears that, as the CLI's answer says.
+    assert.ok(flat.includes('turned off in this folder') && flat.includes('`/mcp enable kombai`'));
+    assert.ok(flat.includes('a new session in a minute or two may get them'));
+    // An error still ends the path: one retry where the CLI's next says so, else the sign-in check and the prompts.
+    assert.ok(flat.includes('run it once more'));
+    assert.ok(flat.includes('end as the `claudeDesktop: false` path does'));
+    assert.ok(flat.includes('`CLI_NODE_TOO_OLD`'));
     for (const link of ['claude://', 'Reply with', '](']) assert.ok(!text.includes(link), link);
     for (const codexOnly of ['codex://', 'canvas_app', 'starters_card', 'sandbox_permissions'])
       assert.ok(!text.includes(codexOnly), codexOnly);

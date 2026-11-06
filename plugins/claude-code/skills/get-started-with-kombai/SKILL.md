@@ -39,9 +39,12 @@ Then follow one of the two paths below.
    config. It answers `added` or `replaced` (set up now) or `already` (set up before).
 2. If it answered `claudeDesktop: false`, this is Claude Code in a terminal or an IDE, which shows no Kombai card:
    run step 3, end with "Kombai is ready. Ask for a design right here, for example:" and the prompts, and stop.
-   If it answered `disabled: true` or `notStarting: true`, no session gets Kombai's cards for now: run step 3, end
-   with "Kombai is ready, but its design-brief cards can't show in Claude yet: <why, in a few words, from the
-   answer>. Ask for a design right here, for example:" and the prompts, and stop.
+   If it answered `disabled: true`, Kombai's server is turned off in this folder (`/mcp disable`): run step 3, end
+   with "Kombai is ready, but its design-brief cards are turned off in this folder; `/mcp enable kombai` turns them
+   back on. Ask for a design right here, for example:" and the prompts, and stop.
+   If it answered `notStarting: true`, Claude couldn't start Kombai's server: run step 3, end with "Kombai is ready,
+   but Claude couldn't start its design-brief cards: <why, in a few words, from the answer>; a new session in a
+   minute or two may get them. Ask for a design right here, for example:" and the prompts, and stop.
 3. Run `npx -y @kombai/cli@latest whoami`. If the user isn't signed in, sign them in as
    `npx -y @kombai/cli@latest skill sign-in` says.
 4. End with "Kombai is ready. Start a new session in this folder to use it: new sessions show Kombai's design-brief
@@ -56,8 +59,13 @@ If a command fails before it prints anything:
 - **`npx` or `node` not found.** Kombai needs Node.js 20 or later. Tell the user, give them the steps for their OS
   (macOS: `brew install node`, or the LTS installer from https://nodejs.org; Windows: `winget install
   OpenJS.NodeJS.LTS`; Linux: nvm, then `nvm install --lts`), and wait; do not install Node yourself.
+- **`CLI_NODE_TOO_OLD`.** The same steps upgrade Node; with nvm, `nvm install --lts` then `nvm alias default lts/*`.
+  If the error comes back after an upgrade, an older `node` is first on PATH: show the user `which -a node`
+  (`where node` on Windows).
 - **Windows PowerShell says running scripts is disabled.** Run `npx.cmd` in place of `npx`.
 - **The network is blocked** (a sandboxed shell). Ask for network access the way your client does; Node is not
   missing.
 
-If `mcp install claude-code` answers an error, tell the user what it says in one line.
+If `mcp install claude-code` answers any other error: when its `next` is the same command (Claude Code was writing
+its config), run it once more. Otherwise tell the user in one line what it says, run step 3, and end as the
+`claudeDesktop: false` path does: designs work without the card.

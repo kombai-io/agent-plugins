@@ -111,10 +111,12 @@ while the work carries on in this one. So that the user's first design chat has 
 Code plugin has the same onboarding skill as Codex, `get-started-with-kombai`, which runs that install
 before any design chat. Claude Code has no manifest key that runs a skill after an install, so the
 user runs it (`/kombai:get-started-with-kombai`, or asking Claude to get started with Kombai), as the
-plugin's README says; it ends with the same three prompts as Codex's, as text, since Claude has no
-link that opens a new session. The CLI answers `claudeDesktop: false` in a terminal, which shows no
-card; once the server is in the user's config, terminal sessions start it too and get no tools from it.
-`mcp uninstall claude-code` takes it out; uninstalling the plugin leaves it in place. The Codex plugin has it off too: OpenAI's plugin directory drops a plugin's local MCP config, so the Codex
+plugin's README says; it ends with the same three prompts as Codex's, each in a code block (Claude
+shows a Copy button) that starts with `/kombai:work-with-kombai`, since Claude's chat opens no link
+to a new session. The CLI answers `claudeDesktop: false` in a terminal, which shows no card; once the
+server is in the user's config, terminal sessions start it too and get no tools from it, as they did
+with 0.4.x's `.mcp.json`. `mcp uninstall claude-code` takes it out; uninstalling the plugin leaves it
+in place. OpenAI's plugin directory drops a plugin's local MCP config, so the Codex
 plugin ships skills only (with `requires_local_executor` set), and the first time its skill finds no
 `canvas_app` it runs `npx -y <cli.package> mcp install codex` without asking, which writes the
 same server into the user's `config.toml`. A running Codex task never picks up a new MCP server, so
