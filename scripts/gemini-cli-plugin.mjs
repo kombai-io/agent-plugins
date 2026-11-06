@@ -61,7 +61,7 @@ function compareVersion(left, right) {
 }
 
 /** Check one Gemini CLI extension folder: the repository's `plugins/gemini-cli`, or an unpacked archive. */
-export function checkGeminiCliPluginDir(pluginRoot) {
+export function checkGeminiCliPluginDir(pluginRoot, { team = false } = {}) {
   const manifest = JSON.parse(readPluginFile(pluginRoot, 'gemini-extension.json', 'Gemini CLI extension'));
   const contract = JSON.parse(readPluginFile(pluginRoot, 'kombai.package.json', 'Gemini CLI extension'));
 
@@ -80,7 +80,7 @@ export function checkGeminiCliPluginDir(pluginRoot) {
   assert(manifest.version === contract.version, 'Gemini CLI manifest and package contract versions must match.');
   assert(contract.schemaVersion === 'kombai-gemini-cli-plugin/v2', 'Unexpected Gemini CLI package contract schema.');
   checkPluginFiles(pluginRoot, PLUGIN_FILES, 'Gemini CLI extension');
-  checkCliContract(pluginRoot, contract, 'Gemini CLI');
+  checkCliContract(pluginRoot, contract, 'Gemini CLI', { team });
   checkSkills(pluginRoot, 'Gemini CLI');
   for (const name of [WORKFLOW_SKILL, FAQ_SKILL]) {
     const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');
@@ -100,9 +100,9 @@ export function checkGeminiCliPluginDir(pluginRoot) {
   return manifest.version;
 }
 
-export function validateGeminiCliPlugin(root = workspaceRoot) {
+export function validateGeminiCliPlugin(root = workspaceRoot, { team = false } = {}) {
   const pluginRoot = path.join(root, PLUGIN_DIR);
-  const version = checkGeminiCliPluginDir(pluginRoot);
+  const version = checkGeminiCliPluginDir(pluginRoot, { team });
   assert(
     fs.readFileSync(path.join(pluginRoot, 'LICENSE'), 'utf8') === fs.readFileSync(path.join(root, 'LICENSE'), 'utf8'),
     'Plugin license must match the repository LICENSE.',
@@ -137,7 +137,7 @@ export function packGeminiCliPlugin(
   // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
   const from = team ? stageTeamBuild(root, STAGE_FILES, readJson(path.join(root, PLUGIN_DIR, 'kombai.package.json'))) : root;
   try {
-    if (team) validateGeminiCliPlugin(from);
+    if (team) validateGeminiCliPlugin(from, { team });
     fs.mkdirSync(outputDir, { recursive: true });
     const archive = path.join(outputDir, `kombai-gemini-cli-plugin-${version}${team ? '-team' : ''}.zip`);
     return zipPluginFolder(path.join(from, PLUGIN_DIR), archive);

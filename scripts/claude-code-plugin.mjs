@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   assertPackOutside,
   checkCliContract,
+  filesBesidePlugin,
   checkSkills,
   SETUP_SKILL,
   stageTeamBuild,
@@ -33,7 +34,7 @@ function compareVersion(left, right) {
   return 0;
 }
 
-export function validateClaudeCodePlugin(root = workspaceRoot) {
+export function validateClaudeCodePlugin(root = workspaceRoot, { team = false } = {}) {
   const pluginRoot = path.join(root, 'plugins/claude-code');
   const marketplace = readJson(path.join(root, '.claude-plugin/marketplace.json'));
   const manifest = readJson(path.join(pluginRoot, '.claude-plugin/plugin.json'));
@@ -68,7 +69,11 @@ export function validateClaudeCodePlugin(root = workspaceRoot) {
   // Anthropic's plugin directory refuses a plugin that ships a local (stdio) MCP server, so the plugin is skills-only:
   // the Kombai CLI writes its server into the user's own Claude Code config instead (`kombai mcp install claude-code`,
   // which the CLI's notes for the Claude desktop app run when Kombai's taste card is missing).
-  const view = checkCliContract(pluginRoot, contract, 'Claude');
+  const view = checkCliContract(pluginRoot, contract, 'Claude', {
+    team,
+    root,
+    shipped: filesBesidePlugin(PACKAGE_FILES),
+  });
   assert(!view, 'Claude must have the canvas view off: the plugin ships no MCP server (cli.view must be false).');
   assert(manifest.mcpServers === undefined, 'Claude manifest must not name mcpServers: the plugin ships no MCP server.');
   // A marketplace entry's fields reach the plugin it installs, so a server there would ship too.
@@ -117,7 +122,7 @@ export function packClaudeCodePlugin(
     ? stageTeamBuild(root, PACKAGE_FILES, readJson(path.join(root, 'plugins/claude-code/kombai.package.json')))
     : root;
   try {
-    if (team) validateClaudeCodePlugin(from);
+    if (team) validateClaudeCodePlugin(from, { team });
     fs.mkdirSync(outputDir, { recursive: true });
     const archive = path.join(outputDir, `kombai-claude-code-plugin-${version}${team ? '-team' : ''}.zip`);
     fs.rmSync(archive, { force: true });

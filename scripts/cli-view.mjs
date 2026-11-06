@@ -12,7 +12,37 @@ export const CLI_VIEW_SERVER = 'kombai';
 export const WORKFLOW_SKILL = 'work-with-kombai';
 export const FAQ_SKILL = 'about-kombai';
 const SKILL_TOPICS = { [WORKFLOW_SKILL]: '', [FAQ_SKILL]: ' faq' };
-const CLI_PACKAGE_RE = /^@kombai(-io)?\/cli@\S+$/;
+/** The CLI's npm package. */
+export const CLI_NAME = '@kombai/cli';
+/** A released CLI version: x.y.z, no tag, range or prerelease. What a plugin's `cli.package` pins. */
+export const RELEASE_VERSION_RE = /^\d+\.\d+\.\d+$/;
+/** Whether `cliPackage` pins a released CLI: `@kombai/cli@x.y.z`. */
+export function isReleaseCliPackage(cliPackage) {
+  return (
+    typeof cliPackage === 'string' &&
+    cliPackage.startsWith(`${CLI_NAME}@`) &&
+    RELEASE_VERSION_RE.test(cliPackage.slice(CLI_NAME.length + 1))
+  );
+}
+// Where a text names the Kombai CLI package (the internal `@kombai-io` one too), built from shared parts so the check
+// and set-cli-version's rewrite read the same name. Not a link to the package's npm page
+// (`npmjs.com/package/@kombai/cli`), which runs nothing; not another package whose name starts the same
+// (`@kombai/client`, `@kombai/cli-tools`); and not ANTIGRAVITY_VERSION_CLASS, the version class of Antigravity's
+// allow rule (`@kombai/cli@[a-z0-9.-]+`), which runs no CLI and matches every version. Any other spelling is read as
+// the CLI: a bare name or a range as `@kombai/cli`, which the check refuses.
+export const ANTIGRAVITY_VERSION_CLASS = '[a-z0-9.-]+';
+const NOT_NPM_PAGE = String.raw`(?<!npmjs\.com\/package\/)`;
+const NAME_END = String.raw`\/cli(?![\w-]|@${ANTIGRAVITY_VERSION_CLASS.replace(/[[\].+-]/g, '\\$&')}(?![\w.-]))`;
+const VERSION_OR_TAG = '@[A-Za-z0-9._+-]+';
+/** Every Kombai CLI package a text names, with whatever tag or version follows it, or none. */
+const CLI_REFERENCE_RE = new RegExp(`${NOT_NPM_PAGE}@kombai(?:-io)?${NAME_END}(?:${VERSION_OR_TAG})?`, 'g');
+/** A reference set-cli-version moves: the public package with a version or tag. */
+export const PINNABLE_REFERENCE_RE = new RegExp(`${NOT_NPM_PAGE}@kombai${NAME_END}${VERSION_OR_TAG}`, 'g');
+
+/** A reference without the full stop of a sentence that ends right after it. */
+export function withoutFullStop(reference) {
+  return reference.replace(/\.+$/, '');
+}
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -22,21 +52,86 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-/** The `.mcp.json` that registers the view, for a plugin whose skill runs `cliPackage` (`@kombai/cli@latest`). */
+/** The `.mcp.json` that registers the view, for a plugin whose skill runs `cliPackage` (`@kombai/cli@x.y.z`). */
 export function cliViewMcpConfig(cliPackage) {
   return { mcpServers: { [CLI_VIEW_SERVER]: { command: 'npx', args: ['-y', cliPackage, 'mcp'] } } };
 }
 
+/** A file's text, or null when it holds a NUL byte (an image, a font). */
+export function textOf(file) {
+  const bytes = fs.readFileSync(file);
+  return bytes.includes(0) ? null : bytes.toString('utf8');
+}
+
+/** The Kombai CLI packages `text` names, in order. */
+export function cliReferences(text) {
+  return [...text.matchAll(CLI_REFERENCE_RE)].map(([match]) => withoutFullStop(match));
+}
+
 /**
- * Check a plugin against the `cli` block of its kombai.package.json: its skills run that CLI, and its
- * `.mcp.json` registers the view exactly when `cli.view` is on. No other MCP or app configuration ships.
- * Returns whether the plugin registers the view.
+ * Every Kombai CLI package named in a text file under `dir` that is not exactly `cliPackage`: a tag (`@latest`,
+ * `@beta`), no version, another version or the internal package. In file order.
+ * @returns {{ file: string, match: string }[]}
  */
-export function checkCliContract(pluginRoot, contract, host) {
+export function strayCliReferences(dir, cliPackage) {
+  return filesUnder(dir).flatMap((file) => {
+    const text = textOf(file);
+    return text === null ? [] : cliReferences(text).filter((m) => m !== cliPackage).map((match) => ({ file, match }));
+  });
+}
+
+/**
+ * Fail when `stray` (strayCliReferences' answer, each file labelled relative to `base`) is not empty, with `rule`
+ * and each reference named once. A reference set-cli-version can move points there; any other it can't (a bare name, a range, the internal
+ * package), so it asks for an exact version instead.
+ */
+export function assertNoStrayCli(stray, base, cliPackage, rule) {
+  if (stray.length === 0) return;
+  const found = [...new Set(stray.map(({ file, match }) => `${path.relative(base, file).split(path.sep).join('/')}: ${match}`))];
+  const unmovable = [...new Set(stray.map(({ match }) => match))].filter(
+    (match) => match.replace(PINNABLE_REFERENCE_RE, '') !== '',
+  );
+  throw new Error(
+    `${rule} (${cliPackage}): ${found.join(', ')}. ` +
+      (unmovable.length === 0
+        ? 'Run pnpm run set-cli-version <x.y.z>.'
+        : `set-cli-version can't move ${unmovable.join(', ')}: name the CLI there as ${cliPackage}.`),
+  );
+}
+
+/**
+ * Check a plugin against the `cli` block of its kombai.package.json: it pins one released CLI (`@kombai/cli@x.y.z`,
+ * never a tag such as `latest`, which the plugin directories refuse), every file in it names that CLI and no other,
+ * and its `.mcp.json` registers the view exactly when `cli.view` is on. No other MCP or app configuration ships.
+ * `shipped` lists the other files or folders (relative to `root`) a pack zips with the plugin, its marketplace among
+ * them, held to the same CLI: filesBesidePlugin of the pack's own list, so nothing it zips goes unchecked.
+ * `team` checks a team build instead (stageTeamBuild), which runs TEAM_CLI_PACKAGE. Returns whether the plugin
+ * registers the view.
+ */
+export function checkCliContract(pluginRoot, contract, host, { team = false, root, shipped = [] } = {}) {
   const cli = contract.cli;
-  assert(
-    typeof cli?.package === 'string' && CLI_PACKAGE_RE.test(cli.package),
-    `${host} contract must name the Kombai CLI it runs (cli.package).`,
+  if (team) {
+    assert(cli?.package === TEAM_CLI_PACKAGE, `${host} team build must run ${TEAM_CLI_PACKAGE}, not ${cli?.package}.`);
+  } else {
+    assert(
+      isReleaseCliPackage(cli?.package),
+      `${host} contract must pin a released Kombai CLI, ${CLI_NAME}@x.y.z (cli.package), not ${cli?.package}: ` +
+        'run pnpm run set-cli-version <x.y.z>.',
+    );
+  }
+  assertNoStrayCli(
+    strayCliReferences(pluginRoot, cli.package),
+    pluginRoot,
+    cli.package,
+    `${host} plugin must name only the CLI its contract pins`,
+  );
+  // The other files a pack zips beside the plugin folder (its marketplace) ship in the same ZIP.
+  assert(shipped.length === 0 || root, `${host}: checkCliContract needs the root its shipped files are under.`);
+  assertNoStrayCli(
+    shipped.flatMap((file) => strayCliReferences(path.join(root, file), cli.package)),
+    root,
+    cli.package,
+    `${host} marketplace must name only the CLI the plugin pins`,
   );
   assert(typeof cli.view === 'boolean', `${host} contract must say whether it registers the canvas view (cli.view).`);
   for (const [name, topic] of Object.entries(SKILL_TOPICS)) {
@@ -110,16 +205,24 @@ export function checkSkills(pluginRoot, host, extra = []) {
 
 // The team build of a plugin, for colleagues trying a CLI beta before it is released: the same plugin, running the
 // newest beta from npm's `beta` tag (vscode-assistant's Publish CLI `beta` action, run from `preprod`), which
-// talks to preprod. `pack --team` zips a staged copy, so the source always names the release.
-export const RELEASE_CLI_PACKAGE = '@kombai/cli@latest';
-export const TEAM_CLI_PACKAGE = '@kombai/cli@beta';
+// talks to preprod. `pack --team` zips a staged copy, so the source always pins a released CLI. The one place a tag
+// is allowed: a team ZIP never goes to a plugin directory, and following the tag spares colleagues a reinstall for
+// every beta.
+export const TEAM_CLI_PACKAGE = `${CLI_NAME}@beta`;
 
-function filesUnder(dir) {
+/** The files under `target` in name order, `target` itself when it is a file, or none when it is missing. */
+export function filesUnder(target) {
+  if (!fs.existsSync(target)) return [];
+  if (!fs.statSync(target).isDirectory()) return [target];
   return fs
-    .readdirSync(dir, { withFileTypes: true })
-    .flatMap((entry) =>
-      entry.isDirectory() ? filesUnder(path.join(dir, entry.name)) : [path.join(dir, entry.name)],
-    );
+    .readdirSync(target, { withFileTypes: true })
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .flatMap((entry) => filesUnder(path.join(target, entry.name)));
+}
+
+/** The paths in a pack's list (relative to the repository) that are not the plugin folder: its marketplace, LICENSE. */
+export function filesBesidePlugin(packageFiles) {
+  return packageFiles.filter((file) => file !== 'plugins' && !file.startsWith('plugins/'));
 }
 
 /** Whether `file` exists and is a regular file. */
@@ -211,13 +314,15 @@ export function zipPluginFolder(dir, archive) {
 }
 
 /**
- * Copy `files` (paths under `root`) into a new directory as the team build, with TEAM_CLI_PACKAGE in place of
- * RELEASE_CLI_PACKAGE everywhere. The caller removes the returned directory.
+ * Copy `files` (paths under `root`) into a new directory as the team build, with TEAM_CLI_PACKAGE in place of the
+ * pinned release CLI (`contract.cli.package`) in every text file. The caller removes the returned directory and
+ * checks it with its validator's `team` option.
  */
 export function stageTeamBuild(root, files, contract) {
+  const release = contract.cli?.package;
   assert(
-    contract.cli?.package === RELEASE_CLI_PACKAGE,
-    `A team build starts from the release plugin (${RELEASE_CLI_PACKAGE}), not ${contract.cli?.package}.`,
+    isReleaseCliPackage(release),
+    `A team build starts from the release plugin (${CLI_NAME}@x.y.z), not ${release}.`,
   );
   const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-plugin-team-'));
   for (const file of files) {
@@ -226,10 +331,14 @@ export function stageTeamBuild(root, files, contract) {
       filter: (from) => path.basename(from) !== STRAY_FILE,
     });
   }
+  // Whole references only: `@kombai/cli@0.1.40` is not `@kombai/cli@0.1.4` followed by a 0.
   for (const file of filesUnder(stage)) {
-    if (!/\.(md|json)$/.test(file)) continue;
-    const text = fs.readFileSync(file, 'utf8');
-    if (text.includes(RELEASE_CLI_PACKAGE)) fs.writeFileSync(file, text.replaceAll(RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE));
+    const text = textOf(file);
+    const next = text?.replace(PINNABLE_REFERENCE_RE, (match) => {
+      const reference = withoutFullStop(match);
+      return reference === release ? TEAM_CLI_PACKAGE + match.slice(reference.length) : match;
+    });
+    if (next !== undefined && next !== text) fs.writeFileSync(file, next);
   }
   return stage;
 }

@@ -10,6 +10,8 @@ const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 // Plus `.mcp.json` while the contract has the canvas view on (cli-view.mjs).
 const PLUGIN_FILES = ['.codex-plugin', 'assets', 'skills', 'README.md', 'kombai.package.json', 'LICENSE'];
 const MARKETPLACE_FILE = '.agents/plugins/marketplace.json';
+// What the pack zips beside the plugin folder: marketplace add needs the catalog in the extracted archive.
+const SHIPPED_FILES = [MARKETPLACE_FILE, 'LICENSE'];
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -23,7 +25,7 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-export function validateCodexPlugin(root = workspaceRoot) {
+export function validateCodexPlugin(root = workspaceRoot, { team = false } = {}) {
   const pluginRoot = path.join(root, 'plugins/codex');
   const marketplace = readJson(path.join(root, MARKETPLACE_FILE));
   const manifest = readJson(path.join(pluginRoot, '.codex-plugin/plugin.json'));
@@ -59,7 +61,7 @@ export function validateCodexPlugin(root = workspaceRoot) {
     assert(typeof relative === 'string' && relative.startsWith('./assets/'), `Invalid ${field} path.`);
     requireFile(path.join(pluginRoot, relative));
   }
-  if (checkCliContract(pluginRoot, contract, 'Codex')) {
+  if (checkCliContract(pluginRoot, contract, 'Codex', { team, root, shipped: SHIPPED_FILES })) {
     assert(manifest.mcpServers === './.mcp.json', 'Codex manifest must point mcpServers at ./.mcp.json.');
   } else {
     assert(manifest.mcpServers === undefined, 'Codex manifest must not name mcpServers while the canvas view is off.');
@@ -136,11 +138,11 @@ export function packCodexPlugin(
   // Validation has checked that .mcp.json is there exactly when the canvas view is on.
   const pluginFiles = fs.existsSync(path.join(pluginRoot, '.mcp.json')) ? [...PLUGIN_FILES, '.mcp.json'] : PLUGIN_FILES;
   // marketplace add needs the catalog and its source path to exist in the extracted archive.
-  const files = [MARKETPLACE_FILE, 'LICENSE', ...pluginFiles.map((file) => `plugins/codex/${file}`)];
+  const files = [...SHIPPED_FILES, ...pluginFiles.map((file) => `plugins/codex/${file}`)];
   // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
   const from = team ? stageTeamBuild(root, files, readJson(path.join(pluginRoot, 'kombai.package.json'))) : root;
   try {
-    if (team) validateCodexPlugin(from);
+    if (team) validateCodexPlugin(from, { team });
     fs.mkdirSync(outputDir, { recursive: true });
     const archive = path.join(outputDir, `kombai-codex-plugin-${version}${team ? '-team' : ''}.zip`);
     fs.rmSync(archive, { force: true });

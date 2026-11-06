@@ -6,7 +6,11 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpVsCodeVersion, packVsCodePlugin, validateVsCodePlugin, VSCODE_UNSANDBOXED } from './vscode-plugin.mjs';
-import { FAQ_SKILL, RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { pinnedCliPackage } from './cli-version.mjs';
+
+/** The released CLI the source pins. */
+const RELEASE_CLI_PACKAGE = pinnedCliPackage();
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PLUGIN = 'plugins/vscode';
@@ -267,7 +271,7 @@ test('a VS Code team pack runs the CLI team build', () => {
         assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
         assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
       }
-      assert.equal(validateVsCodePlugin(extracted), version);
+      assert.equal(validateVsCodePlugin(extracted, { team: true }), version);
     } finally {
       fs.rmSync(extracted, { recursive: true, force: true });
     }

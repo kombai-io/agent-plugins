@@ -7,10 +7,10 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 and release tooling.
 
 Each plugin's `work-with-kombai` skill runs the Kombai CLI
-(`npx -y @kombai/cli@latest skill`), which prints the full instructions for designing on a hosted
+(`npx -y @kombai/cli@0.1.4 skill`), which prints the full instructions for designing on a hosted
 Kombai canvas. The CLI needs Node.js 20 or later.
 
-A second skill, `about-kombai`, runs `npx -y @kombai/cli@latest skill faq` and answers the user's
+A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.1.4 skill faq` and answers the user's
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
 live, sharing, updates and support.
 
@@ -233,9 +233,34 @@ The scripts require an increasing `major.minor.patch` version. Each plugin's
 plugin registers the canvas view (`cli.view`). Validation checks that the skill runs that CLI
 and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling checkout.
 
+### The CLI version
+
+OpenAI's and Anthropic's plugin directories refuse a plugin that runs a floating npm tag (the
+CLI's `latest`), so the source pins one released CLI: every plugin's `cli.package`
+is `@kombai/cli@0.1.4`, the same in all six, and every file that names the CLI (the skills under
+`plugins/` and `skills/`, the READMEs, `agents/openai.yaml`, the marketplaces) names that one.
+Describe a tag without the package name in front of it (the CLI's `latest` tag): the check reads
+any package name followed by a tag as one the plugins run, and set-cli-version would rewrite it. Move them all with
+one command:
+
+```sh
+pnpm run set-cli-version 0.1.5
+```
+
+It refuses a tag (`latest`, `beta`, …), a range or a prerelease, and a version npm doesn't have
+(`npm view`). It runs that version's `mcp install --help` and refuses it unless it takes every
+client a plugin's skill installs Kombai's server for (`codex`, `claude-code`), so no plugin pins
+a CLI older than its skills. Then it rewrites every CLI it finds in those files, and runs the
+checks below. Commit the result; it changes no plugin version.
+
+`pnpm run check` (and Validate Plugins) runs `node scripts/cli-version.mjs check`, which fails
+unless every plugin pins the same released CLI and `skills/` and `README.md` name it and no other.
+Each plugin's validator fails the same way on its own folder and on the files its pack zips
+beside it (its marketplace): a file that names a tag or another version than its `cli.package`.
+
 ## CI and packaging
 
-**Validate Plugins** runs the release-script tests and all plugin validators on pushes and
+**Validate Plugins** runs the release-script tests, the pinned-CLI check and all plugin validators on pushes and
 pull requests. **Build Plugins** is manually triggered and provides independent Codex,
 Claude Code, Cursor, VS Code, Antigravity and Gemini CLI build checkboxes. Select at least one. Each selected job
 runs its tests and validation before packaging and uploading its ZIP. No local command is required.
@@ -267,16 +292,39 @@ Workflow artifacts do not publish marketplace listings or GitHub releases.
 ### Team builds
 
 Colleagues trying a CLI beta before it is released use a team build of each plugin: the same
-plugin, running the newest beta, `@kombai/cli@beta` on npm (vscode-assistant's Publish CLI
+plugin, running the newest beta, npm's `beta` tag of the CLI (vscode-assistant's Publish CLI
 `beta` action, run from `preprod`), which talks to preprod unless `kombai config env` says
-otherwise. No plugin build runs the alphas from `dev` (`@kombai/cli@alpha`).
+otherwise. No plugin build runs the alphas from `dev` (npm's `alpha` tag).
 Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
 (`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity` or `gemini-cli`): it writes `kombai-<host>-plugin-<version>-team.zip`
-from a staged copy, so the source always names `@kombai/cli@latest`. A team ZIP installs like the
-public one and has the same plugin name, so a machine has one or the other. In VS Code the two
+from a staged copy in which the beta tag takes the place of the pinned version everywhere, so the
+source always pins a released CLI. The team build is the one place a tag is allowed: a team ZIP
+never goes to a plugin directory, and following the tag spares colleagues a reinstall for every
+beta. A team ZIP installs like the public one and has the same plugin name, so a machine has one
+or the other. In VS Code the two
 install side by side, because VS Code keys a local folder by its path, not by name: uninstall (or
 disable) the public kombai from `@agentPlugins` before installing the team folder, and remove the
 folder from `chat.pluginLocations` before going back. It needs no setup beyond the public one's.
+
+### Directory releases
+
+The Codex ZIP goes to OpenAI's plugin directory and the Claude Code ZIP to Anthropic's. A
+directory takes a plugin version once, and runs the CLI the ZIP pins:
+
+1. Pin the CLI the release needs, once it is on npm `latest`: `pnpm run set-cli-version <x.y.z>`.
+2. Bump each plugin you submit: `pnpm run version:codex <next>`, `pnpm run version:claude-code <next>`.
+3. Validate: `pnpm test` and `pnpm run check` (with Claude Code installed, also
+   `claude plugin validate ./plugins/claude-code --strict`).
+4. Commit and merge, then pack from that commit: run **Build Plugins** (Codex and Claude Code, no
+   team build), or `pnpm run pack:codex ./dist` and `pnpm run pack:claude-code ./dist` on a clean
+   checkout.
+5. Submit the Codex ZIP to OpenAI's portal and the Claude Code ZIP to Anthropic's directory.
+
+The plugins are ready for the directories only from a CLI release that names its own exact
+version after the first call: up to 0.1.4, the CLI's skill text has the agent run later commands
+with the CLI's `latest` tag, and `mcp install` writes that tag into the host's MCP config, whatever
+version the plugin pinned. vscode-assistant removes that tag; once a CLI release includes it, run
+`pnpm run set-cli-version` with that version and submit.
 
 ## Repository and license
 

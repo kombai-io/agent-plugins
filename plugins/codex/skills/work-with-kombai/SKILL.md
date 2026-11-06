@@ -11,10 +11,10 @@ Do not try the restricted command first. If this chat cannot approve the require
 explain the restriction and wait for the user to change its permissions; do not retry inside
 the sandbox.
 
-**First, before anything else, even `npx -y @kombai/cli@latest skill`:** in the Codex app, look for Kombai's
+**First, before anything else, even `npx -y @kombai/cli@0.1.4 skill`:** in the Codex app, look for Kombai's
 `canvas_app` tool. Codex lists no MCP tool up front, so search inside exec with
 `ALL_TOOLS.filter((t) => t.name.endsWith('canvas_app'))`. If it doesn't exist, Kombai's view isn't set up in Codex
-yet: set it up without asking, with `npx -y @kombai/cli@latest mcp install codex` (outside the sandbox, like every
+yet: set it up without asking, with `npx -y @kombai/cli@0.1.4 mcp install codex` (outside the sandbox, like every
 Kombai command), tell the user in one line, then follow its `next`. When it answers `notStarting: true` (Kombai's
 server isn't starting in Codex) or `codexApp: false` (this Codex isn't the app, so it shows no view), its `next` starts
 no new task: follow it, and carry on in this task as it says. Otherwise it moves the work to a new task: one offer,
@@ -28,7 +28,7 @@ Once `canvas_app` exists, it is the only way to show a canvas here: call it with
 the chat. No browser, no in-app browser, and no canvas link unless the user asks for one; show no link when the view
 isn't there either.
 
-Run `npx -y @kombai/cli@latest skill` and follow what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.1.4 skill` and follow what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 

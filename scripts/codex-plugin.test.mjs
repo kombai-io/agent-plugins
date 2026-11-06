@@ -8,10 +8,16 @@ import { fileURLToPath } from 'node:url';
 import { bumpCodexVersion, packCodexPlugin, validateCodexPlugin } from './codex-plugin.mjs';
 import {
   cliViewMcpConfig,
-  RELEASE_CLI_PACKAGE,
   stageTeamBuild,
   TEAM_CLI_PACKAGE,
 } from './cli-view.mjs';
+import { pinnedCliPackage } from './cli-version.mjs';
+
+/** The released CLI the source pins. */
+const RELEASE_CLI_PACKAGE = pinnedCliPackage();
+
+// The tag the source used to run, spelled in two parts so a repository grep for it finds nothing.
+const LATEST = `@kombai/cli@${'latest'}`;
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -214,9 +220,61 @@ test('validation holds the skill and the view to the CLI the contract names', ()
   fixture((root) => {
     const contractPath = path.join(root, 'plugins/codex/kombai.package.json');
     const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
-    contract.cli.package = '@kombai/cli@beta';
+    contract.cli.package = '@kombai/cli@9.9.9';
     fs.writeFileSync(contractPath, JSON.stringify(contract));
-    assert.throws(() => validateCodexPlugin(root), /work-with-kombai skill must run @kombai\/cli@beta skill\./);
+    assert.throws(() => validateCodexPlugin(root), /must name only the CLI its contract pins \(@kombai\/cli@9\.9\.9\): README\.md: @kombai\/cli@\d/);
+  });
+});
+
+test('validation refuses a contract that runs a CLI tag or prerelease, not a released version', () => {
+  for (const cliPackage of [LATEST, '@kombai/cli@beta', '@kombai/cli@0.1.4-beta.2', '@kombai/cli', '@kombai-io/cli@1.0.0']) {
+    fixture((root) => {
+      const contractPath = path.join(root, 'plugins/codex/kombai.package.json');
+      const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
+      contract.cli.package = cliPackage;
+      fs.writeFileSync(contractPath, JSON.stringify(contract));
+      assert.throws(() => validateCodexPlugin(root), /must pin a released Kombai CLI, @kombai\/cli@x\.y\.z/, cliPackage);
+    });
+  }
+});
+
+test('validation refuses any file that names a CLI tag or another version than the contract pins', () => {
+  for (const [file, stray] of [
+    ['skills/about-kombai/SKILL.md', LATEST],
+    ['README.md', '@kombai/cli@beta'],
+    ['skills/work-with-kombai/agents/openai.yaml', '@kombai/cli@alpha'],
+    ['skills/get-started-with-kombai/SKILL.md', '@kombai/cli@0.0.1'],
+  ]) {
+    fixture((root) => {
+      const target = path.join(root, 'plugins/codex', file);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      const text = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : '';
+      fs.writeFileSync(target, `${text}\nAlso run \`npx -y ${stray} whoami\`.\n`);
+      assert.throws(
+        () => validateCodexPlugin(root),
+        new RegExp(`must name only the CLI its contract pins .*${file.replaceAll('.', '\\.')}: ${stray.replaceAll('.', '\\.')}`),
+        file,
+      );
+    });
+  }
+});
+
+test('a team build is validated as one: the beta tag and nothing else', () => {
+  fixture((root) => {
+    // The source is no team build.
+    assert.throws(() => validateCodexPlugin(root, { team: true }), /team build must run @kombai\/cli@beta/);
+    const archive = packCodexPlugin(path.join(root, 'out'), root, { team: true });
+    const extracted = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-team-unpacked-'));
+    try {
+      assert.equal(spawnSync('unzip', ['-q', archive, '-d', extracted]).status, 0);
+      // A team ZIP is no release: it runs a tag.
+      assert.throws(() => validateCodexPlugin(extracted), /must pin a released Kombai CLI/);
+      const skill = path.join(extracted, 'plugins/codex/skills/about-kombai/SKILL.md');
+      fs.appendFileSync(skill, `\n${RELEASE_CLI_PACKAGE}\n`);
+      assert.throws(() => validateCodexPlugin(extracted, { team: true }), /must name only the CLI its contract pins/);
+    } finally {
+      fs.rmSync(extracted, { recursive: true, force: true });
+    }
   });
 });
 
@@ -289,7 +347,7 @@ test('a team pack runs the CLI beta from npm beta, and the source stays on the r
           .includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install codex`),
       );
       // The extracted team marketplace is a valid plugin of its own.
-      assert.equal(validateCodexPlugin(extracted), version);
+      assert.equal(validateCodexPlugin(extracted, { team: true }), version);
     } finally {
       fs.rmSync(extracted, { recursive: true, force: true });
     }

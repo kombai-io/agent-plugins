@@ -6,7 +6,11 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpClaudeCodeVersion, packClaudeCodePlugin, validateClaudeCodePlugin } from './claude-code-plugin.mjs';
-import { cliViewMcpConfig, RELEASE_CLI_PACKAGE, SETUP_SKILL, TEAM_CLI_PACKAGE } from './cli-view.mjs';
+import { cliViewMcpConfig, SETUP_SKILL, TEAM_CLI_PACKAGE } from './cli-view.mjs';
+import { pinnedCliPackage } from './cli-version.mjs';
+
+/** The released CLI the source pins. */
+const RELEASE_CLI_PACKAGE = pinnedCliPackage();
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -187,7 +191,7 @@ test('Claude validation requires the get-started skill, and that it sets the ser
     const skill = path.join(root, 'plugins/claude-code/skills', SETUP_SKILL, 'SKILL.md');
     const text = fs.readFileSync(skill, 'utf8');
     fs.writeFileSync(skill, text.replaceAll('mcp install claude-code', 'mcp install codex'));
-    assert.throws(() => validateClaudeCodePlugin(root), /must run @kombai\/cli@latest mcp install claude-code/);
+    assert.throws(() => validateClaudeCodePlugin(root), new RegExp(`must run ${RELEASE_CLI_PACKAGE.replaceAll('.', '\\.')} mcp install claude-code`));
     fs.rmSync(path.dirname(skill), { recursive: true });
     assert.throws(() => validateClaudeCodePlugin(root), new RegExp(SETUP_SKILL));
   });
@@ -224,7 +228,7 @@ test('a Claude Code team pack runs the CLI team build, and ships no MCP config e
           .readFileSync(path.join(plugin, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8')
           .includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install claude-code`),
       );
-      assert.equal(validateClaudeCodePlugin(extracted), version);
+      assert.equal(validateClaudeCodePlugin(extracted, { team: true }), version);
     } finally {
       fs.rmSync(extracted, { recursive: true, force: true });
     }

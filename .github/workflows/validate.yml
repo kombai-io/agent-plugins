@@ -20,6 +20,8 @@ jobs:
           package-manager-cache: false
       - name: Test release scripts
         run: node --test scripts/*.test.mjs
+      - name: Check the pinned Kombai CLI
+        run: node scripts/cli-version.mjs check
       - name: Validate Codex plugin
         run: node scripts/codex-plugin.mjs validate
       - name: Validate Claude Code plugin

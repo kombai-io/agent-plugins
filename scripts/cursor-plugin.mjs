@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { assertPackOutside, checkCliContract, checkSkills, stageTeamBuild, STRAY_FILE } from './cli-view.mjs';
+import { assertPackOutside, checkCliContract, checkSkills, filesBesidePlugin, stageTeamBuild, STRAY_FILE } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -26,7 +26,7 @@ function compareVersion(left, right) {
   return 0;
 }
 
-export function validateCursorPlugin(root = workspaceRoot) {
+export function validateCursorPlugin(root = workspaceRoot, { team = false } = {}) {
   const pluginRoot = path.join(root, 'plugins/cursor');
   const marketplace = readJson(path.join(root, '.cursor-plugin/marketplace.json'));
   const manifest = readJson(path.join(pluginRoot, '.cursor-plugin/plugin.json'));
@@ -60,7 +60,7 @@ export function validateCursorPlugin(root = workspaceRoot) {
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Cursor plugin file: ${file}`);
   }
-  checkCliContract(pluginRoot, contract, 'Cursor');
+  checkCliContract(pluginRoot, contract, 'Cursor', { team, root, shipped: filesBesidePlugin(PACKAGE_FILES) });
   checkSkills(pluginRoot, 'Cursor');
   return manifest.version;
 }
@@ -94,7 +94,7 @@ export function packCursorPlugin(
     ? stageTeamBuild(root, PACKAGE_FILES, readJson(path.join(root, 'plugins/cursor/kombai.package.json')))
     : root;
   try {
-    if (team) validateCursorPlugin(from);
+    if (team) validateCursorPlugin(from, { team });
     fs.mkdirSync(outputDir, { recursive: true });
     const archive = path.join(outputDir, `kombai-cursor-plugin-${version}${team ? '-team' : ''}.zip`);
     fs.rmSync(archive, { force: true });
