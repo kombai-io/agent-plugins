@@ -29,13 +29,13 @@ Then follow one of the two paths below.
 
 **If it is there**, Kombai's server is set up and this session has it:
 
-1. Run `npx -y @kombai/cli@0.1.4 whoami`. If the user isn't signed in, sign them in as
-   `npx -y @kombai/cli@0.1.4 skill sign-in` says.
+1. Run `npx -y @kombai/cli@0.1.5 whoami`. If the user isn't signed in, sign them in as
+   `npx -y @kombai/cli@0.1.5 skill sign-in` says.
 2. End with "Kombai is ready. Ask for one of these here, or for anything else you want designed:" and the prompts.
 
 **If it isn't there**, set Kombai's server up:
 
-1. Run `npx -y @kombai/cli@0.1.4 mcp install claude-code`. It adds Kombai's MCP server to the user's own Claude Code
+1. Run `npx -y @kombai/cli@0.1.5 mcp install claude-code`. It adds Kombai's MCP server to the user's own Claude Code
    config. It answers `added` or `replaced` (set up now) or `already` (set up before).
 2. If it answered `claudeDesktop: false`, this is Claude Code in a terminal or an IDE, which shows no Kombai card:
    run step 3, end with "Kombai is ready. Ask for a design right here, for example:" and the prompts, and stop.
@@ -45,8 +45,8 @@ Then follow one of the two paths below.
    If it answered `notStarting: true`, Claude couldn't start Kombai's server: run step 3, end with "Kombai is ready,
    but Claude couldn't start its design-brief cards: <why, in a few words, from the answer>; a new session in a
    minute or two may get them. Ask for a design right here, for example:" and the prompts, and stop.
-3. Run `npx -y @kombai/cli@0.1.4 whoami`. If the user isn't signed in, sign them in as
-   `npx -y @kombai/cli@0.1.4 skill sign-in` says.
+3. Run `npx -y @kombai/cli@0.1.5 whoami`. If the user isn't signed in, sign them in as
+   `npx -y @kombai/cli@0.1.5 skill sign-in` says.
 4. End with "Kombai is ready. Start a new session in this folder to use it: new sessions show Kombai's design-brief
    cards, which this one can't load. Copy a prompt to begin:" and the prompts. (Claude Code gives a session only the
    MCP servers it had when it started.)

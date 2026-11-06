@@ -11,7 +11,7 @@ Do not try the restricted command first. If this chat cannot approve the require
 explain the restriction and wait for the user to change its permissions; do not retry inside
 the sandbox.
 
-Run `npx -y @kombai/cli@0.1.4 skill faq` and answer from what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.1.5 skill faq` and answer from what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 
