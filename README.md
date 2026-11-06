@@ -298,7 +298,8 @@ reverted); `pnpm run release:pinned` pins a copy (`scripts/pin-release.mjs`):
    (`--out <dir>` for elsewhere) and print the version and the paths, so a failed run adds no ZIP beside older ones.
 
 By default it packs the Codex and Claude Code plugins; `--hosts all`, or a list such as `--hosts codex,cursor`, picks
-others. Run it after vscode-assistant's Publish CLI has put the CLI the plugins need on npm `latest`, and upload the
+others. `--channel beta` pins the CLI beta instead (the version npm's `beta` tag names, `x.y.z-beta.n`), to try the
+pinned plugins on preprod before a release; a beta ZIP is never submitted. Run it after vscode-assistant's Publish CLI has put the CLI the plugins need on npm `latest`, and upload the
 ZIPs it prints. A directory takes a version once, so bump the plugin (`pnpm run version:<host> <next>`, committed)
 before submitting again with another CLI. Two things the pinned CLI still floats, both CLI changes in vscode-assistant:
 after the first command, its text tells the agent to run `npx -y @kombai/cli@latest <command>`; and the MCP server

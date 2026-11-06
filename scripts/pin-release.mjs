@@ -2,7 +2,9 @@
 // no floating npm tag, so the ZIPs submitted to them must run one exact CLI version. The source keeps naming the
 // release tag (`@kombai/cli@latest`, RELEASE_CLI_PACKAGE); this script pins a copy, never the source:
 //
-//   1. the version: the one given (`--cli 0.1.4`), else the one npm's `latest` names now; a plain x.y.z release;
+//   1. the version: the one given (`--cli 0.1.4`), else the one npm's `latest` names now; a plain x.y.z release.
+//      `--channel beta` pins the beta instead (npm's `beta` tag, x.y.z-beta.n): a trial of the pinned plugins on the
+//      CLI beta, never a directory submission;
 //   2. checks it on npm: the version exists, and its `mcp install` takes the client each chosen plugin's get-started
 //      skill runs it for (Codex: `codex`, Claude Code: `claude-code`), so no ZIP pins a CLI older than its skills;
 //   3. copies the repository, puts `@kombai/cli@<version>` in place of `@kombai/cli@latest` in every text file of
@@ -11,7 +13,8 @@
 //      archive the same way; only when every plugin packed does it write them, as
 //      `kombai-<host>-plugin-<plugin version>-cli-<version>.zip`.
 //
-// Usage: node scripts/pin-release.mjs [--cli <x.y.z>] [--hosts codex,claude-code|all] [--out <dir>]
+// Usage: node scripts/pin-release.mjs [--channel latest|beta] [--cli <version>] [--hosts codex,claude-code|all]
+//        [--out <dir>]
 // Defaults: npm's latest CLI, the Codex and Claude Code plugins, and `dist/pinned` (which git ignores).
 
 import fs from 'node:fs';
@@ -29,8 +32,11 @@ import { packVsCodePlugin } from './vscode-plugin.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI_NAME = '@kombai/cli';
-/** A released CLI: no tag, no range, no prerelease. */
-const RELEASE_VERSION_RE = /^\d+\.\d+\.\d+$/;
+/** The versions each channel pins: a release (no tag, no range, no prerelease), or a beta of one. */
+const CHANNELS = {
+  latest: { versionRe: /^\d+\.\d+\.\d+$/, refusal: 'Pin a released CLI version, x.y.z' },
+  beta: { versionRe: /^\d+\.\d+\.\d+-beta\.\d+$/, refusal: 'A beta pin takes a beta version, x.y.z-beta.n' },
+};
 /** Every Kombai CLI package a text names, with whatever tag or version follows it. */
 const CLI_REFERENCE_RE = /@kombai(?:-io)?\/cli(?:@[A-Za-z0-9._+-]+)?/g;
 /** What the repository copy leaves out: git's own files, installs, earlier builds. */
@@ -106,14 +112,14 @@ function spawn(command, args) {
 const NPM_ERROR_RE = /npm (?:error|ERR!)/;
 
 /**
- * npm as this script asks it, through `run` (spawnSync's result shape): what `latest` is, whether a version exists, and
- * what `mcp install --help` prints. A failing npm says why rather than passing for "no such version".
+ * npm as this script asks it, through `run` (spawnSync's result shape): the version a dist-tag names, whether a version
+ * exists, and what `mcp install --help` prints. A failing npm says why rather than passing for "no such version".
  */
 export function npmRegistryWith(run) {
   return {
-    latestVersion() {
-      const result = run('npm', ['view', `${CLI_NAME}@latest`, 'version', '--prefer-online']);
-      assert(result.status === 0, `npm view ${CLI_NAME}@latest failed: ${result.stderr.trim()}`);
+    tagVersion(tag) {
+      const result = run('npm', ['view', `${CLI_NAME}@${tag}`, 'version', '--prefer-online']);
+      assert(result.status === 0, `npm view ${CLI_NAME}@${tag} failed: ${result.stderr.trim()}`);
       return result.stdout.trim();
     },
     versionExists(version) {
@@ -172,21 +178,24 @@ function assertArchivePinned(archive, version) {
 /**
  * Pin the Kombai CLI in `hosts`' plugins and pack each into `outputDir`. Checks the version on npm before it copies
  * anything, and writes no ZIP unless every plugin packed, so a failed run leaves the output folder as it was.
- * @param {{ root?: string, outputDir?: string, hosts?: string[], cliVersion?: string, npm?: typeof npmRegistry }} [options]
+ * @param {{ root?: string, outputDir?: string, hosts?: string[], channel?: 'latest' | 'beta', cliVersion?: string,
+ *   npm?: typeof npmRegistry }} [options]
  * @returns {{ cliVersion: string, archives: { host: string, archive: string }[] }}
  */
 export function releasePinned({
   root = workspaceRoot,
   outputDir = path.join(root, 'dist', 'pinned'),
   hosts = DIRECTORY_HOSTS,
+  channel = 'latest',
   cliVersion,
   npm = npmRegistry,
 } = {}) {
   for (const host of hosts) {
     assert(Object.hasOwn(PINNABLE, host), `No plugin "${host}": use ${Object.keys(PINNABLE).join(', ')}.`);
   }
-  const version = cliVersion ?? npm.latestVersion();
-  assert(RELEASE_VERSION_RE.test(version), `Pin a released CLI version, x.y.z, not "${version}".`);
+  assert(Object.hasOwn(CHANNELS, channel), `No channel "${channel}": use ${Object.keys(CHANNELS).join(' or ')}.`);
+  const version = cliVersion ?? npm.tagVersion(channel);
+  assert(CHANNELS[channel].versionRe.test(version), `${CHANNELS[channel].refusal}, not "${version}".`);
   assert(npm.versionExists(version), `${CLI_NAME}@${version} is not on npm.`);
   const needed = hosts.flatMap((host) => PINNABLE[host].clients.map((client) => ({ host, client })));
   if (needed.length > 0) {
@@ -229,8 +238,9 @@ export function releasePinned({
 
 /** `--name value` pairs from argv; refuses anything else. */
 function parseArgs(argv) {
-  const known = new Set(['--cli', '--hosts', '--out']);
-  const usage = 'Usage: pin-release.mjs [--cli <x.y.z>] [--hosts codex,claude-code|all] [--out <dir>]';
+  const known = new Set(['--channel', '--cli', '--hosts', '--out']);
+  const usage =
+    'Usage: pin-release.mjs [--channel latest|beta] [--cli <version>] [--hosts codex,claude-code|all] [--out <dir>]';
   const options = {};
   for (let i = 0; i < argv.length; i += 2) {
     const [name, value] = [argv[i], argv[i + 1]];
@@ -238,6 +248,7 @@ function parseArgs(argv) {
     options[name.slice(2)] = value;
   }
   return {
+    channel: options.channel,
     cliVersion: options.cli,
     hosts: options.hosts === 'all' ? Object.keys(PINNABLE) : options.hosts?.split(',').filter(Boolean),
     outputDir: options.out,
@@ -246,9 +257,10 @@ function parseArgs(argv) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const { cliVersion, hosts, outputDir } = parseArgs(process.argv.slice(2));
+    const { channel, cliVersion, hosts, outputDir } = parseArgs(process.argv.slice(2));
     const result = releasePinned({
       cliVersion,
+      ...(channel ? { channel } : {}),
       ...(hosts ? { hosts } : {}),
       ...(outputDir ? { outputDir } : {}),
     });

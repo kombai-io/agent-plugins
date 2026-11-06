@@ -25,16 +25,16 @@ function fixture(run) {
   }
 }
 
-/** npm as the script asks it: what `latest` is, whether a version exists, and what `mcp install --help` prints. */
+/** npm as the script asks it: what a dist-tag names, whether a version exists, and what `mcp install --help` prints. */
 function fakeNpm({
-  latest = '0.1.4',
-  published = ['0.1.3', '0.1.4'],
+  tags = { latest: '0.1.4', beta: '0.1.5-beta.1' },
+  published = ['0.1.3', '0.1.4', '0.1.5-beta.1'],
   help = 'kombai mcp install codex|claude-code',
 } = {}) {
   const asked = [];
   return {
     asked,
-    latestVersion: () => latest,
+    tagVersion: (tag) => tags[tag],
     versionExists: (version) => published.includes(version),
     installHelp: (version) => {
       asked.push(version);
@@ -150,6 +150,25 @@ test('a pack that fails leaves no ZIP from the run and no temp folder', () => {
   });
 });
 
+test('pins the beta for a trial run when asked, and only a beta version there', () => {
+  fixture((root, temp) => {
+    const out = path.join(temp, 'out');
+    const result = releasePinned({ root, outputDir: out, channel: 'beta', npm: fakeNpm() });
+    assert.equal(result.cliVersion, '0.1.5-beta.1');
+    for (const { host, archive } of result.archives) {
+      assert.match(path.basename(archive), new RegExp(`^kombai-${host}-plugin-\\d+\\.\\d+\\.\\d+-cli-0\\.1\\.5-beta\\.1\\.zip$`));
+      const text = archiveText(archive);
+      assert.ok(text.includes('npx -y @kombai/cli@0.1.5-beta.1 skill'), host);
+      assert.doesNotMatch(text, /@kombai\/cli@latest|@kombai\/cli@beta\b/, host);
+    }
+    assert.throws(
+      () => releasePinned({ root, outputDir: out, channel: 'beta', cliVersion: '0.1.4', npm: fakeNpm() }),
+      /A beta pin takes a beta version, x\.y\.z-beta\.n, not "0\.1\.4"/,
+    );
+    assert.throws(() => releasePinned({ root, outputDir: out, channel: 'alpha', npm: fakeNpm() }), /channel "alpha"/);
+  });
+});
+
 test("reads the CLI's usage line however it brackets the clients", () => {
   fixture((root, temp) => {
     for (const help of ['Usage: kombai mcp install [codex|claude-code]', 'kombai mcp install <codex|claude-code>']) {
@@ -169,7 +188,8 @@ test('tells a network failure from a version npm does not have', () => {
     () => npmRegistryWith(answers(1, '', 'npm error code ENOTFOUND\nnpm error network')).versionExists('0.1.4'),
     /npm view @kombai\/cli@0\.1\.4 failed: npm error code ENOTFOUND/,
   );
-  assert.throws(() => npmRegistryWith(answers(1, '', 'npm error code EAI_AGAIN')).latestVersion(), /EAI_AGAIN/);
+  assert.throws(() => npmRegistryWith(answers(1, '', 'npm error code EAI_AGAIN')).tagVersion('latest'), /EAI_AGAIN/);
+  assert.equal(npmRegistryWith(answers(0, '0.1.5-beta.1\n', '')).tagVersion('beta'), '0.1.5-beta.1');
   // npx: npm failing to fetch the CLI is no answer from the CLI; the CLI refusing the command is one.
   assert.throws(
     () => npmRegistryWith(answers(1, '', 'npm error code ENOTFOUND')).installHelp('0.1.4'),
