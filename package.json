@@ -13,6 +13,7 @@
     "version:claude-code": "node scripts/claude-code-plugin.mjs bump",
     "test:claude-code": "node --test scripts/claude-code-plugin.test.mjs",
     "test": "node --test scripts/*.test.mjs",
+    "release:pinned": "node scripts/pin-release.mjs",
     "check": "node scripts/codex-plugin.mjs validate && node scripts/claude-code-plugin.mjs validate && node scripts/cursor-plugin.mjs validate && node scripts/vscode-plugin.mjs validate && node scripts/antigravity-plugin.mjs validate && node scripts/gemini-cli-plugin.mjs validate",
     "check:cursor": "node scripts/cursor-plugin.mjs validate",
     "pack:cursor": "node scripts/cursor-plugin.mjs pack",

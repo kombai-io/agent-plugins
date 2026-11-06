@@ -278,6 +278,28 @@ install side by side, because VS Code keys a local folder by its path, not by na
 disable) the public kombai from `@agentPlugins` before installing the team folder, and remove the
 folder from `chat.pluginLocations` before going back. It needs no setup beyond the public one's.
 
+### Directory releases: the CLI pinned
+
+OpenAI's and Anthropic's plugin directories take no floating npm tag, so a ZIP submitted to them must run one exact
+Kombai CLI version. The source keeps naming `@kombai/cli@latest` (pinning it in the source is what #23 tried and #24
+reverted); `pnpm run release:pinned` pins a copy (`scripts/pin-release.mjs`):
+
+1. It takes the CLI version given with `--cli 0.1.4`, else the one npm's `latest` names now, and refuses a tag, a
+   prerelease or a version npm doesn't have.
+2. It checks that version's `mcp install` takes the client each plugin's get-started skill runs it for (`codex`,
+   `claude-code`), so no ZIP pins a CLI older than its skills. It checks before it copies anything, so a refused
+   version packs nothing.
+3. It copies the repository, puts `@kombai/cli@<version>` in place of `@kombai/cli@latest` in each plugin's .md and
+   .json files, packs each with the plugin's own `pack` (which validates it), and checks no archive names a tag.
+4. It writes `dist/pinned/kombai-<host>-plugin-<plugin version>-cli-<version>.zip` (`--out <dir>` for elsewhere) and
+   prints the version and the paths.
+
+By default it packs the Codex and Claude Code plugins; `--hosts all`, or a list such as `--hosts codex,cursor`, picks
+others. Run it after vscode-assistant's Publish CLI has put the CLI the plugins need on npm `latest`, and upload the
+ZIPs it prints. A directory takes a version once, so bump the plugin (`pnpm run version:<host> <next>`, committed)
+before submitting again with another CLI. After the first command, the CLI's own text tells the agent to run
+`npx -y @kombai/cli@latest <command>`; pinning that too is a CLI change in vscode-assistant.
+
 ## Repository and license
 
 Source repository: [kombai-io/agent-plugins](https://github.com/kombai-io/agent-plugins).
