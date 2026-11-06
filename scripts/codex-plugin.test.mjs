@@ -247,8 +247,11 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
     // Setting the view up is the skill's first instruction after the sandbox note, before even `kombai skill`.
     const afterSandbox = skill.stdout.split('\n\n').slice(2).join('\n\n');
     assert.ok(afterSandbox.startsWith("**First, before anything else, even `npx"), afterSandbox.slice(0, 120));
-    // The install's answer says how to move the work to a new task without the user asking twice.
-    assert.ok(skill.stdout.replace(/\s+/g, ' ').includes('then follow its `next` to move the work to a new task'));
+    // The install's answer says how to move the work to a new task without the user asking twice, and, from facts
+    // the CLI reads itself, when to start none: a server that isn't starting, or a Codex that isn't the app.
+    const flatSkill = skill.stdout.replace(/\s+/g, ' ');
+    assert.ok(flatSkill.includes('then follow its `next`. Usually it moves the work to a new task'));
+    assert.ok(flatSkill.includes('`notStarting: true`') && flatSkill.includes('`codexApp: false`'));
     // The new task's prompt starts with Kombai's mention, which needs the plugin's id in Codex.
     // It reads the plugin's id from its own install path, since one ZIP installs under different marketplaces.
     assert.ok(skill.stdout.replace(/\s+/g, ' ').includes("Kombai's plugin id in this Codex is `kombai@<marketplace>`"));
@@ -319,6 +322,11 @@ test("the Codex plugin's setup runs an onboarding skill that adds Kombai's view 
     // A turned-off entry is the CLI's own answer (`disabled: true`), not a guess about when this chat started.
     assert.ok(flat.includes('If it answered with `disabled: true`'));
     assert.ok(!flat.includes('this chat started after'));
+    // So is a server that isn't starting (the CLI reads it from the task's start), and a Codex that isn't the app,
+    // where a codex:// link would open the desktop app: no links in either.
+    assert.ok(flat.includes('If it answered `notStarting: true`'));
+    assert.ok(flat.includes('If it answered `codexApp: false`'));
+    assert.ok(flat.includes('as plain text, not links'));
     assert.ok(!flat.includes("what the install's `next` says"));
     // The id comes from the skill's own install path, so the links name the plugin the user has, however installed.
     assert.ok(flat.includes("Kombai's plugin id in this Codex is `kombai@<marketplace>`"));

@@ -45,6 +45,11 @@ Then follow one of the two paths below.
    the user's own Codex config. It answers `added` or `replaced` (set up now) or `already` (set up before).
 2. If it answered with `disabled: true`, Kombai's view is turned off in the user's Codex config (`enabled = false`),
    so no chat gets it: tell the user the canvas can't be shown until they turn it back on, show no links, and stop.
+   If it answered `notStarting: true`, Kombai's server isn't starting in Codex, so no chat gets the view either: tell
+   the user the canvas can't be shown and why that may be (the answer says), show no links, and stop.
+   If it answered `codexApp: false`, this is Codex in a terminal or an IDE, which shows no canvas view and can't open
+   a link to a new chat: run step 3, tell the user Kombai is ready and that they can ask for a design right here, list
+   the prompts as plain text, not links, and stop.
 3. Run `npx -y @kombai/cli@latest whoami`. If the user isn't signed in, sign them in as
    `npx -y @kombai/cli@latest skill sign-in` says.
 4. Tell the user in one line that Kombai is ready and that a new chat shows its canvas beside the chat. This chat
