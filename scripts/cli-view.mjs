@@ -75,8 +75,19 @@ export function skillGuidance(text) {
   return run > 0 ? text.slice(0, run) : '';
 }
 
-/** Check that a plugin ships exactly the workflow and FAQ skills, each named in its frontmatter and described. */
-export function checkSkills(pluginRoot, host) {
+/**
+ * The Codex plugin's onboarding skill (its manifest's `onboardingSkill`): Codex runs it when the user sets the plugin
+ * up after installing it, and from its Try now (the manifest's first `defaultPrompt` asks for it); the user can run it again. Where Kombai's view isn't set up it adds it (`kombai mcp
+ * install codex`) before the user's first design chat, which then has the view from its first message; where the
+ * chat has the view it shows the CLI's starters card. Codex only.
+ */
+export const CODEX_SETUP_SKILL = 'get-started-with-kombai';
+
+/**
+ * Check that a plugin ships exactly the workflow and FAQ skills, plus the host's own `extra` ones, each named in its
+ * frontmatter and described.
+ */
+export function checkSkills(pluginRoot, host, extra = []) {
   const skillRoot = path.join(pluginRoot, 'skills');
   const names = fs
     .readdirSync(skillRoot, { withFileTypes: true })
@@ -84,8 +95,8 @@ export function checkSkills(pluginRoot, host) {
     .map((entry) => entry.name)
     .sort();
   assert(
-    JSON.stringify(names) === JSON.stringify(Object.keys(SKILL_TOPICS).sort()),
-    `${host} plugin must contain the ${WORKFLOW_SKILL} and ${FAQ_SKILL} skills, and no other.`,
+    JSON.stringify(names) === JSON.stringify([...Object.keys(SKILL_TOPICS), ...extra].sort()),
+    `${host} plugin must contain the ${[WORKFLOW_SKILL, FAQ_SKILL, ...extra].join(', ')} skills, and no other.`,
   );
   for (const name of names) {
     const skill = fs.readFileSync(path.join(skillRoot, name, 'SKILL.md'), 'utf8');

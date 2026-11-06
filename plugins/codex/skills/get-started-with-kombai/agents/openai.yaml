@@ -1,0 +1,5 @@
+interface:
+  display_name: "Get started with Kombai"
+  short_description: "Set Kombai up in Codex and see prompts to try."
+policy:
+  allow_implicit_invocation: true

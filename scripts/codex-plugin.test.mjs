@@ -34,6 +34,24 @@ function fixture(run) {
   }
 }
 
+/**
+ * Turn the canvas view on in a fixture copy, as Codex plugin versions to 0.4.x shipped it: `cli.view`, the
+ * `.mcp.json` that registers the CLI view, and the manifest's `mcpServers`. From 0.5.0 the plugin is skills-only and
+ * its skill writes the server into the user's own config (`kombai mcp install codex`).
+ */
+function withViewOn(root) {
+  const pluginRoot = path.join(root, 'plugins/codex');
+  const contractPath = path.join(pluginRoot, 'kombai.package.json');
+  const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
+  contract.cli.view = true;
+  fs.writeFileSync(contractPath, JSON.stringify(contract));
+  fs.writeFileSync(path.join(pluginRoot, '.mcp.json'), JSON.stringify(cliViewMcpConfig(contract.cli.package)));
+  const manifestPath = path.join(pluginRoot, '.codex-plugin/plugin.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.mcpServers = './.mcp.json';
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+}
+
 /** Unzip a team archive and check each stub runs the CLI's newest beta from npm. */
 function checkTeamArchive(archive, pluginDir) {
   const extracted = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-team-unpacked-'));
@@ -159,6 +177,7 @@ test('validation stops packaging when versions disagree', () => {
 
 test('validation accepts only the Kombai CLI view as a bundled MCP server', () => {
   fixture((root) => {
+    withViewOn(root);
     const file = path.join(root, 'plugins/codex/.mcp.json');
     const config = JSON.parse(fs.readFileSync(file, 'utf8'));
     config.mcpServers.kombai = { command: '/Applications/Kombai.app/Contents/MacOS/Kombai', args: [] };
@@ -171,6 +190,7 @@ test('validation accepts only the Kombai CLI view as a bundled MCP server', () =
 
 test('with the canvas view off, the plugin registers no MCP server and packs none', () => {
   fixture((root) => {
+    withViewOn(root);
     const pluginRoot = path.join(root, 'plugins/codex');
     const contractPath = path.join(pluginRoot, 'kombai.package.json');
     const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
@@ -207,12 +227,50 @@ test('validation rejects an app MCP configuration', () => {
   });
 });
 
-test('the packed plugin carries the CLI view', () => {
+test('the packed Codex plugin carries no MCP config: its skill sets the view up', () => {
   fixture((root) => {
     const archive = packCodexPlugin(path.join(root, 'out'), root);
-    const packed = spawnSync('unzip', ['-p', archive, 'plugins/codex/.mcp.json'], { encoding: 'utf8' });
-    assert.equal(packed.status, 0, packed.stderr);
-    assert.deepEqual(Object.keys(JSON.parse(packed.stdout).mcpServers), ['kombai']);
+    const listing = spawnSync('unzip', ['-Z1', archive], { encoding: 'utf8' });
+    assert.equal(listing.status, 0, listing.stderr);
+    for (const file of ['.mcp.json', 'mcp.json', '.app.json'])
+      assert.ok(!listing.stdout.split('\n').includes(`plugins/codex/${file}`), file);
+    const skill = spawnSync('unzip', ['-p', archive, 'plugins/codex/skills/work-with-kombai/SKILL.md'], {
+      encoding: 'utf8',
+    });
+    assert.ok(skill.stdout.includes(`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex`));
+    // The skill sets the view up without a question (as listing 0.2.2 did) and tells the user in one line.
+    assert.ok(
+      skill.stdout
+        .replace(/\s+/g, ' ')
+        .includes(`set it up without asking, with \`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex\``),
+    );
+    // Setting the view up is the skill's first instruction after the sandbox note, before even `kombai skill`.
+    const afterSandbox = skill.stdout.split('\n\n').slice(2).join('\n\n');
+    assert.ok(afterSandbox.startsWith("**First, before anything else, even `npx"), afterSandbox.slice(0, 120));
+    // The install's answer says how to move the work to a new task without the user asking twice, and, from facts
+    // the CLI reads itself, when to start none: a server that isn't starting, or a Codex that isn't the app.
+    const flatSkill = skill.stdout.replace(/\s+/g, ' ');
+    assert.ok(flatSkill.includes('then follow its `next`.'));
+    assert.ok(flatSkill.includes('`notStarting: true`') && flatSkill.includes('`codexApp: false`'));
+    // The no-new-task answers come first, so "do no design work in this task" is only the hand-off's.
+    assert.ok(flatSkill.indexOf('`codexApp: false`') < flatSkill.indexOf('Otherwise it moves the work to a new task'));
+    assert.ok(flatSkill.includes('Then do no design work in this task: it can\'t show the canvas.'));
+    // The new task's prompt starts with Kombai's mention, which needs the plugin's id in Codex.
+    // It reads the plugin's id from its own install path, since one ZIP installs under different marketplaces.
+    assert.ok(skill.stdout.replace(/\s+/g, ' ').includes("Kombai's plugin id in this Codex is `kombai@<marketplace>`"));
+    assert.ok(!skill.stdout.includes('kombai@kombai'));
+    assert.ok(skill.stdout.replace(/\s+/g, ' ').includes('a link that opens it with the request filled in'));
+    assert.ok(skill.stdout.indexOf('mcp install codex') < skill.stdout.indexOf(`Run \`npx -y ${RELEASE_CLI_PACKAGE} skill\``));
+  });
+});
+
+test('the Codex manifest says the plugin needs local execution', () => {
+  fixture((root) => {
+    const manifestPath = path.join(root, 'plugins/codex/.codex-plugin/plugin.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    delete manifest.requires_local_executor;
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+    assert.throws(() => validateCodexPlugin(root), /requires_local_executor/);
   });
 });
 
@@ -223,9 +281,12 @@ test('a team pack runs the CLI beta from npm beta, and the source stays on the r
     assert.equal(path.basename(archive), `kombai-codex-plugin-${version}-team.zip`);
     const { extracted, plugin } = checkTeamArchive(archive, 'plugins/codex');
     try {
-      assert.deepEqual(
-        JSON.parse(fs.readFileSync(path.join(plugin, '.mcp.json'), 'utf8')),
-        cliViewMcpConfig(TEAM_CLI_PACKAGE),
+      // Skills-only: the team build ships no MCP config either; its skill runs the team CLI's mcp install.
+      assert.ok(!fs.existsSync(path.join(plugin, '.mcp.json')));
+      assert.ok(
+        fs
+          .readFileSync(path.join(plugin, 'skills/work-with-kombai/SKILL.md'), 'utf8')
+          .includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install codex`),
       );
       // The extracted team marketplace is a valid plugin of its own.
       assert.equal(validateCodexPlugin(extracted), version);
@@ -243,5 +304,92 @@ test('a team build starts only from the release plugin', () => {
       () => stageTeamBuild(root, [], { cli: { package: TEAM_CLI_PACKAGE } }),
       /starts from the release plugin/,
     );
+  });
+});
+
+test("the Codex plugin's setup runs an onboarding skill that adds Kombai's view right after install", () => {
+  fixture((root) => {
+    validateCodexPlugin(root);
+    const pluginRoot = path.join(root, 'plugins/codex');
+    const manifest = JSON.parse(fs.readFileSync(path.join(pluginRoot, '.codex-plugin/plugin.json'), 'utf8'));
+    assert.equal(manifest.onboardingSkill, './skills/get-started-with-kombai/SKILL.md');
+    const setup = fs.readFileSync(path.join(pluginRoot, 'skills/get-started-with-kombai/SKILL.md'), 'utf8');
+    assert.match(setup, /^---\nname: get-started-with-kombai\n/);
+    assert.ok(setup.includes(`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex`));
+    // The user can run it again. The branch is whether this chat has Kombai's view: then the starters card, or links
+    // where the chat's CLI has no card yet; else the setup, then links that each open a new chat with Kombai mentioned
+    // and a prompt filled in. A turned-off entry gets no links to another chat without the view.
+    const flat = setup.replace(/\s+/g, ' ');
+    assert.ok(flat.includes('**If `canvas_app` is there**'));
+    assert.ok(flat.includes('If `starters_card` is there too'));
+    // A turned-off entry is the CLI's own answer (`disabled: true`), not a guess about when this chat started.
+    assert.ok(flat.includes('If it answered with `disabled: true`'));
+    assert.ok(!flat.includes('this chat started after'));
+    // So is a server that isn't starting (the CLI reads it from the task's start), and a Codex that isn't the app,
+    // where a codex:// link would open the desktop app: no links in either.
+    assert.ok(flat.includes('If it answered `notStarting: true`'));
+    assert.ok(flat.includes('If it answered `codexApp: false`'));
+    assert.ok(flat.includes('as plain text, not links'));
+    assert.ok(!flat.includes("what the install's `next` says"));
+    // The id comes from the skill's own install path, so the links name the plugin the user has, however installed.
+    assert.ok(flat.includes("Kombai's plugin id in this Codex is `kombai@<marketplace>`"));
+    assert.ok(flat.includes('the folder after `plugins/cache/` in this skill\'s own path'));
+    assert.ok(!setup.includes('kombai@kombai') && !setup.includes('kombai%40kombai'));
+    assert.ok(flat.includes('`codex://threads/new?prompt=`'));
+    assert.ok(flat.includes("`encodeURIComponent('[@Kombai](plugin://<id>) ' + prompt)`"));
+    // The three prompts, the same as the CLI's starters card, each link's text what it pastes: no title of its own.
+    for (const prompt of [
+      'Design a standout UI for my website',
+      'Explore design directions on canvas',
+      'Redesign this section for my app',
+    ]) {
+      assert.ok(setup.includes(`\n- ${prompt}\n`), prompt);
+    }
+    assert.ok(flat.includes('each `[@Kombai <prompt>](link)`'));
+    assert.ok(!flat.includes('[title](link)'));
+    // No starter depends on a project: a new-chat link can carry only its prompt.
+    assert.ok(!/this project/i.test(setup));
+    const agent = fs.readFileSync(path.join(pluginRoot, 'skills/get-started-with-kombai/agents/openai.yaml'), 'utf8');
+    assert.match(agent, /display_name: "Get started with Kombai"/);
+    // Codex's Try now, on the toast after an install, starts a chat with the plugin's first default prompt after
+    // Kombai's mention: that prompt asks for the onboarding, which picks it up by its description.
+    assert.deepEqual(manifest.interface.defaultPrompt, [
+      'Get started with Kombai and tell me what to try',
+      'Explore design directions on canvas',
+      'Redesign this section for my app',
+    ]);
+    assert.match(setup, /^description: .*get started with it, or see what to try/m);
+    const archive = packCodexPlugin(path.join(root, 'out'), root);
+    const listing = spawnSync('unzip', ['-Z1', archive], { encoding: 'utf8' });
+    assert.ok(listing.stdout.split('\n').includes('plugins/codex/skills/get-started-with-kombai/SKILL.md'));
+  });
+});
+
+test('validation holds the onboarding skill to the manifest and to the CLI the contract names', () => {
+  fixture((root) => {
+    const manifestPath = path.join(root, 'plugins/codex/.codex-plugin/plugin.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    delete manifest.onboardingSkill;
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+    assert.throws(() => validateCodexPlugin(root), /onboardingSkill/);
+  });
+  fixture((root) => {
+    const setupPath = path.join(root, 'plugins/codex/skills/get-started-with-kombai/SKILL.md');
+    fs.writeFileSync(setupPath, fs.readFileSync(setupPath, 'utf8').replaceAll('mcp install codex', 'mcp'));
+    assert.throws(() => validateCodexPlugin(root), /get-started-with-kombai skill must run/);
+  });
+  fixture((root) => {
+    const setupPath = path.join(root, 'plugins/codex/skills/get-started-with-kombai/SKILL.md');
+    fs.writeFileSync(setupPath, fs.readFileSync(setupPath, 'utf8').replaceAll('`starters_card`', 'the card'));
+    assert.throws(() => validateCodexPlugin(root), /get-started-with-kombai skill must show starters_card/);
+  });
+});
+
+test("a team pack's onboarding skill installs with the team CLI", () => {
+  fixture((root) => {
+    const archive = packCodexPlugin(path.join(root, 'out'), root, { team: true });
+    const setup = spawnSync('unzip', ['-p', archive, 'plugins/codex/skills/get-started-with-kombai/SKILL.md'], { encoding: 'utf8' });
+    assert.ok(setup.stdout.includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install codex`));
+    assert.ok(!setup.stdout.includes(RELEASE_CLI_PACKAGE));
   });
 });

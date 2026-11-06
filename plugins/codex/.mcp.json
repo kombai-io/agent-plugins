@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "kombai": {
-      "command": "npx",
-      "args": ["-y", "@kombai/cli@latest", "mcp"]
-    }
-  }
-}

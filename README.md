@@ -38,7 +38,8 @@ validators check their host's guidance too:
 | Claude Code, Cursor | nothing beyond "ask for network access the way your client does" |
 
 The only MCP server a plugin registers is the CLI's canvas view (`kombai`), and only the plugins
-with `cli.view` on, Codex and Claude Code today, register it; see
+with `cli.view` on, Claude Code today, register it; the Codex plugin's skill adds it to the user's own
+Codex config instead (`kombai mcp install codex`); see
 [The canvas view](#the-canvas-view). This repository supplies the workflow skill and plugin
 packaging; it builds neither the CLI nor the desktop app.
 
@@ -93,9 +94,17 @@ in it (a taste run's design brief, and the plans when taste is out of credits), 
 (server `kombai`, run as `npx -y <cli.package> mcp`). A host shows them only if it renders
 MCP App views, and the CLI decides what each host is listed (`VIEW_HOSTS` and `cardsFor` in
 vscode-assistant's `packages/cli/src/mcp/client-gate.js`): Codex desktop gets the view and both
-cards, and Claude desktop's Code tab the taste card. So the Codex and Claude Code plugins have
-`cli.view` on, which registers the server; Cursor's, VS Code's, Antigravity's and Gemini CLI's
-are off. Validation checks each plugin against its contract: `.mcp.json` ships exactly when
+cards, and Claude desktop's Code tab the taste card. The Claude Code plugin has `cli.view` on,
+which registers the server; Cursor's, VS Code's, Antigravity's and Gemini CLI's are off. The Codex
+plugin has it off too: OpenAI's plugin directory drops a plugin's local MCP config, so the Codex
+plugin ships skills only (with `requires_local_executor` set), and the first time its skill finds no
+`canvas_app` it runs `npx -y <cli.package> mcp install codex` without asking, which writes the
+same server into the user's `config.toml`. A running Codex task never picks up a new MCP server, so
+the view appears from the next task. To make that the user's first design chat, the Codex plugin's
+onboarding skill (`get-started-with-kombai`, the manifest's `onboardingSkill`, which Codex runs when the user
+sets the plugin up after installing it, and which its Try now and the user can run again) runs the same install before any design
+chat starts. Where the chat already has Kombai's view, it shows the CLI's starters card instead: prompts to try, each
+with a Try that opens a new chat. Validation checks each plugin against its contract: `.mcp.json` ships exactly when
 `cli.view` is on, with exactly the CLI server in it (`scripts/cli-view.mjs`).
 
 VS Code already shows MCP App views: it declares `io.modelcontextprotocol/ui` and sends its
