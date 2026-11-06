@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpClaudeCodeVersion, packClaudeCodePlugin, validateClaudeCodePlugin } from './claude-code-plugin.mjs';
-import { cliViewMcpConfig, RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE } from './cli-view.mjs';
+import { cliViewMcpConfig, RELEASE_CLI_PACKAGE, SETUP_SKILL, TEAM_CLI_PACKAGE } from './cli-view.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -133,6 +133,50 @@ test('the Claude Code plugin ships no local MCP server, as Anthropic\'s plugin d
   });
 });
 
+test("the Claude Code plugin's get-started skill sets Kombai's server up before the first design chat", () => {
+  // Claude Code gives a session only the MCP servers it had when it started, as Codex does a chat: setting the server
+  // up mid-design leaves that chat without Kombai's card. Getting started first means the next chat has it.
+  fixture((root) => {
+    const archive = packClaudeCodePlugin(path.join(root, 'out'), root);
+    const packed = spawnSync('unzip', ['-p', archive, `plugins/claude-code/skills/${SETUP_SKILL}/SKILL.md`], {
+      encoding: 'utf8',
+    });
+    assert.equal(packed.status, 0, packed.stderr);
+    const text = packed.stdout;
+    const flat = text.replace(/\s+/g, ' ');
+    assert.match(text, new RegExp(`^---\\nname: ${SETUP_SKILL}\\ndescription: `));
+    // It looks for Kombai's card first, and sets the server up only where it is missing.
+    assert.ok(flat.includes('ends in `taste_card`'));
+    assert.ok(flat.indexOf('`taste_card`') < flat.indexOf(`npx -y ${RELEASE_CLI_PACKAGE} mcp install claude-code`));
+    // It follows the CLI's answers, which only the CLI can read: a Claude Code with no card, a server turned off or
+    // not starting.
+    for (const answer of ['`claudeDesktop: false`', '`disabled: true`', '`notStarting: true`']) assert.ok(flat.includes(answer), answer);
+    assert.ok(flat.includes(`npx -y ${RELEASE_CLI_PACKAGE} whoami`));
+    // The same three prompts as Codex's onboarding and the CLI's starters card, as text: Claude has no link that opens
+    // a new chat.
+    for (const prompt of [
+      'Design a standout UI for my website',
+      'Explore design directions on canvas',
+      'Redesign this section for my app',
+    ])
+      assert.ok(text.includes(`- ${prompt}`), prompt);
+    assert.ok(flat.includes('a new session'));
+    for (const codexOnly of ['codex://', 'canvas_app', 'starters_card', 'sandbox_permissions'])
+      assert.ok(!text.includes(codexOnly), codexOnly);
+  });
+});
+
+test('Claude validation requires the get-started skill, and that it sets the server up', () => {
+  fixture((root) => {
+    const skill = path.join(root, 'plugins/claude-code/skills', SETUP_SKILL, 'SKILL.md');
+    const text = fs.readFileSync(skill, 'utf8');
+    fs.writeFileSync(skill, text.replaceAll('mcp install claude-code', 'mcp install codex'));
+    assert.throws(() => validateClaudeCodePlugin(root), /must run @kombai\/cli@latest mcp install claude-code/);
+    fs.rmSync(path.dirname(skill), { recursive: true });
+    assert.throws(() => validateClaudeCodePlugin(root), new RegExp(SETUP_SKILL));
+  });
+});
+
 test('neither the Claude Code manifest nor its marketplace entry names an MCP server', () => {
   fixture((root) => {
     const manifestPath = path.join(root, 'plugins/claude-code/.claude-plugin/plugin.json');
@@ -159,6 +203,11 @@ test('a Claude Code team pack runs the CLI team build, and ships no MCP config e
     const { extracted, plugin } = checkTeamArchive(archive, 'plugins/claude-code');
     try {
       assert.ok(!fs.existsSync(path.join(plugin, '.mcp.json')));
+      assert.ok(
+        fs
+          .readFileSync(path.join(plugin, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8')
+          .includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install claude-code`),
+      );
       assert.equal(validateClaudeCodePlugin(extracted), version);
     } finally {
       fs.rmSync(extracted, { recursive: true, force: true });

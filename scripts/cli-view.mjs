@@ -76,12 +76,15 @@ export function skillGuidance(text) {
 }
 
 /**
- * The Codex plugin's onboarding skill (its manifest's `onboardingSkill`): Codex runs it when the user sets the plugin
- * up after installing it, and from its Try now (the manifest's first `defaultPrompt` asks for it); the user can run it again. Where Kombai's view isn't set up it adds it (`kombai mcp
- * install codex`) before the user's first design chat, which then has the view from its first message; where the
- * chat has the view it shows the CLI's starters card. Codex only.
+ * The Codex and Claude Code plugins' onboarding skill. A running Codex chat or Claude Code session never picks up an
+ * MCP server added during it, so this sets Kombai's server up (`kombai mcp install codex|claude-code`) before the
+ * user's first design chat, which then has Kombai's view or card from its first message. Codex runs it when the user
+ * sets the plugin up after installing it (its manifest's `onboardingSkill`), and from its Try now (the manifest's first
+ * `defaultPrompt` asks for it); where the chat has the view it shows the CLI's starters card. Claude Code has no
+ * onboarding key: the user asks for it, or runs `/kombai:get-started-with-kombai`, and its README says to. Either
+ * user can run it again.
  */
-export const CODEX_SETUP_SKILL = 'get-started-with-kombai';
+export const SETUP_SKILL = 'get-started-with-kombai';
 
 /**
  * Check that a plugin ships exactly the workflow and FAQ skills, plus the host's own `extra` ones, each named in its

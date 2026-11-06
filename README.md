@@ -14,6 +14,10 @@ A second skill, `about-kombai`, runs `npx -y @kombai/cli@latest skill faq` and a
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
 live, sharing, updates and support.
 
+The Codex and Claude Code plugins have a third, `get-started-with-kombai`, their onboarding: it sets
+up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
+and ends with prompts to try (see [The canvas view](#the-canvas-view)).
+
 When running in Codex's sandbox, the Codex plugin and standalone skill request approved
 execution outside it before the first `npx` call and for later CLI commands, using the execution
 tool's `sandbox_permissions: "require_escalated"` setting. npm may need network access before
@@ -103,8 +107,13 @@ desktop app that text tells the agent to run `npx -y <cli.package> mcp install c
 session, without asking, when no `taste_card` tool is there, which writes the server into the user's
 own Claude Code config (`.claude.json`'s `mcpServers`, as `claude mcp add --scope user` does). A
 running Claude Code session never picks up a new MCP server, so the card shows from the next session
-while the work carries on in this one. Claude Code in a terminal shows no card, so nothing installs
-it there; once it is in the user's config, terminal sessions start it too and get no tools from it.
+while the work carries on in this one. So that the user's first design chat has the card, the Claude
+Code plugin has the same onboarding skill as Codex, `get-started-with-kombai`, which runs that install
+before any design chat. Claude Code has no manifest key that runs a skill after an install, so the
+user runs it (`/kombai:get-started-with-kombai`, or asking Claude to get started with Kombai), as the
+plugin's README says; it ends with the same three prompts as Codex's, as text, since Claude has no
+link that opens a new session. The CLI answers `claudeDesktop: false` in a terminal, which shows no
+card; once the server is in the user's config, terminal sessions start it too and get no tools from it.
 `mcp uninstall claude-code` takes it out; uninstalling the plugin leaves it in place. The Codex plugin has it off too: OpenAI's plugin directory drops a plugin's local MCP config, so the Codex
 plugin ships skills only (with `requires_local_executor` set), and the first time its skill finds no
 `canvas_app` it runs `npx -y <cli.package> mcp install codex` without asking, which writes the

@@ -3,7 +3,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { assertPackOutside, checkCliContract, checkSkills, stageTeamBuild, STRAY_FILE } from './cli-view.mjs';
+import {
+  assertPackOutside,
+  checkCliContract,
+  checkSkills,
+  SETUP_SKILL,
+  stageTeamBuild,
+  STRAY_FILE,
+} from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -54,6 +61,7 @@ export function validateClaudeCodePlugin(root = workspaceRoot) {
     '.claude-plugin/plugin.json',
     'skills/work-with-kombai/SKILL.md',
     'skills/about-kombai/SKILL.md',
+    `skills/${SETUP_SKILL}/SKILL.md`,
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Claude plugin file: ${file}`);
   }
@@ -68,7 +76,15 @@ export function validateClaudeCodePlugin(root = workspaceRoot) {
     marketplace.plugins[0].mcpServers === undefined,
     'Claude marketplace entry must not name mcpServers: the plugin ships no MCP server.',
   );
-  checkSkills(pluginRoot, 'Claude');
+  checkSkills(pluginRoot, 'Claude', [SETUP_SKILL]);
+  // Getting started sets Kombai's server up before the first design chat, which then has the taste card from its first
+  // message: a running session never picks up a new MCP server.
+  assert(
+    fs
+      .readFileSync(path.join(pluginRoot, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8')
+      .includes(`npx -y ${contract.cli.package} mcp install claude-code`),
+    `Claude ${SETUP_SKILL} skill must run ${contract.cli.package} mcp install claude-code.`,
+  );
   return manifest.version;
 }
 
