@@ -3,7 +3,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { assertPackOutside, checkCliContract, checkSkills, stageTeamBuild, STRAY_FILE } from './cli-view.mjs';
+import {
+  assertPackOutside,
+  checkCliContract,
+  checkSkills,
+  SETUP_SKILL,
+  stageTeamBuild,
+  STRAY_FILE,
+} from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -54,11 +61,30 @@ export function validateClaudeCodePlugin(root = workspaceRoot) {
     '.claude-plugin/plugin.json',
     'skills/work-with-kombai/SKILL.md',
     'skills/about-kombai/SKILL.md',
+    `skills/${SETUP_SKILL}/SKILL.md`,
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Claude plugin file: ${file}`);
   }
-  checkCliContract(pluginRoot, contract, 'Claude');
-  checkSkills(pluginRoot, 'Claude');
+  // Anthropic's plugin directory refuses a plugin that ships a local (stdio) MCP server, so the plugin is skills-only:
+  // the Kombai CLI writes its server into the user's own Claude Code config instead (`kombai mcp install claude-code`,
+  // which the CLI's notes for the Claude desktop app run when Kombai's taste card is missing).
+  const view = checkCliContract(pluginRoot, contract, 'Claude');
+  assert(!view, 'Claude must have the canvas view off: the plugin ships no MCP server (cli.view must be false).');
+  assert(manifest.mcpServers === undefined, 'Claude manifest must not name mcpServers: the plugin ships no MCP server.');
+  // A marketplace entry's fields reach the plugin it installs, so a server there would ship too.
+  assert(
+    marketplace.plugins[0].mcpServers === undefined,
+    'Claude marketplace entry must not name mcpServers: the plugin ships no MCP server.',
+  );
+  checkSkills(pluginRoot, 'Claude', [SETUP_SKILL]);
+  // Getting started sets Kombai's server up before the first design chat, which then has the taste card from its first
+  // message: a running session never picks up a new MCP server.
+  assert(
+    fs
+      .readFileSync(path.join(pluginRoot, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8')
+      .includes(`npx -y ${contract.cli.package} mcp install claude-code`),
+    `Claude ${SETUP_SKILL} skill must run ${contract.cli.package} mcp install claude-code.`,
+  );
   return manifest.version;
 }
 

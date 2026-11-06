@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpClaudeCodeVersion, packClaudeCodePlugin, validateClaudeCodePlugin } from './claude-code-plugin.mjs';
-import { cliViewMcpConfig, RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE } from './cli-view.mjs';
+import { cliViewMcpConfig, RELEASE_CLI_PACKAGE, SETUP_SKILL, TEAM_CLI_PACKAGE } from './cli-view.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -82,7 +82,7 @@ test('Claude version bump and marketplace package are independent of Codex', () 
   });
 });
 
-test('Claude validation rejects mismatched versions and any MCP configuration but the CLI server', () => {
+test('Claude validation rejects mismatched versions and any MCP configuration', () => {
   fixture((root) => {
     const contractPath = path.join(root, 'plugins/claude-code/kombai.package.json');
     const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
@@ -93,35 +93,136 @@ test('Claude validation rejects mismatched versions and any MCP configuration bu
     contract.version = originalVersion;
     fs.writeFileSync(contractPath, JSON.stringify(contract));
     fs.writeFileSync(path.join(root, 'plugins/claude-code/.mcp.json'), '{}');
-    assert.throws(() => validateClaudeCodePlugin(root), /may only register the Kombai CLI view/);
+    assert.throws(() => validateClaudeCodePlugin(root), /canvas view off, so \.mcp\.json must not ship/);
   });
 });
 
-test('the Claude Code plugin registers the CLI server for the taste card, and packs it', () => {
+/**
+ * Turn the canvas view on in a fixture copy, as Claude Code plugin versions to 0.4.x shipped it: `cli.view` and the
+ * `.mcp.json` that registers the CLI server. From 0.5.0 the plugin is skills-only and the CLI writes the server into
+ * the user's own Claude Code config (`kombai mcp install claude-code`, from the CLI's notes for the Claude desktop app).
+ */
+function withViewOn(root) {
+  const pluginRoot = path.join(root, 'plugins/claude-code');
+  const contractPath = path.join(pluginRoot, 'kombai.package.json');
+  const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
+  contract.cli.view = true;
+  fs.writeFileSync(contractPath, JSON.stringify(contract));
+  fs.writeFileSync(path.join(pluginRoot, '.mcp.json'), JSON.stringify(cliViewMcpConfig(contract.cli.package)));
+}
+
+test('the Claude Code plugin ships no local MCP server, as Anthropic\'s plugin directory requires', () => {
   fixture((root) => {
     const pluginRoot = path.join(root, 'plugins/claude-code');
     const contract = JSON.parse(fs.readFileSync(path.join(pluginRoot, 'kombai.package.json'), 'utf8'));
-    assert.equal(contract.cli.view, true);
+    assert.equal(contract.cli.view, false);
     validateClaudeCodePlugin(root);
     const archive = packClaudeCodePlugin(path.join(root, 'out'), root);
-    const packed = spawnSync('unzip', ['-p', archive, 'plugins/claude-code/.mcp.json'], { encoding: 'utf8' });
-    assert.equal(packed.status, 0, packed.stderr);
-    assert.deepEqual(JSON.parse(packed.stdout), cliViewMcpConfig(contract.cli.package));
-    fs.rmSync(path.join(pluginRoot, '.mcp.json'));
-    assert.throws(() => validateClaudeCodePlugin(root), /canvas view on, so it must ship \.mcp\.json/);
+    const listing = spawnSync('unzip', ['-Z1', archive], { encoding: 'utf8' });
+    assert.equal(listing.status, 0, listing.stderr);
+    for (const file of ['.mcp.json', 'mcp.json', '.app.json'])
+      assert.ok(!listing.stdout.split('\n').includes(`plugins/claude-code/${file}`), file);
+    // The skill stays a stub over the CLI's text, whose Claude desktop notes add Kombai's server when it is missing.
+    const skill = spawnSync('unzip', ['-p', archive, 'plugins/claude-code/skills/work-with-kombai/SKILL.md'], {
+      encoding: 'utf8',
+    });
+    assert.ok(skill.stdout.includes(`Run \`npx -y ${RELEASE_CLI_PACKAGE} skill\``));
+    // The view's old shape, the CLI server in .mcp.json, is refused.
+    withViewOn(root);
+    assert.throws(() => validateClaudeCodePlugin(root), /canvas view off/);
   });
 });
 
-test('a Claude Code team pack runs the CLI team build, its server included', () => {
+test("the Claude Code plugin's get-started skill sets Kombai's server up before the first design chat", () => {
+  // Claude Code gives a session only the MCP servers it had when it started, as Codex does a chat: setting the server
+  // up mid-design leaves that chat without Kombai's card. Getting started first means the next chat has it.
+  fixture((root) => {
+    const archive = packClaudeCodePlugin(path.join(root, 'out'), root);
+    const packed = spawnSync('unzip', ['-p', archive, `plugins/claude-code/skills/${SETUP_SKILL}/SKILL.md`], {
+      encoding: 'utf8',
+    });
+    assert.equal(packed.status, 0, packed.stderr);
+    const text = packed.stdout;
+    const flat = text.replace(/\s+/g, ' ');
+    assert.match(text, new RegExp(`^---\\nname: ${SETUP_SKILL}\\ndescription: `));
+    // It looks for Kombai's card first, and sets the server up only where it is missing.
+    assert.ok(flat.includes('ends in `taste_card`'));
+    assert.ok(flat.indexOf('`taste_card`') < flat.indexOf(`npx -y ${RELEASE_CLI_PACKAGE} mcp install claude-code`));
+    // It follows the CLI's answers, which only the CLI can read: a Claude Code with no card, a server turned off or
+    // not starting.
+    for (const answer of ['`claudeDesktop: false`', '`disabled: true`', '`notStarting: true`']) assert.ok(flat.includes(answer), answer);
+    assert.ok(flat.includes(`npx -y ${RELEASE_CLI_PACKAGE} whoami`));
+    // The same three prompts as Codex's onboarding and the CLI's starters card, each in a code block of its own, which
+    // Claude draws with a Copy button: Claude's chat opens no link to a new session, so the user copies one there.
+    for (const prompt of [
+      'Design a standout UI for my website',
+      'Explore design directions on canvas',
+      'Redesign this section for my app',
+    ])
+      // Each starts with the workflow skill's command, Claude's counterpart of Codex's @Kombai mention, so a pasted prompt
+      // runs Kombai's skill from its first message.
+      assert.ok(text.includes(`\n\`\`\`\n/kombai:work-with-kombai ${prompt}\n\`\`\`\n`), prompt);
+    // The user hears what to do in their words: where to start the new session, and why this one can't show the card.
+    assert.ok(flat.includes('Start a new session in this folder to use it'));
+    assert.ok(flat.includes("which this one can't load"));
+    assert.ok(flat.includes('Copy a prompt to begin'));
+    // Where the card can't show (a terminal, or a server off or not starting), the user designs right here.
+    assert.ok(flat.includes('Ask for a design right here'));
+    // A server turned off is so for this folder only (`/mcp disable` is per project), and one not starting may start in
+    // a new session once its first download is done: the user hears that, as the CLI's answer says.
+    assert.ok(flat.includes('turned off in this folder') && flat.includes('`/mcp enable kombai`'));
+    assert.ok(flat.includes('a new session in a minute or two may get them'));
+    // An error still ends the path: one retry where the CLI's next says so, else the sign-in check and the prompts.
+    assert.ok(flat.includes('run it once more'));
+    assert.ok(flat.includes('end as the `claudeDesktop: false` path does'));
+    assert.ok(flat.includes('`CLI_NODE_TOO_OLD`'));
+    for (const link of ['claude://', 'Reply with', '](']) assert.ok(!text.includes(link), link);
+    for (const codexOnly of ['codex://', 'canvas_app', 'starters_card', 'sandbox_permissions'])
+      assert.ok(!text.includes(codexOnly), codexOnly);
+  });
+});
+
+test('Claude validation requires the get-started skill, and that it sets the server up', () => {
+  fixture((root) => {
+    const skill = path.join(root, 'plugins/claude-code/skills', SETUP_SKILL, 'SKILL.md');
+    const text = fs.readFileSync(skill, 'utf8');
+    fs.writeFileSync(skill, text.replaceAll('mcp install claude-code', 'mcp install codex'));
+    assert.throws(() => validateClaudeCodePlugin(root), /must run @kombai\/cli@latest mcp install claude-code/);
+    fs.rmSync(path.dirname(skill), { recursive: true });
+    assert.throws(() => validateClaudeCodePlugin(root), new RegExp(SETUP_SKILL));
+  });
+});
+
+test('neither the Claude Code manifest nor its marketplace entry names an MCP server', () => {
+  fixture((root) => {
+    const manifestPath = path.join(root, 'plugins/claude-code/.claude-plugin/plugin.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    manifest.mcpServers = cliViewMcpConfig(RELEASE_CLI_PACKAGE).mcpServers;
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+    assert.throws(() => validateClaudeCodePlugin(root), /manifest must not name mcpServers/);
+  });
+  // A marketplace entry's fields reach the plugin too, so a server there would ship as surely as one in .mcp.json.
+  fixture((root) => {
+    const marketplacePath = path.join(root, '.claude-plugin/marketplace.json');
+    const marketplace = JSON.parse(fs.readFileSync(marketplacePath, 'utf8'));
+    marketplace.plugins[0].mcpServers = cliViewMcpConfig(RELEASE_CLI_PACKAGE).mcpServers;
+    fs.writeFileSync(marketplacePath, JSON.stringify(marketplace));
+    assert.throws(() => validateClaudeCodePlugin(root), /marketplace entry must not name mcpServers/);
+  });
+});
+
+test('a Claude Code team pack runs the CLI team build, and ships no MCP config either', () => {
   fixture((root) => {
     const version = validateClaudeCodePlugin(root);
     const archive = packClaudeCodePlugin(path.join(root, 'out'), root, { team: true });
     assert.equal(path.basename(archive), `kombai-claude-code-plugin-${version}-team.zip`);
     const { extracted, plugin } = checkTeamArchive(archive, 'plugins/claude-code');
     try {
-      assert.deepEqual(
-        JSON.parse(fs.readFileSync(path.join(plugin, '.mcp.json'), 'utf8')),
-        cliViewMcpConfig(TEAM_CLI_PACKAGE),
+      assert.ok(!fs.existsSync(path.join(plugin, '.mcp.json')));
+      assert.ok(
+        fs
+          .readFileSync(path.join(plugin, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8')
+          .includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install claude-code`),
       );
       assert.equal(validateClaudeCodePlugin(extracted), version);
     } finally {
