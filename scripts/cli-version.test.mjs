@@ -40,7 +40,10 @@ function fixture(run) {
 }
 
 /** npm as the script asks it: whether a version exists, and what its `mcp install --help` prints. */
-function fakeNpm({ published = ['0.1.4', '0.1.5', '0.1.5-beta.1'], help = 'kombai mcp install codex|claude-code' } = {}) {
+/** A release no pin in this repository ever names, so a test that moves the pin always moves it. */
+const NEXT = '9.9.9';
+
+function fakeNpm({ published = ['0.1.4', '0.1.5', '0.1.5-beta.1', NEXT], help = 'kombai mcp install codex|claude-code' } = {}) {
   const asked = [];
   return {
     asked,
@@ -76,11 +79,11 @@ test('set-cli-version pins the version in every plugin and every file that names
   fixture((root) => {
     const before = pinnedCliPackage(root);
     const npm = fakeNpm();
-    const result = setCliVersion('0.1.5', { root, npm });
-    assert.equal(result.cliPackage, '@kombai/cli@0.1.5');
-    assert.deepEqual(npm.asked, ['0.1.5']);
-    assert.equal(pinnedCliPackage(root), '@kombai/cli@0.1.5');
-    assert.equal(checkCliVersion(root), '@kombai/cli@0.1.5');
+    const result = setCliVersion(NEXT, { root, npm });
+    assert.equal(result.cliPackage, `@kombai/cli@${NEXT}`);
+    assert.deepEqual(npm.asked, [NEXT]);
+    assert.equal(pinnedCliPackage(root), `@kombai/cli@${NEXT}`);
+    assert.equal(checkCliVersion(root), `@kombai/cli@${NEXT}`);
     for (const host of Object.keys(PLUGINS)) {
       assert.ok(result.changed.includes(`plugins/${host}/kombai.package.json`), host);
       assert.ok(result.changed.includes(`plugins/${host}/skills/work-with-kombai/SKILL.md`), host);
@@ -105,7 +108,7 @@ test('set-cli-version pins the version in every plugin and every file that names
         .includes('@kombai/cli@[a-z0-9.-]+ .*)'),
     );
     // The same version again changes nothing.
-    assert.deepEqual(setCliVersion('0.1.5', { root, npm: fakeNpm() }).changed, []);
+    assert.deepEqual(setCliVersion(NEXT, { root, npm: fakeNpm() }).changed, []);
   });
 });
 
@@ -360,7 +363,7 @@ test('a failed pin restores every file, and says so when one cannot be restored'
     };
     try {
       assert.throws(
-        () => setCliVersion('0.1.5', { root, npm: fakeNpm() }),
+        () => setCliVersion(NEXT, { root, npm: fakeNpm() }),
         (error) =>
           error instanceof AggregateError &&
           /^cursor plugin is broken\. Restoring 1 of the rewritten files failed too/.test(error.message) &&
@@ -373,7 +376,7 @@ test('a failed pin restores every file, and says so when one cannot be restored'
     // Every other file is back as it was; the locked one still names the new pin.
     const after = snapshot(root);
     for (const [file, text] of Object.entries(before)) {
-      if (path.join(root, file) === locked) assert.ok(after[file].includes('@kombai/cli@0.1.5'), file);
+      if (path.join(root, file) === locked) assert.ok(after[file].includes(`@kombai/cli@${NEXT}`), file);
       else assert.equal(after[file], text, file);
     }
   });
