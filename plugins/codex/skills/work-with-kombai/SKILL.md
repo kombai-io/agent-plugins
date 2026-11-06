@@ -15,11 +15,11 @@ the sandbox.
 `canvas_app` tool. Codex lists no MCP tool up front, so search inside exec with
 `ALL_TOOLS.filter((t) => t.name.endsWith('canvas_app'))`. If it doesn't exist, Kombai's view isn't set up in Codex
 yet: set it up without asking, with `npx -y @kombai/cli@latest mcp install codex` (outside the sandbox, like every
-Kombai command), tell the user in one line, then follow its `next`. Usually it moves the work to a new task: one
-offer, with a link that opens it with the request filled in, and on yes a new task that carries the request; the new
-task's prompt starts with Kombai's mention. Do no design work in this task first: it can't show the canvas. When it
-answers `notStarting: true` (Kombai's server isn't starting in Codex) or `codexApp: false` (this Codex isn't the app,
-so it shows no view), its `next` starts no new task: follow it. Kombai's
+Kombai command), tell the user in one line, then follow its `next`. When it answers `notStarting: true` (Kombai's
+server isn't starting in Codex) or `codexApp: false` (this Codex isn't the app, so it shows no view), its `next` starts
+no new task: follow it, and carry on in this task as it says. Otherwise it moves the work to a new task: one offer,
+with a link that opens it with the request filled in, and on yes a new task that carries the request; the new task's
+prompt starts with Kombai's mention. Then do no design work in this task: it can't show the canvas. Kombai's
 plugin id in this Codex is `kombai@<marketplace>`, where `<marketplace>` is the folder after `plugins/cache/` in
 this skill's own path: `~/.codex/plugins/cache/openai-curated-remote/kombai/…` gives `kombai@openai-curated-remote`.
 
