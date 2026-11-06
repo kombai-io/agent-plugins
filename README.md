@@ -7,10 +7,10 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 and release tooling.
 
 Each plugin's `work-with-kombai` skill runs the Kombai CLI
-(`npx -y @kombai/cli@0.1.4 skill`), which prints the full instructions for designing on a hosted
+(`npx -y @kombai/cli@0.1.5 skill`), which prints the full instructions for designing on a hosted
 Kombai canvas. The CLI needs Node.js 20 or later.
 
-A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.1.4 skill faq` and answers the user's
+A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.1.5 skill faq` and answers the user's
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
 live, sharing, updates and support.
 
@@ -237,7 +237,7 @@ and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling check
 
 OpenAI's and Anthropic's plugin directories refuse a plugin that runs a floating npm tag (the
 CLI's `latest`), so the source pins one released CLI: every plugin's `cli.package`
-is `@kombai/cli@0.1.4`, the same in all six, and every file that names the CLI (the skills under
+is `@kombai/cli@0.1.5`, the same in all six, and every file that names the CLI (the skills under
 `plugins/` and `skills/`, the READMEs, `agents/openai.yaml`, the marketplaces) names that one.
 Describe a tag without the package name in front of it (the CLI's `latest` tag): the check reads
 any package name followed by a tag as one the plugins run, and set-cli-version would rewrite it. Move them all with

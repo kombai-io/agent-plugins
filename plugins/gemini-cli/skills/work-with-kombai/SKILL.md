@@ -20,7 +20,7 @@ allow it for the session; later Kombai commands then run with it, so do not pass
 user declines, stop and explain that Kombai needs it. If there is no such parameter and `$SANDBOX`
 is empty, Kombai is not sandboxed: report a permission or network error as it is.
 
-Run `npx -y @kombai/cli@0.1.4 skill` and follow what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.1.5 skill` and follow what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 
