@@ -127,19 +127,27 @@ test('the Claude Code plugin ships no local MCP server, as Anthropic\'s plugin d
       encoding: 'utf8',
     });
     assert.ok(skill.stdout.includes(`Run \`npx -y ${RELEASE_CLI_PACKAGE} skill\``));
-    // The view's old shape, the CLI server in .mcp.json, is refused, as is a server named in the manifest.
+    // The view's old shape, the CLI server in .mcp.json, is refused.
     withViewOn(root);
     assert.throws(() => validateClaudeCodePlugin(root), /canvas view off/);
   });
 });
 
-test("the Claude Code manifest names no MCP server of its own", () => {
+test('neither the Claude Code manifest nor its marketplace entry names an MCP server', () => {
   fixture((root) => {
     const manifestPath = path.join(root, 'plugins/claude-code/.claude-plugin/plugin.json');
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     manifest.mcpServers = cliViewMcpConfig(RELEASE_CLI_PACKAGE).mcpServers;
     fs.writeFileSync(manifestPath, JSON.stringify(manifest));
-    assert.throws(() => validateClaudeCodePlugin(root), /must not name mcpServers/);
+    assert.throws(() => validateClaudeCodePlugin(root), /manifest must not name mcpServers/);
+  });
+  // A marketplace entry's fields reach the plugin too, so a server there would ship as surely as one in .mcp.json.
+  fixture((root) => {
+    const marketplacePath = path.join(root, '.claude-plugin/marketplace.json');
+    const marketplace = JSON.parse(fs.readFileSync(marketplacePath, 'utf8'));
+    marketplace.plugins[0].mcpServers = cliViewMcpConfig(RELEASE_CLI_PACKAGE).mcpServers;
+    fs.writeFileSync(marketplacePath, JSON.stringify(marketplace));
+    assert.throws(() => validateClaudeCodePlugin(root), /marketplace entry must not name mcpServers/);
   });
 });
 

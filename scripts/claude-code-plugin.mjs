@@ -61,8 +61,13 @@ export function validateClaudeCodePlugin(root = workspaceRoot) {
   // the Kombai CLI writes its server into the user's own Claude Code config instead (`kombai mcp install claude-code`,
   // which the CLI's notes for the Claude desktop app run when Kombai's taste card is missing).
   const view = checkCliContract(pluginRoot, contract, 'Claude');
-  assert(!view, 'Claude has the canvas view off: the plugin ships no MCP server (cli.view must be false).');
+  assert(!view, 'Claude must have the canvas view off: the plugin ships no MCP server (cli.view must be false).');
   assert(manifest.mcpServers === undefined, 'Claude manifest must not name mcpServers: the plugin ships no MCP server.');
+  // A marketplace entry's fields reach the plugin it installs, so a server there would ship too.
+  assert(
+    marketplace.plugins[0].mcpServers === undefined,
+    'Claude marketplace entry must not name mcpServers: the plugin ships no MCP server.',
+  );
   checkSkills(pluginRoot, 'Claude');
   return manifest.version;
 }

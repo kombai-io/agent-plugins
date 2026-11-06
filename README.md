@@ -104,7 +104,8 @@ session, without asking, when no `taste_card` tool is there, which writes the se
 own Claude Code config (`.claude.json`'s `mcpServers`, as `claude mcp add --scope user` does). A
 running Claude Code session never picks up a new MCP server, so the card shows from the next session
 while the work carries on in this one. Claude Code in a terminal shows no card, so nothing installs
-it there. The Codex plugin has it off too: OpenAI's plugin directory drops a plugin's local MCP config, so the Codex
+it there; once it is in the user's config, terminal sessions start it too and get no tools from it.
+`mcp uninstall claude-code` takes it out; uninstalling the plugin leaves it in place. The Codex plugin has it off too: OpenAI's plugin directory drops a plugin's local MCP config, so the Codex
 plugin ships skills only (with `requires_local_executor` set), and the first time its skill finds no
 `canvas_app` it runs `npx -y <cli.package> mcp install codex` without asking, which writes the
 same server into the user's `config.toml`. A running Codex task never picks up a new MCP server, so
