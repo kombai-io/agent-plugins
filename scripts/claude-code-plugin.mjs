@@ -57,7 +57,12 @@ export function validateClaudeCodePlugin(root = workspaceRoot) {
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Claude plugin file: ${file}`);
   }
-  checkCliContract(pluginRoot, contract, 'Claude');
+  // Anthropic's plugin directory refuses a plugin that ships a local (stdio) MCP server, so the plugin is skills-only:
+  // the Kombai CLI writes its server into the user's own Claude Code config instead (`kombai mcp install claude-code`,
+  // which the CLI's notes for the Claude desktop app run when Kombai's taste card is missing).
+  const view = checkCliContract(pluginRoot, contract, 'Claude');
+  assert(!view, 'Claude has the canvas view off: the plugin ships no MCP server (cli.view must be false).');
+  assert(manifest.mcpServers === undefined, 'Claude manifest must not name mcpServers: the plugin ships no MCP server.');
   checkSkills(pluginRoot, 'Claude');
   return manifest.version;
 }
