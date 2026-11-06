@@ -77,6 +77,10 @@ const PLUGIN_FILES = [
 ];
 // Antigravity's sandbox has no network and Kombai writes ~/.kombai; the skill asks to run outside it.
 export const ANTIGRAVITY_SANDBOX = 'When Antigravity runs terminal commands in its sandbox';
+// The Allow rule the skills give for Kombai's commands. Antigravity matches a rule's words against the command's whole
+// words, so a rule naming the pinned CLI version would stop matching when set-cli-version moves it; each word of a
+// `regex:` rule is matched as a whole regular expression, so this takes any CLI version, and `npx.cmd` on Windows.
+export const ANTIGRAVITY_ALLOW_RULE = 'command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)';
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -104,7 +108,7 @@ function compareVersion(left, right) {
 }
 
 /** Check one Antigravity plugin folder: the repository's `plugins/antigravity`, or an unpacked archive. */
-export function checkAntigravityPluginDir(pluginRoot) {
+export function checkAntigravityPluginDir(pluginRoot, { team = false } = {}) {
   const manifest = JSON.parse(readPluginFile(pluginRoot, MANIFEST, 'Antigravity plugin'));
   const contract = JSON.parse(readPluginFile(pluginRoot, 'kombai.package.json', 'Antigravity plugin'));
 
@@ -157,7 +161,7 @@ export function checkAntigravityPluginDir(pluginRoot) {
   assert(manifest.version === contract.version, 'Antigravity manifest and package contract versions must match.');
   assert(contract.schemaVersion === 'kombai-antigravity-plugin/v2', 'Unexpected Antigravity package contract schema.');
   checkPluginFiles(pluginRoot, [...PLUGIN_FILES, logo], 'Antigravity plugin');
-  checkCliContract(pluginRoot, contract, 'Antigravity');
+  checkCliContract(pluginRoot, contract, 'Antigravity', { team });
   checkSkills(pluginRoot, 'Antigravity');
   for (const name of [WORKFLOW_SKILL, FAQ_SKILL]) {
     const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');
@@ -165,13 +169,17 @@ export function checkAntigravityPluginDir(pluginRoot) {
       skillGuidance(skill).includes(ANTIGRAVITY_SANDBOX),
       `Antigravity ${name} skill must ask to run outside Antigravity's sandbox before the first command.`,
     );
+    assert(
+      skillGuidance(skill).replace(/\s+/g, ' ').includes(ANTIGRAVITY_ALLOW_RULE),
+      `Antigravity ${name} skill must give the Allow rule ${ANTIGRAVITY_ALLOW_RULE}, which matches every CLI version.`,
+    );
   }
   return manifest.version;
 }
 
-export function validateAntigravityPlugin(root = workspaceRoot) {
+export function validateAntigravityPlugin(root = workspaceRoot, { team = false } = {}) {
   const pluginRoot = path.join(root, PLUGIN_DIR);
-  const version = checkAntigravityPluginDir(pluginRoot);
+  const version = checkAntigravityPluginDir(pluginRoot, { team });
   assert(
     fs.readFileSync(path.join(pluginRoot, 'LICENSE'), 'utf8') === fs.readFileSync(path.join(root, 'LICENSE'), 'utf8'),
     'Plugin license must match the repository LICENSE.',
@@ -203,7 +211,7 @@ export function packAntigravityPlugin(
   // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
   const from = team ? stageTeamBuild(root, STAGE_FILES, readJson(path.join(root, PLUGIN_DIR, 'kombai.package.json'))) : root;
   try {
-    if (team) validateAntigravityPlugin(from);
+    if (team) validateAntigravityPlugin(from, { team });
     fs.mkdirSync(outputDir, { recursive: true });
     const archive = path.join(outputDir, `kombai-antigravity-plugin-${version}${team ? '-team' : ''}.zip`);
     return zipPluginFolder(path.join(from, PLUGIN_DIR), archive);

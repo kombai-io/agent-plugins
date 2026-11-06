@@ -3,7 +3,7 @@ name: about-kombai
 description: Answer the user's questions about Kombai itself (what it is, which agents it works with, accounts and guest mode, credits and plans, where designs and data live, sharing, privacy, updates and support). Use when the user asks about Kombai rather than for design work.
 ---
 
-Run `npx -y @kombai/cli@latest skill faq` and answer from what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.1.4 skill faq` and answer from what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 

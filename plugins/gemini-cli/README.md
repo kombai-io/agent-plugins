@@ -2,9 +2,9 @@
 
 This folder is a Gemini CLI extension. Gemini CLI loads its skills by default (`skills.enabled`, since v0.26).
 
-Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@latest skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
+Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.1.4 skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
 
-Its `about-kombai` skill runs `npx -y @kombai/cli@latest skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
+Its `about-kombai` skill runs `npx -y @kombai/cli@0.1.4 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 
 ## Install
 
@@ -40,7 +40,7 @@ They go to `~/.gemini/skills` (`--scope workspace` puts them in the project), an
 
 ## Using it
 
-In an interactive session, Gemini CLI's model activates a skill when the request matches its description, and asks the user first (in YOLO mode, `--yolo` or `--approval-mode=yolo`, it does not ask). `/skills list` shows both skills. A headless `gemini -p` run has no skill, shell or file-writing tool, so the design workflow runs there only in YOLO mode, or with a policy that allows `activate_skill`, `run_shell_command` for `echo` and `npx -y @kombai/cli@latest` (the workflow skill first runs `echo "$SANDBOX"`), and `write_file` and `replace` (the agent writes each design's files). Pass the policy with `--policy <file>`, or put it in `~/.gemini/policies/`.
+In an interactive session, Gemini CLI's model activates a skill when the request matches its description, and asks the user first (in YOLO mode, `--yolo` or `--approval-mode=yolo`, it does not ask). `/skills list` shows both skills. A headless `gemini -p` run has no skill, shell or file-writing tool, so the design workflow runs there only in YOLO mode, or with a policy that allows `activate_skill`, `run_shell_command` for `echo` and `npx -y @kombai/cli@0.1.4` (the workflow skill first runs `echo "$SANDBOX"`), and `write_file` and `replace` (the agent writes each design's files). Pass the policy with `--policy <file>`, or put it in `~/.gemini/policies/`.
 
 A skill with the same name takes precedence over the extension's: one in the project's `.agents/skills` or `.gemini/skills` (in trusted folders), or in `~/.agents/skills` or `~/.gemini/skills`. Gemini CLI warns about the conflict and names both files; the user should remove one copy. Such copies come from `npx skills add` (the project's `.agents/skills`, or `~/.agents/skills` with `-g`) and from the Kombai desktop app's Gemini CLI and Codex switches (`~/.gemini/skills`, `~/.agents/skills`). They carry Codex's sandbox guidance instead of Gemini CLI's. Turn the app's switch off rather than deleting its copy: the app writes it again at its next start.
 

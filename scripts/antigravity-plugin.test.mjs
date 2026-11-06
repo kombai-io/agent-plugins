@@ -6,13 +6,18 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
+  ANTIGRAVITY_ALLOW_RULE,
   ANTIGRAVITY_SANDBOX,
   bumpAntigravityVersion,
   checkAntigravityPluginDir,
   packAntigravityPlugin,
   validateAntigravityPlugin,
 } from './antigravity-plugin.mjs';
-import { cliViewMcpConfig, FAQ_SKILL, RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { cliViewMcpConfig, FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { pinnedCliPackage } from './cli-version.mjs';
+
+/** The released CLI the source pins. */
+const RELEASE_CLI_PACKAGE = pinnedCliPackage();
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PLUGIN = 'plugins/antigravity';
@@ -248,7 +253,33 @@ test('an Antigravity team pack runs the CLI team build', () => {
         assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
         assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
       }
-      assert.equal(checkAntigravityPluginDir(plugin), version);
+      assert.equal(checkAntigravityPluginDir(plugin, { team: true }), version);
     });
+  });
+});
+
+test("the Antigravity skills give an Allow rule that matches every CLI version, not only the pinned one", () => {
+  // Each word of a `regex:` rule is matched as a whole, anchored regular expression against the command's words.
+  const words = ANTIGRAVITY_ALLOW_RULE.slice('command(regex:'.length, -1).split(' ');
+  const matches = (command) => {
+    const parts = command.split(' ');
+    return parts.length >= words.length && words.every((word, i) => new RegExp(`^(?:${word})$`).test(parts[i]));
+  };
+  for (const command of [
+    'npx -y @kombai/cli@0.1.4 skill',
+    'npx -y @kombai/cli@0.1.5 skill faq',
+    'npx.cmd -y @kombai/cli@1.0.0 whoami',
+    'npx -y @kombai/cli@0.1.5-beta.1 mcp install codex',
+  ]) {
+    assert.ok(matches(command), command);
+  }
+  for (const command of ['npx -y @kombai/cli skill', 'npx -y @evil/cli@0.1.4 skill', 'npx -y @kombai/cli@0.1.4']) {
+    assert.ok(!matches(command), command);
+  }
+  fixture((root) => {
+    const skillPath = path.join(root, 'plugins/antigravity/skills/about-kombai/SKILL.md');
+    const text = fs.readFileSync(skillPath, 'utf8');
+    fs.writeFileSync(skillPath, text.replace(/`command\(regex:[^`]*`/, '`command(npx -y @kombai/cli@0.1.4)`'));
+    assert.throws(() => validateAntigravityPlugin(root), /about-kombai skill must give the Allow rule/);
   });
 });

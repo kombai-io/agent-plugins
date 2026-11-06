@@ -14,7 +14,11 @@ import {
   packGeminiCliPlugin,
   validateGeminiCliPlugin,
 } from './gemini-cli-plugin.mjs';
-import { cliViewMcpConfig, FAQ_SKILL, RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { cliViewMcpConfig, FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { pinnedCliPackage } from './cli-version.mjs';
+
+/** The released CLI the source pins. */
+const RELEASE_CLI_PACKAGE = pinnedCliPackage();
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PLUGIN = 'plugins/gemini-cli';
@@ -232,7 +236,7 @@ test('a Gemini CLI team pack runs the CLI team build', () => {
         assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
         assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
       }
-      assert.equal(checkGeminiCliPluginDir(plugin), version);
+      assert.equal(checkGeminiCliPluginDir(plugin, { team: true }), version);
     });
   });
 });

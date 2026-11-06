@@ -6,7 +6,11 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpCursorVersion, packCursorPlugin, validateCursorPlugin } from './cursor-plugin.mjs';
-import { RELEASE_CLI_PACKAGE, TEAM_CLI_PACKAGE } from './cli-view.mjs';
+import { TEAM_CLI_PACKAGE } from './cli-view.mjs';
+import { pinnedCliPackage } from './cli-version.mjs';
+
+/** The released CLI the source pins. */
+const RELEASE_CLI_PACKAGE = pinnedCliPackage();
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -105,7 +109,7 @@ test('a Cursor team pack runs the CLI team build', () => {
     const { extracted, plugin } = checkTeamArchive(archive, 'plugins/cursor');
     try {
       assert.equal(fs.existsSync(path.join(plugin, '.mcp.json')), false);
-      assert.equal(validateCursorPlugin(extracted), version);
+      assert.equal(validateCursorPlugin(extracted, { team: true }), version);
     } finally {
       fs.rmSync(extracted, { recursive: true, force: true });
     }

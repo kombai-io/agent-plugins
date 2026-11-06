@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   assertPackOutside,
   checkCliContract,
+  filesBesidePlugin,
   checkPluginFiles,
   checkSkills,
   FAQ_SKILL,
@@ -72,7 +73,7 @@ function compareVersion(left, right) {
   return 0;
 }
 
-export function validateVsCodePlugin(root = workspaceRoot) {
+export function validateVsCodePlugin(root = workspaceRoot, { team = false } = {}) {
   const pluginRoot = path.join(root, 'plugins/vscode');
   const marketplace = readJson(path.join(root, '.github/plugin/marketplace.json'));
   const manifest = JSON.parse(readPluginFile(pluginRoot, 'plugin.json', 'VS Code plugin'));
@@ -106,7 +107,7 @@ export function validateVsCodePlugin(root = workspaceRoot) {
     fs.readFileSync(path.join(pluginRoot, 'LICENSE'), 'utf8') === fs.readFileSync(path.join(root, 'LICENSE'), 'utf8'),
     'Plugin license must match the repository LICENSE.',
   );
-  checkCliContract(pluginRoot, contract, 'VS Code');
+  checkCliContract(pluginRoot, contract, 'VS Code', { team, root, shipped: filesBesidePlugin(PACKAGE_FILES) });
   checkSkills(pluginRoot, 'VS Code');
   for (const name of [WORKFLOW_SKILL, FAQ_SKILL]) {
     const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');
@@ -147,7 +148,7 @@ export function packVsCodePlugin(
     ? stageTeamBuild(root, PACKAGE_FILES, readJson(path.join(root, 'plugins/vscode/kombai.package.json')))
     : root;
   try {
-    if (team) validateVsCodePlugin(from);
+    if (team) validateVsCodePlugin(from, { team });
     fs.mkdirSync(outputDir, { recursive: true });
     const archive = path.join(outputDir, `kombai-vscode-plugin-${version}${team ? '-team' : ''}.zip`);
     fs.rmSync(archive, { force: true });
