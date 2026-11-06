@@ -279,7 +279,8 @@ test("the Antigravity skills give an Allow rule that matches every CLI version, 
   fixture((root) => {
     const skillPath = path.join(root, 'plugins/antigravity/skills/about-kombai/SKILL.md');
     const text = fs.readFileSync(skillPath, 'utf8');
-    fs.writeFileSync(skillPath, text.replace(/`command\(regex:[^`]*`/, '`command(npx -y @kombai/cli@0.1.4)`'));
+    const pinned = JSON.parse(fs.readFileSync(path.join(root, 'plugins/antigravity/kombai.package.json'), 'utf8')).cli.package;
+    fs.writeFileSync(skillPath, text.replace(/`command\(regex:[^`]*`/, `\`command(npx -y ${pinned})\``));
     assert.throws(() => validateAntigravityPlugin(root), /about-kombai skill must give the Allow rule/);
   });
 });
