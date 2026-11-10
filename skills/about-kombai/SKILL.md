@@ -13,13 +13,15 @@ restricted command first. The commands need network access and write `~/.kombai`
   does), call that before the first Kombai command of every reply, asking for network access and write access
   to those paths, then run the commands without escalation. A grant from before the latest user message is
   gone. If the first Kombai command of a reply comes back with no output at all, it ran in the sandbox with no
-  network: call `request_permissions` and run it again. The first time in a chat, tell the user in one line
-  that choosing **Approve for me** in the permissions menu under the message box, or picking a project, stops
-  this prompt on every message.
-- If neither is available, or the user declines, run nothing and do not retry inside the sandbox. Tell the
-  user only this, in one or two lines: Kombai needs network access to start, and they can allow it by choosing
-  **Approve for me** in the permissions menu under the message box (in Codex in a terminal, by allowing network
-  access in its approval settings), then sending their message again.
+  network: call `request_permissions` and run it again. The first time in a chat, once the reply's Kombai work
+  is done, call Kombai's `access_card` tool with reason `granted` where it is there (in Codex, find it in
+  `ALL_TOOLS`): it shows the user how to stop this prompt on every message, with a Continue button.
+- If neither is available, or the user declines, run nothing and do not retry inside the sandbox. Where
+  Kombai's `access_card` tool is there, call it with reason `blocked` (it shows how to allow Kombai, with a
+  Continue button that sends "Continue" here) and end your turn with one line. Otherwise tell the user only
+  this, in one or two lines: Kombai needs network access to start, and they can allow it by choosing **Approve
+  for me** in the permissions menu under the message box (in Codex in a terminal, by allowing network access
+  in its approval settings), then sending their message again.
 
 Run `npx -y @kombai/cli@0.1.5 skill faq` and answer from what it prints; it is this skill's full text.
 

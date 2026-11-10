@@ -35,9 +35,11 @@ the ChatGPT and Codex apps give a chat with no project picked that tool, reject 
 automatically even when its permissions menu reads "Ask for approval", and end the grant with the
 turn (in ChatGPT mode the card offers only "Allow once"). A reply's first Kombai command that comes
 back with no output is taken as one run in the sandbox without asking: the agent asks and runs it again. The
-first time in such a chat, the agent tells the user that "Approve for me" or a project stops the
-per-message prompt. If neither route works, the skills run nothing and tell the user to choose
-"Approve for me" in that menu. Existing Codex installations need the updated
+first time in such a chat, the agent shows Kombai's `access_card` where it is available (the CLI's
+card: Approve for me, a project, or Codex mode stops the per-message prompt, with a Continue
+button); no line of text asks it to relay that tip, which agents ignored in testing. If neither
+route works, the skills run nothing and show that card with reason `blocked`, or tell the user to
+choose "Approve for me" in that menu. Existing Codex installations need the updated
 plugin or standalone skill to receive this guidance; upgrading only the CLI does not replace
 the bootstrap skill.
 
