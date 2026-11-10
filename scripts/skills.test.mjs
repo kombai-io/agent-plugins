@@ -4,7 +4,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { ANTIGRAVITY_SANDBOX } from './antigravity-plugin.mjs';
-import { CHAT_NOTICES, FAQ_SKILL, skillGuidance, WORKFLOW_SKILL } from './cli-view.mjs';
+import { CHAT_NOTICES, CODEX_REFUSAL, FAQ_SKILL, skillGuidance, WORKFLOW_SKILL } from './cli-view.mjs';
 import { GEMINI_SANDBOX } from './gemini-cli-plugin.mjs';
 import { VSCODE_UNSANDBOXED } from './vscode-plugin.mjs';
 
@@ -111,12 +111,14 @@ test('the Codex and Claude Code copies open every skill with their own chat noti
       if (NOTICES[copy]) {
         assert.equal(opening, NOTICES[copy], `${copy}/${skill}: opening paragraph`);
       } else {
-        assert.ok(!text.includes("Kombai's plugin works only in"), `${copy}/${skill}: no chat notice`);
+        assert.ok(!text.includes("Kombai's plugin works only in") && !text.includes(CODEX_REFUSAL), `${copy}/${skill}: no chat notice`);
       }
     }
   }
-  // Each names only its own agent and chat app: Codex and ChatGPT, Claude Code and Claude's chat.
-  assert.match(CHAT_NOTICES.codex, /"Kombai's plugin works only in Codex, not in ChatGPT\. Install it in Codex and ask there\."/);
+  // Codex's is keyed on a shell on the user's computer, not on the app's name: the ChatGPT desktop app runs Codex there.
+  assert.ok(CHAT_NOTICES.codex.includes(`"${CODEX_REFUSAL}"`), 'the Codex notice quotes its refusal');
+  assert.match(CHAT_NOTICES.codex, /ChatGPT desktop app \(its Work chats and Codex\)[^.]*carry on there/);
+  assert.match(CODEX_REFUSAL, /Codex or in a Work chat in the ChatGPT desktop app/);
   assert.match(
     CHAT_NOTICES['claude-code'],
     /"Kombai's plugin works only in Claude Code, not in Claude's chat\. Install it in Claude Code and ask there\."/,

@@ -205,7 +205,7 @@ test('Claude validation requires every skill to open with its Claude Code-only n
       const text = fs.readFileSync(file, 'utf8');
       fs.writeFileSync(file, text.replace(`${notice}\n\n`, ''));
       assert.throws(() => validateClaudeCodePlugin(root), new RegExp(`Claude ${skill} skill must open with the notice`));
-      // Codex's notice names Codex and ChatGPT, not Claude Code.
+      // Codex's notice is about Codex and ChatGPT, not Claude Code.
       fs.writeFileSync(file, text.replace(notice, CHAT_NOTICES.codex));
       assert.throws(() => validateClaudeCodePlugin(root), new RegExp(`Claude ${skill} skill must open with the notice`));
       fs.writeFileSync(file, text);

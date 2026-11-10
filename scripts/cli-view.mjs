@@ -181,7 +181,7 @@ export function skillGuidance(text) {
  */
 export const SETUP_SKILL = 'get-started-with-kombai';
 
-/** What the agent tells a user who runs the plugin for `agent` in `chat` (ChatGPT for Codex, Claude's chat for Claude Code). */
+/** What the agent tells a user who runs the plugin for `agent` in `chat` (Claude's chat for Claude Code). */
 export const chatRefusal = (agent, chat) =>
   `Kombai's plugin works only in ${agent}, not in ${chat}. Install it in ${agent} and ask there.`;
 const chatNotice = (agent, chat, where) =>
@@ -196,8 +196,22 @@ const chatNotice = (agent, chat, where) =>
  * plugin may run, so an older VS Code install that still loads the Claude Code plugin (README.md) keeps working.
  * Keyed by plugin folder.
  */
+/**
+ * What the Codex plugin tells a user whose chat can't run commands on their computer. The ChatGPT desktop app runs Codex
+ * on the user's computer (its Work chats and Codex), so the refusal is keyed on that, not on the app's name.
+ */
+export const CODEX_REFUSAL =
+  "Kombai needs to run commands on your computer, and this chat can't. Ask in Codex or in a Work chat in the " +
+  'ChatGPT desktop app.';
+const codexNotice =
+  "**Needs a shell on the user's computer.** Kombai runs its CLI in a shell on the user's computer. Codex has one " +
+  "wherever it runs: the ChatGPT desktop app (its Work chats and Codex), the Codex CLI and the IDE extension, so " +
+  "carry on there, whatever the app is called. Only if this chat has no shell on the user's computer, as in " +
+  "ChatGPT on the web, whose code tool is a cloud sandbox, run nothing, not even in that code tool, and do no " +
+  'design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other ' +
+  `help): "${CODEX_REFUSAL}"`;
 export const CHAT_NOTICES = {
-  codex: chatNotice('Codex', 'ChatGPT', 'chatgpt.com or the ChatGPT app'),
+  codex: codexNotice,
   'claude-code': chatNotice(
     'Claude Code',
     "Claude's chat",
@@ -214,7 +228,7 @@ export function checkChatNotice(pluginRoot, host, notice) {
     assert(
       // A paragraph of its own, with either line ending: a Windows checkout may have CRLF.
       afterFrontmatter.startsWith(notice) && /^\r?\n/.test(afterFrontmatter.slice(notice.length)),
-      `${host} ${entry.name} skill must open with the notice that it works only in ${host === 'Claude' ? 'Claude Code' : host}.`,
+      `${host} ${entry.name} skill must open with the notice about where it works.`,
     );
   }
 }

@@ -4,7 +4,7 @@ This plugin's `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@
 
 Its `about-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 
-The plugin works only in Codex (the app, CLI and IDE extension). OpenAI's directory also offers it in ChatGPT, which has no shell on the user's computer, so every skill opens with a notice: in ChatGPT the agent runs nothing and tells the user that Kombai's plugin works only in Codex. The validator checks each skill opens with it (`CHAT_NOTICES` in `scripts/cli-view.mjs`).
+The plugin works wherever Codex runs on the user's computer: the ChatGPT desktop app (its Work chats and Codex), the Codex CLI and the IDE extension. OpenAI's directory also offers it in ChatGPT on the web, which has no shell on the user's computer, so every skill opens with a notice keyed on that shell, not on the app's name: where there is none the agent runs nothing and tells the user to ask in Codex or in a Work chat in the ChatGPT desktop app. The validator checks each skill opens with it (`CHAT_NOTICES` in `scripts/cli-view.mjs`).
 
 The skill requests approved execution outside Codex's sandbox before this first `npx` call
 and for later Kombai CLI commands, using the execution tool's

@@ -3,7 +3,7 @@ name: get-started-with-kombai
 description: Kombai's onboarding in Codex. Sets Kombai's canvas view up if this Codex doesn't have it yet, checks the user is signed in, and shows prompts to try in a new chat. Run by the plugin's setup and by Codex's Try now after an install, and whenever the user asks to set Kombai up, get started with it, or see what to try. Not for design requests; those are work-with-kombai's.
 ---
 
-**Codex only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in ChatGPT (chatgpt.com or the ChatGPT app) rather than Codex, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai's plugin works only in Codex, not in ChatGPT. Install it in Codex and ask there."
+**Needs a shell on the user's computer.** Kombai runs its CLI in a shell on the user's computer. Codex has one wherever it runs: the ChatGPT desktop app (its Work chats and Codex), the Codex CLI and the IDE extension, so carry on there, whatever the app is called. Only if this chat has no shell on the user's computer, as in ChatGPT on the web, whose code tool is a cloud sandbox, run nothing, not even in that code tool, and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai needs to run commands on your computer, and this chat can't. Ask in Codex or in a Work chat in the ChatGPT desktop app."
 
 When running in Codex's sandbox, request approved execution outside it **before the first
 command below** and for every later Kombai CLI command. Use
