@@ -3,13 +3,19 @@ name: about-kombai
 description: Answer the user's questions about Kombai itself (what it is, which agents it works with, accounts and guest mode, credits and plans, where designs and data live, sharing, privacy, updates and support). Use when the user asks about Kombai rather than for design work.
 ---
 
-When running in Codex's sandbox, request approved execution outside it **before the first
-command below** and for every later Kombai CLI command. Use
-`sandbox_permissions: "require_escalated"` on the execution tool call. The commands need network
-access and write `~/.kombai`; `npx` may contact the package registry before Kombai starts.
-Do not try the restricted command first. If this chat cannot approve the required access,
-explain the restriction and wait for the user to change its permissions; do not retry inside
-the sandbox.
+When running in Codex's sandbox, get access outside it **before the first command below**; do not try the
+restricted command first. The commands need network access and write `~/.kombai`, npm's cache (`~/.npm`);
+`npx` may contact the package registry before Kombai starts.
+
+- If this chat can approve sandbox escalations, use `sandbox_permissions: "require_escalated"` on the
+  execution tool call for the first command and every later Kombai CLI command.
+- If it can't but has the `request_permissions` tool (as a ChatGPT or Codex app chat with no project picked
+  does), call that once per turn before the first Kombai command, asking for network access and write access to
+  those paths, then run the commands without escalation.
+- If neither is available, or the user declines, run nothing and do not retry inside the sandbox. Tell the
+  user only this, in one or two lines: Kombai needs network access to start, and they can allow it by choosing
+  **Approve for me** in the permissions menu under the message box (in Codex in a terminal, by allowing network
+  access in its approval settings), then sending their message again.
 
 Run `npx -y @kombai/cli@0.1.5 skill faq` and answer from what it prints; it is this skill's full text.
 

@@ -3,13 +3,19 @@ name: get-started-with-kombai
 description: Kombai's onboarding in Codex. Sets Kombai's canvas view up if this Codex doesn't have it yet, checks the user is signed in, and shows prompts to try in a new chat. Run by the plugin's setup and by Codex's Try now after an install, and whenever the user asks to set Kombai up, get started with it, or see what to try. Not for design requests; those are work-with-kombai's.
 ---
 
-When running in Codex's sandbox, request approved execution outside it **before the first
-command below** and for every later Kombai CLI command. Use
-`sandbox_permissions: "require_escalated"` on the execution tool call. The commands need network
-access and write `~/.kombai` and Codex's `config.toml`; `npx` may contact the package registry before Kombai
-starts. Do not try the restricted command first. If this chat cannot approve the required access,
-explain the restriction and wait for the user to change its permissions; do not retry inside
-the sandbox.
+When running in Codex's sandbox, get access outside it **before the first command below**; do not try the
+restricted command first. The commands need network access and write `~/.kombai`, npm's cache (`~/.npm`) and
+Codex's `config.toml`; `npx` may contact the package registry before Kombai starts.
+
+- If this chat can approve sandbox escalations, use `sandbox_permissions: "require_escalated"` on the
+  execution tool call for the first command and every later Kombai CLI command.
+- If it can't but has the `request_permissions` tool (as a ChatGPT or Codex app chat with no project picked
+  does), call that once per turn before the first Kombai command, asking for network access and write access to
+  those paths, then run the commands without escalation.
+- If neither is available, or the user declines, run nothing and do not retry inside the sandbox. Tell the
+  user only this, in one or two lines: Kombai needs network access to start, and they can allow it by choosing
+  **Approve for me** in the permissions menu under the message box (in Codex in a terminal, by allowing network
+  access in its approval settings), then sending their message again.
 
 The user can run this as often as they like. Do each step without asking first, and do no design work here.
 

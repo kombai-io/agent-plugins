@@ -3,19 +3,25 @@ name: work-with-kombai
 description: Design UI with Kombai. Designs go on a Kombai canvas, which the Codex app shows beside the chat; design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding.
 ---
 
-When running in Codex's sandbox, request approved execution outside it **before the first
-command below** and for every later Kombai CLI command. Use
-`sandbox_permissions: "require_escalated"` on the execution tool call. The commands need network
-access and write `~/.kombai`; `npx` may contact the package registry before Kombai starts.
-Do not try the restricted command first. If this chat cannot approve the required access,
-explain the restriction and wait for the user to change its permissions; do not retry inside
-the sandbox.
+When running in Codex's sandbox, get access outside it **before the first command below**; do not try the
+restricted command first. The commands need network access and write `~/.kombai`, npm's cache (`~/.npm`);
+`npx` may contact the package registry before Kombai starts.
+
+- If this chat can approve sandbox escalations, use `sandbox_permissions: "require_escalated"` on the
+  execution tool call for the first command and every later Kombai CLI command.
+- If it can't but has the `request_permissions` tool (as a ChatGPT or Codex app chat with no project picked
+  does), call that once per turn before the first Kombai command, asking for network access and write access to
+  those paths, then run the commands without escalation.
+- If neither is available, or the user declines, run nothing and do not retry inside the sandbox. Tell the
+  user only this, in one or two lines: Kombai needs network access to start, and they can allow it by choosing
+  **Approve for me** in the permissions menu under the message box (in Codex in a terminal, by allowing network
+  access in its approval settings), then sending their message again.
 
 **First, before anything else, even `npx -y @kombai/cli@0.1.5 skill`:** in the Codex app, look for Kombai's
 `canvas_app` tool. Codex lists no MCP tool up front, so search inside exec with
 `ALL_TOOLS.filter((t) => t.name.endsWith('canvas_app'))`. If it doesn't exist, Kombai's view isn't set up in Codex
 yet: set it up without asking, with `npx -y @kombai/cli@0.1.5 mcp install codex` (outside the sandbox, like every
-Kombai command), tell the user in one line, then follow its `next`. When it answers `notStarting: true` (Kombai's
+Kombai command; through `request_permissions`, ask for write access to Codex's `config.toml` too), tell the user in one line, then follow its `next`. When it answers `notStarting: true` (Kombai's
 server isn't starting in Codex) or `codexApp: false` (this Codex isn't the app, so it shows no view), its `next` starts
 no new task: follow it, and carry on in this task as it says. Otherwise it moves the work to a new task: one offer,
 with a link that opens it with the request filled in, and on yes a new task that carries the request; the new task's
