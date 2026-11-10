@@ -45,6 +45,8 @@ the bootstrap skill.
 
 Codex setup resolves `config.toml` under `$CODEX_HOME` (else `~/.codex`) and follows a config symlink to its
 target. It requests the target's directory because the CLI saves through a temporary sibling and rename.
+The same grant is required for standalone setup and existing-view upgrades; skills request any missing
+write access before later commands need it.
 
 The skills differ between hosts in that sandbox guidance (the paragraphs before the line that runs
 `npx`, and the "The network is blocked" bullet); the Codex workflow skill also has its own

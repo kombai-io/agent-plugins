@@ -25,6 +25,10 @@ returned directory, including any configured override; do not assume it is `~/.n
   any write was sent; for an unknown write outcome, inspect state first. The first time in a chat, tell the user in one line
   that choosing **Approve for me** in the permissions menu under the message box, or picking a project, stops
   this prompt on every message.
+- Before any later command needs another write path, request the missing access first. Every
+  `mcp install codex`, including an existing view's upgrade or setup from the standalone skill, needs the
+  directory containing `config.toml` under `$CODEX_HOME` (else `~/.codex`), following a config symlink to
+  its target's directory. The CLI creates a temporary sibling there before replacing the config.
 - If neither is available, or the user declines, run nothing and do not retry inside the sandbox. Tell the
   user only this, in one or two lines: Kombai needs network access to start, and they can allow it by choosing
   **Approve for me** in the permissions menu under the message box (in Codex in a terminal, by allowing network
