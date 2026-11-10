@@ -5,6 +5,8 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   assertPackOutside,
+  CHAT_NOTICES,
+  checkChatNotice,
   checkCliContract,
   filesBesidePlugin,
   checkSkills,
@@ -82,6 +84,8 @@ export function validateClaudeCodePlugin(root = workspaceRoot, { team = false } 
     'Claude marketplace entry must not name mcpServers: the plugin ships no MCP server.',
   );
   checkSkills(pluginRoot, 'Claude', [SETUP_SKILL]);
+  // Claude's chat offers the plugin too, but its skills need a shell on the user's computer.
+  checkChatNotice(pluginRoot, 'Claude', CHAT_NOTICES['claude-code']);
   // Getting started sets Kombai's server up before the first design chat, which then has the taste card from its first
   // message: a running session never picks up a new MCP server.
   assert(

@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpClaudeCodeVersion, packClaudeCodePlugin, validateClaudeCodePlugin } from './claude-code-plugin.mjs';
-import { cliViewMcpConfig, SETUP_SKILL, TEAM_CLI_PACKAGE } from './cli-view.mjs';
+import { CHAT_NOTICES, cliViewMcpConfig, SETUP_SKILL, TEAM_CLI_PACKAGE } from './cli-view.mjs';
 import { pinnedCliPackage } from './cli-version.mjs';
 
 /** The released CLI the source pins. */
@@ -194,6 +194,33 @@ test('Claude validation requires the get-started skill, and that it sets the ser
     assert.throws(() => validateClaudeCodePlugin(root), new RegExp(`must run ${RELEASE_CLI_PACKAGE.replaceAll('.', '\\.')} mcp install claude-code`));
     fs.rmSync(path.dirname(skill), { recursive: true });
     assert.throws(() => validateClaudeCodePlugin(root), new RegExp(SETUP_SKILL));
+  });
+});
+
+test('Claude validation requires every skill to open with its Claude Code-only notice', () => {
+  fixture((root) => {
+    const notice = CHAT_NOTICES['claude-code'];
+    for (const skill of fs.readdirSync(path.join(root, 'plugins/claude-code/skills'))) {
+      const file = path.join(root, 'plugins/claude-code/skills', skill, 'SKILL.md');
+      const text = fs.readFileSync(file, 'utf8');
+      fs.writeFileSync(file, text.replace(`${notice}\n\n`, ''));
+      assert.throws(() => validateClaudeCodePlugin(root), new RegExp(`Claude ${skill} skill must open with the notice`));
+      // Codex's notice is about Codex and ChatGPT, not Claude Code.
+      fs.writeFileSync(file, text.replace(notice, CHAT_NOTICES.codex));
+      assert.throws(() => validateClaudeCodePlugin(root), new RegExp(`Claude ${skill} skill must open with the notice`));
+      fs.writeFileSync(file, text);
+    }
+    validateClaudeCodePlugin(root);
+  });
+});
+
+test('Claude validation accepts skills with CRLF line endings', () => {
+  fixture((root) => {
+    for (const skill of fs.readdirSync(path.join(root, 'plugins/claude-code/skills'))) {
+      const file = path.join(root, 'plugins/claude-code/skills', skill, 'SKILL.md');
+      fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/\n/g, '\r\n'));
+    }
+    validateClaudeCodePlugin(root);
   });
 });
 

@@ -181,6 +181,58 @@ export function skillGuidance(text) {
  */
 export const SETUP_SKILL = 'get-started-with-kombai';
 
+/** What the agent tells a user who runs the plugin for `agent` in `chat` (Claude's chat for Claude Code). */
+export const chatRefusal = (agent, chat) =>
+  `Kombai's plugin works only in ${agent}, not in ${chat}. Install it in ${agent} and ask there.`;
+const chatNotice = (agent, chat, where) =>
+  `**${agent} only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in ${chat} (${where}) ` +
+  `rather than ${agent}, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no ` +
+  `design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other ` +
+  `help): "${chatRefusal(agent, chat)}"`;
+/**
+ * The paragraph every skill of the Codex and Claude Code plugins opens with, each naming only its own agent. OpenAI's directory and Anthropic's plugin
+ * catalog also offer these plugins in their chat apps, which have no shell on the user's computer, so the skill could
+ * never run there: the agent says where Kombai works instead. It names the chat apps rather than listing where the
+ * plugin may run, so an older VS Code install that still loads the Claude Code plugin (README.md) keeps working.
+ * Keyed by plugin folder.
+ */
+/**
+ * What the Codex plugin tells a user whose chat can't run commands on their computer. The ChatGPT desktop app runs Codex
+ * on the user's computer (its Work chats and Codex), so the refusal is keyed on that, not on the app's name.
+ */
+export const CODEX_REFUSAL =
+  "Kombai needs to run commands on your computer, and this chat can't. Ask in Codex or in a Work chat in the " +
+  'ChatGPT desktop app.';
+const codexNotice =
+  "**Needs a shell on the user's computer.** Kombai runs its CLI in a shell on the user's computer. Codex has one " +
+  "wherever it runs: the ChatGPT desktop app (its Work chats and Codex), the Codex CLI and the IDE extension, so " +
+  "carry on there, whatever the app is called. Only if this chat has no shell on the user's computer, as in " +
+  "ChatGPT on the web, whose code tool is a cloud sandbox, run nothing, not even in that code tool, and do no " +
+  'design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other ' +
+  `help): "${CODEX_REFUSAL}"`;
+export const CHAT_NOTICES = {
+  codex: codexNotice,
+  'claude-code': chatNotice(
+    'Claude Code',
+    "Claude's chat",
+    'claude.ai, or the Chat tab of the Claude desktop or mobile app',
+  ),
+};
+
+/** Check that every skill of a plugin opens with `notice`, the first paragraph after its frontmatter. */
+export function checkChatNotice(pluginRoot, host, notice) {
+  const skillRoot = path.join(pluginRoot, 'skills');
+  for (const entry of fs.readdirSync(skillRoot, { withFileTypes: true }).filter((e) => e.isDirectory())) {
+    const text = fs.readFileSync(path.join(skillRoot, entry.name, 'SKILL.md'), 'utf8');
+    const afterFrontmatter = text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').replace(/^\s+/, '');
+    assert(
+      // A paragraph of its own, with either line ending: a Windows checkout may have CRLF.
+      afterFrontmatter.startsWith(notice) && /^\r?\n/.test(afterFrontmatter.slice(notice.length)),
+      `${host} ${entry.name} skill must open with the notice about where it works.`,
+    );
+  }
+}
+
 /**
  * Check that a plugin ships exactly the workflow and FAQ skills, plus the host's own `extra` ones, each named in its
  * frontmatter and described.

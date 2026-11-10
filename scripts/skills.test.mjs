@@ -4,7 +4,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { ANTIGRAVITY_SANDBOX } from './antigravity-plugin.mjs';
-import { FAQ_SKILL, skillGuidance, WORKFLOW_SKILL } from './cli-view.mjs';
+import { CHAT_NOTICES, CODEX_REFUSAL, FAQ_SKILL, skillGuidance, WORKFLOW_SKILL } from './cli-view.mjs';
 import { GEMINI_SANDBOX } from './gemini-cli-plugin.mjs';
 import { VSCODE_UNSANDBOXED } from './vscode-plugin.mjs';
 
@@ -31,18 +31,24 @@ const GENERIC_BULLET =
   '- **The network is blocked** (a sandboxed shell). Ask for network access the way your client does; Node is not missing.';
 const DESCRIPTION = /^description: .+\n/m;
 
-// A skill in four parts: its frontmatter; its host guidance (between the frontmatter and the line that runs the CLI);
-// its network bullet, which is the host's too; and the body every copy shares (from that line on, less the bullet).
+// The copies that open every skill with a notice that they work only in their own agent (cli-view.mjs).
+const NOTICES = { 'plugins/codex': CHAT_NOTICES.codex, 'plugins/claude-code': CHAT_NOTICES['claude-code'] };
+
+// A skill in four parts: its frontmatter; its host guidance (between the frontmatter and the line that runs the CLI,
+// less the Codex or Claude Code notice, checked on its own); its network bullet, which is the host's too; and the body
+// every copy shares (from that line on, less the bullet).
 function parts(copy, skill) {
   const text = fs.readFileSync(path.join(root, copy, 'skills', skill, 'SKILL.md'), 'utf8');
   const frontmatter = text.match(/^---\n[\s\S]*?\n---\n/)?.[0];
   const bullet = text.match(NETWORK_BULLET)?.[0];
   const guidance = skillGuidance(text);
   assert.ok(frontmatter && bullet && guidance, `${copy}/${skill}: frontmatter, guidance and network bullet`);
+  const notice = NOTICES[copy];
+  const own = guidance.slice(frontmatter.length);
   return {
     text,
     frontmatter,
-    guidance: guidance.slice(frontmatter.length).trim(),
+    guidance: (notice ? own.replace(`\n${notice}\n`, '') : own).trim(),
     bullet,
     body: text.slice(guidance.length).replace(NETWORK_BULLET, ''),
   };
@@ -96,6 +102,30 @@ for (const skill of [WORKFLOW_SKILL, FAQ_SKILL]) {
     }
   });
 }
+
+test('the Codex and Claude Code copies open every skill with their own chat notice, and no other copy has one', () => {
+  for (const copy of Object.keys(COPIES)) {
+    for (const skill of fs.readdirSync(path.join(root, copy, 'skills'))) {
+      const text = fs.readFileSync(path.join(root, copy, 'skills', skill, 'SKILL.md'), 'utf8');
+      const opening = text.replace(/^---\n[\s\S]*?\n---\n\n/, '').split('\n\n')[0];
+      if (NOTICES[copy]) {
+        assert.equal(opening, NOTICES[copy], `${copy}/${skill}: opening paragraph`);
+      } else {
+        assert.ok(!text.includes("Kombai's plugin works only in") && !text.includes(CODEX_REFUSAL), `${copy}/${skill}: no chat notice`);
+      }
+    }
+  }
+  // Codex's is keyed on a shell on the user's computer, not on the app's name: the ChatGPT desktop app runs Codex there.
+  assert.ok(CHAT_NOTICES.codex.includes(`"${CODEX_REFUSAL}"`), 'the Codex notice quotes its refusal');
+  assert.match(CHAT_NOTICES.codex, /ChatGPT desktop app \(its Work chats and Codex\)[^.]*carry on there/);
+  assert.match(CODEX_REFUSAL, /Codex or in a Work chat in the ChatGPT desktop app/);
+  assert.match(
+    CHAT_NOTICES['claude-code'],
+    /"Kombai's plugin works only in Claude Code, not in Claude's chat\. Install it in Claude Code and ask there\."/,
+  );
+  assert.ok(!/Claude/.test(CHAT_NOTICES.codex), 'the Codex notice names no Claude product');
+  assert.ok(!/Codex|ChatGPT/.test(CHAT_NOTICES['claude-code']), 'the Claude Code notice names no OpenAI product');
+});
 
 test("each copy's two skills share one network bullet", () => {
   for (const copy of Object.keys(COPIES)) {

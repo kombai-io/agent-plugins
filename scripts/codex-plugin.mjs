@@ -3,7 +3,15 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkCliContract, checkSkills, SETUP_SKILL, stageTeamBuild, STRAY_FILE } from './cli-view.mjs';
+import {
+  CHAT_NOTICES,
+  checkChatNotice,
+  checkCliContract,
+  checkSkills,
+  SETUP_SKILL,
+  stageTeamBuild,
+  STRAY_FILE,
+} from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -68,6 +76,9 @@ export function validateCodexPlugin(root = workspaceRoot, { team = false } = {})
   }
 
   checkSkills(pluginRoot, 'Codex', [SETUP_SKILL]);
+  // ChatGPT on the web offers the plugin too, but its skills need a shell on the user's computer, which the ChatGPT
+  // desktop app's Codex has and the web's code tool does not.
+  checkChatNotice(pluginRoot, 'Codex', CHAT_NOTICES.codex);
   // Setup right after install adds Kombai's view, so the user's first design chat has it from its first message.
   assert(
     manifest.onboardingSkill === `./skills/${SETUP_SKILL}/SKILL.md`,

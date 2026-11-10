@@ -4,7 +4,7 @@ description: Answer the user's questions about Kombai itself (what it is, which 
 ---
 
 When running in Codex's sandbox, get access outside it **before the first command below**; do not try the
-restricted command first. The commands need network access and write `~/.kombai`, npm's cache (`~/.npm`);
+restricted command first. The commands need network access and write `~/.kombai` and npm's cache (`~/.npm`);
 `npx` may contact the package registry before Kombai starts.
 
 - If this chat can approve sandbox escalations, use `sandbox_permissions: "require_escalated"` on the

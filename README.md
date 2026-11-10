@@ -18,6 +18,13 @@ The Codex and Claude Code plugins have a third, `get-started-with-kombai`, their
 up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
 and ends with prompts to try (see [The canvas view](#the-canvas-view)).
 
+The Codex plugin needs Codex on the user's computer, and the Claude Code plugin needs Claude Code. ChatGPT on the web
+and Claude's chat can offer the same plugins but have no shell on the user's computer, so every skill of those two
+plugins opens with a notice: where the chat has no such shell the agent runs nothing and says where to ask instead
+(`CHAT_NOTICES` in `scripts/cli-view.mjs`; their validators check it). The Codex notice is keyed on the shell, not on
+the app's name: the ChatGPT desktop app runs Codex on the user's computer (its Work chats and Codex), so Kombai works
+there even though the app's own prompts say "ChatGPT".
+
 When running in Codex's sandbox, the Codex plugin and standalone skill request approved
 execution outside it before the first `npx` call and for later CLI commands, using the execution
 tool's `sandbox_permissions: "require_escalated"` setting. npm may need network access before
