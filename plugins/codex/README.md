@@ -9,7 +9,8 @@ and for later Kombai CLI commands, using the execution tool's
 `sandbox_permissions: "require_escalated"` setting. npm may need network access before Kombai
 starts, and the CLI writes `~/.kombai`. In a ChatGPT or Codex app chat with no project picked,
 escalations are rejected automatically, so the skill asks for network access and write access to
-`~/.kombai`, npm's cache and Codex's `config.toml` through Codex's `request_permissions` tool
+`~/.kombai`, npm's cache and the folder holding Codex's `config.toml` (the CLI saves it through a
+temporary file beside it) through Codex's `request_permissions` tool
 instead; if that is missing or declined, it tells the user to choose "Approve for me" in the
 permissions menu. Update the installed plugin to receive this bootstrap
 guidance; updating only the CLI does not change the installed skill.

@@ -5,7 +5,8 @@ description: Kombai's onboarding in Codex. Sets Kombai's canvas view up if this 
 
 When running in Codex's sandbox, get access outside it **before the first command below**; do not try the
 restricted command first. The commands need network access and write `~/.kombai`, npm's cache (`~/.npm`) and
-Codex's `config.toml`; `npx` may contact the package registry before Kombai starts.
+the folder holding Codex's `config.toml` (`$CODEX_HOME`, else `~/.codex`: the CLI saves the file through a
+temporary file beside it); `npx` may contact the package registry before Kombai starts.
 
 - If this chat can approve sandbox escalations, use `sandbox_permissions: "require_escalated"` on the
   execution tool call for the first command and every later Kombai CLI command.
