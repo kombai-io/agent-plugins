@@ -214,6 +214,16 @@ test('Claude validation requires every skill to open with its Claude Code-only n
   });
 });
 
+test('Claude validation accepts skills with CRLF line endings', () => {
+  fixture((root) => {
+    for (const skill of fs.readdirSync(path.join(root, 'plugins/claude-code/skills'))) {
+      const file = path.join(root, 'plugins/claude-code/skills', skill, 'SKILL.md');
+      fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/\n/g, '\r\n'));
+    }
+    validateClaudeCodePlugin(root);
+  });
+});
+
 test('neither the Claude Code manifest nor its marketplace entry names an MCP server', () => {
   fixture((root) => {
     const manifestPath = path.join(root, 'plugins/claude-code/.claude-plugin/plugin.json');

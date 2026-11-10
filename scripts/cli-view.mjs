@@ -212,7 +212,8 @@ export function checkChatNotice(pluginRoot, host, notice) {
     const text = fs.readFileSync(path.join(skillRoot, entry.name, 'SKILL.md'), 'utf8');
     const afterFrontmatter = text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').replace(/^\s+/, '');
     assert(
-      afterFrontmatter.startsWith(`${notice}\n`),
+      // A paragraph of its own, with either line ending: a Windows checkout may have CRLF.
+      afterFrontmatter.startsWith(notice) && /^\r?\n/.test(afterFrontmatter.slice(notice.length)),
       `${host} ${entry.name} skill must open with the notice that it works only in ${host === 'Claude' ? 'Claude Code' : host}.`,
     );
   }

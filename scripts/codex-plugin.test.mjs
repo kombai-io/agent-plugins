@@ -351,6 +351,16 @@ test('Codex validation requires every skill to open with its Codex-only notice',
   });
 });
 
+test('Codex validation accepts skills with CRLF line endings', () => {
+  fixture((root) => {
+    for (const skill of fs.readdirSync(path.join(root, 'plugins/codex/skills'))) {
+      const file = path.join(root, 'plugins/codex/skills', skill, 'SKILL.md');
+      fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/\n/g, '\r\n'));
+    }
+    validateCodexPlugin(root);
+  });
+});
+
 test('a team pack runs the CLI beta from npm beta, and the source stays on the release', () => {
   fixture((root) => {
     const version = validateCodexPlugin(root);
