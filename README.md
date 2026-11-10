@@ -18,6 +18,11 @@ The Codex and Claude Code plugins have a third, `get-started-with-kombai`, their
 up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
 and ends with prompts to try (see [The canvas view](#the-canvas-view)).
 
+The Codex plugin works only in Codex, and the Claude Code plugin only in Claude Code. ChatGPT and Claude's chat can
+offer the same plugins but have no shell on the user's computer, so every skill of those two plugins opens with a
+notice: in ChatGPT the agent runs nothing and tells the user Kombai's plugin works only in Codex, and in Claude's chat
+that it works only in Claude Code (`CHAT_NOTICES` in `scripts/cli-view.mjs`; their validators check it).
+
 When running in Codex's sandbox, the Codex plugin and standalone skill request approved
 execution outside it before the first `npx` call and for later CLI commands, using the execution
 tool's `sandbox_permissions: "require_escalated"` setting. npm may need network access before

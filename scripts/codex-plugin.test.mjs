@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpCodexVersion, packCodexPlugin, validateCodexPlugin } from './codex-plugin.mjs';
 import {
+  CHAT_NOTICES,
   cliViewMcpConfig,
   stageTeamBuild,
   TEAM_CLI_PACKAGE,
@@ -302,8 +303,9 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
         .replace(/\s+/g, ' ')
         .includes(`set it up without asking, with \`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex\``),
     );
-    // Setting the view up is the skill's first instruction after the sandbox note, before even `kombai skill`.
-    const afterSandbox = skill.stdout.split('\n\n').slice(2).join('\n\n');
+    // Setting the view up is the skill's first instruction after the ChatGPT notice and the sandbox note, before even
+    // `kombai skill`.
+    const afterSandbox = skill.stdout.split('\n\n').slice(3).join('\n\n');
     assert.ok(afterSandbox.startsWith("**First, before anything else, even `npx"), afterSandbox.slice(0, 120));
     // The install's answer says how to move the work to a new task without the user asking twice, and, from facts
     // the CLI reads itself, when to start none: a server that isn't starting, or a Codex that isn't the app.
@@ -329,6 +331,23 @@ test('the Codex manifest says the plugin needs local execution', () => {
     delete manifest.requires_local_executor;
     fs.writeFileSync(manifestPath, JSON.stringify(manifest));
     assert.throws(() => validateCodexPlugin(root), /requires_local_executor/);
+  });
+});
+
+test('Codex validation requires every skill to open with its Codex-only notice', () => {
+  fixture((root) => {
+    for (const skill of fs.readdirSync(path.join(root, 'plugins/codex/skills'))) {
+      const file = path.join(root, 'plugins/codex/skills', skill, 'SKILL.md');
+      const text = fs.readFileSync(file, 'utf8');
+      const without = text.replace(`${CHAT_NOTICES.codex}\n\n`, '');
+      fs.writeFileSync(file, without);
+      assert.throws(() => validateCodexPlugin(root), new RegExp(`Codex ${skill} skill must open with the notice`));
+      // Further down is not enough: the agent must read it before its first command.
+      fs.writeFileSync(file, `${without}\n${CHAT_NOTICES.codex}\n`);
+      assert.throws(() => validateCodexPlugin(root), new RegExp(`Codex ${skill} skill must open with the notice`));
+      fs.writeFileSync(file, text);
+    }
+    validateCodexPlugin(root);
   });
 });
 

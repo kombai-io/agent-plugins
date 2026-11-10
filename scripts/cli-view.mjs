@@ -181,6 +181,43 @@ export function skillGuidance(text) {
  */
 export const SETUP_SKILL = 'get-started-with-kombai';
 
+/** What the agent tells a user who runs the plugin for `agent` in `chat` (ChatGPT for Codex, Claude's chat for Claude Code). */
+export const chatRefusal = (agent, chat) =>
+  `Kombai's plugin works only in ${agent}, not in ${chat}. Install it in ${agent} and ask there.`;
+const chatNotice = (agent, chat, where) =>
+  `**${agent} only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in ${chat} (${where}) ` +
+  `rather than ${agent}, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no ` +
+  `design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other ` +
+  `help): "${chatRefusal(agent, chat)}"`;
+/**
+ * The paragraph every skill of the Codex and Claude Code plugins opens with, each naming only its own agent. OpenAI's directory and Anthropic's plugin
+ * catalog also offer these plugins in their chat apps, which have no shell on the user's computer, so the skill could
+ * never run there: the agent says where Kombai works instead. It names the chat apps rather than listing where the
+ * plugin may run, so an older VS Code install that still loads the Claude Code plugin (README.md) keeps working.
+ * Keyed by plugin folder.
+ */
+export const CHAT_NOTICES = {
+  codex: chatNotice('Codex', 'ChatGPT', 'chatgpt.com or the ChatGPT app'),
+  'claude-code': chatNotice(
+    'Claude Code',
+    "Claude's chat",
+    'claude.ai, or the Chat tab of the Claude desktop or mobile app',
+  ),
+};
+
+/** Check that every skill of a plugin opens with `notice`, the first paragraph after its frontmatter. */
+export function checkChatNotice(pluginRoot, host, notice) {
+  const skillRoot = path.join(pluginRoot, 'skills');
+  for (const entry of fs.readdirSync(skillRoot, { withFileTypes: true }).filter((e) => e.isDirectory())) {
+    const text = fs.readFileSync(path.join(skillRoot, entry.name, 'SKILL.md'), 'utf8');
+    const afterFrontmatter = text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').replace(/^\s+/, '');
+    assert(
+      afterFrontmatter.startsWith(`${notice}\n`),
+      `${host} ${entry.name} skill must open with the notice that it works only in ${host === 'Claude' ? 'Claude Code' : host}.`,
+    );
+  }
+}
+
 /**
  * Check that a plugin ships exactly the workflow and FAQ skills, plus the host's own `extra` ones, each named in its
  * frontmatter and described.

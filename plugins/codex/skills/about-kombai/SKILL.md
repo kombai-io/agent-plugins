@@ -3,6 +3,8 @@ name: about-kombai
 description: Answer the user's questions about Kombai itself (what it is, which agents it works with, accounts and guest mode, credits and plans, where designs and data live, sharing, privacy, updates and support). Use when the user asks about Kombai rather than for design work.
 ---
 
+**Codex only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in ChatGPT (chatgpt.com or the ChatGPT app) rather than Codex, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai's plugin works only in Codex, not in ChatGPT. Install it in Codex and ask there."
+
 When running in Codex's sandbox, request approved execution outside it **before the first
 command below** and for every later Kombai CLI command. Use
 `sandbox_permissions: "require_escalated"` on the execution tool call. The commands need network

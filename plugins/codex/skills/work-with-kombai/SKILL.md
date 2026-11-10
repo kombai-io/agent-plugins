@@ -3,6 +3,8 @@ name: work-with-kombai
 description: Design UI with Kombai. Designs go on a Kombai canvas, which the Codex app shows beside the chat; design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding.
 ---
 
+**Codex only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in ChatGPT (chatgpt.com or the ChatGPT app) rather than Codex, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai's plugin works only in Codex, not in ChatGPT. Install it in Codex and ask there."
+
 When running in Codex's sandbox, request approved execution outside it **before the first
 command below** and for every later Kombai CLI command. Use
 `sandbox_permissions: "require_escalated"` on the execution tool call. The commands need network
