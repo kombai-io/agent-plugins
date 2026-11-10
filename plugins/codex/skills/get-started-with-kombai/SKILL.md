@@ -7,8 +7,9 @@ description: Kombai's onboarding in Codex. Sets Kombai's canvas view up if this 
 
 When running in Codex's sandbox, get access outside it **before the first command below**; do not try the
 restricted command first. The commands need network access and write `~/.kombai`, npm's configured cache and
-the folder holding Codex's `config.toml` (`$CODEX_HOME`, else `~/.codex`: the CLI saves the file through a
-temporary file beside it); `npx` may contact the package registry before Kombai starts.
+the directory containing Codex's `config.toml` (`$CODEX_HOME`, else `~/.codex`; if the file is a symlink,
+resolve it and use its target's directory). The CLI saves through a temporary sibling of that target;
+`npx` may contact the package registry before Kombai starts.
 
 Before requesting access, resolve npm's cache with the local config read `npm config get cache`
 (`npm.cmd config get cache` on Windows), from the workspace root when in an npm workspace. Request the

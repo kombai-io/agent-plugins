@@ -32,7 +32,9 @@ returned directory, including any configured override; do not assume it is `~/.n
 `canvas_app` tool. Codex lists no MCP tool up front, so search inside exec with
 `ALL_TOOLS.filter((t) => t.name.endsWith('canvas_app'))`. If it doesn't exist, Kombai's view isn't set up in Codex
 yet: set it up without asking, with `npx -y @kombai/cli@0.1.5 mcp install codex` (outside the sandbox, like every
-Kombai command; through `request_permissions`, ask for write access to the folder holding Codex's `config.toml` too (`$CODEX_HOME`, else `~/.codex`)), tell the user in one line, then follow its `next`. When it answers `notStarting: true` (Kombai's
+Kombai command; through `request_permissions`, also request the directory containing Codex's `config.toml`
+under `$CODEX_HOME`, else `~/.codex`, resolving a config symlink to its target's directory for the temporary
+sibling the CLI writes), tell the user in one line, then follow its `next`. When it answers `notStarting: true` (Kombai's
 server isn't starting in Codex) or `codexApp: false` (this Codex isn't the app, so it shows no view), its `next` starts
 no new task: follow it, and carry on in this task as it says. Otherwise it moves the work to a new task: one offer,
 with a link that opens it with the request filled in, and on yes a new task that carries the request; the new task's

@@ -43,6 +43,9 @@ per-message prompt. If neither route works, the skills run nothing and tell the 
 plugin or standalone skill to receive this guidance; upgrading only the CLI does not replace
 the bootstrap skill.
 
+Codex setup resolves `config.toml` under `$CODEX_HOME` (else `~/.codex`) and follows a config symlink to its
+target. It requests the target's directory because the CLI saves through a temporary sibling and rename.
+
 The skills differ between hosts in that sandbox guidance (the paragraphs before the line that runs
 `npx`, and the "The network is blocked" bullet); the Codex workflow skill also has its own
 description and a paragraph on showing the canvas beside the chat. `scripts/skills.test.mjs`
