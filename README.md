@@ -21,7 +21,12 @@ and ends with prompts to try (see [The canvas view](#the-canvas-view)).
 When running in Codex's sandbox, the Codex plugin and standalone skill request approved
 execution outside it before the first `npx` call and for later CLI commands, using the execution
 tool's `sandbox_permissions: "require_escalated"` setting. npm may need network access before
-Kombai starts, and the CLI writes `~/.kombai`. Existing Codex installations need the updated
+Kombai starts, and the CLI writes `~/.kombai` (and npm its cache, `~/.npm`). Where the chat cannot
+approve escalations but offers Codex's `request_permissions` tool, the skills ask for network
+access and those write paths through it instead, once per turn: the ChatGPT and Codex apps give a
+chat with no project picked that tool, and reject every escalation automatically even when its
+permissions menu reads "Ask for approval". If neither works, the skills run nothing and tell the
+user to choose "Approve for me" in that menu. Existing Codex installations need the updated
 plugin or standalone skill to receive this guidance; upgrading only the CLI does not replace
 the bootstrap skill.
 
@@ -35,7 +40,7 @@ validators check their host's guidance too:
 
 | Host | What the skill says about the sandbox |
 | --- | --- |
-| Codex (and the standalone skill) | request `sandbox_permissions: "require_escalated"` before the first command |
+| Codex (and the standalone skill) | request `sandbox_permissions: "require_escalated"` before the first command, or, where escalations are off, network and write access through `request_permissions` |
 | VS Code | set `requestUnsandboxedExecution: true` (never `requestAllowNetwork`) on the terminal tool call when VS Code's terminal sandbox is on |
 | Antigravity | request to run outside Antigravity's sandbox from the first try; a headless `agy -p` run needs `command(...)` allow rules unless its permission mode approves the commands |
 | Gemini CLI | the workflow skill checks `$SANDBOX` before the first command and, if it is set, asks the user to restart without the sandbox; the FAQ skill does the same after a command fails. With tool sandboxing, both pass `additional_permissions` on the first command |
