@@ -3,7 +3,7 @@ name: about-kombai
 description: Answer the user's questions about Kombai itself (what it is, which agents it works with, accounts and guest mode, credits and plans, where designs and data live, sharing, privacy, updates and support). Use when the user asks about Kombai rather than for design work.
 ---
 
-When running in Codex's sandbox, get access outside it **before the first command below**; do not try the
+When running in Codex's sandbox, get access outside it **before the first Kombai command**; do not try the
 restricted command first. The commands need network access and write `~/.kombai` and npm's configured cache;
 `npx` may contact the package registry before Kombai starts.
 

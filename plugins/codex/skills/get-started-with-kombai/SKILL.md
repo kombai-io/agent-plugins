@@ -5,7 +5,7 @@ description: Kombai's onboarding in Codex. Sets Kombai's canvas view up if this 
 
 **Needs a shell on the user's computer.** Kombai runs its CLI in a shell on the user's computer. Codex has one wherever it runs: the ChatGPT desktop app (its Work chats and Codex), the Codex CLI and the IDE extension, so carry on there, whatever the app is called. Only if this chat has no shell on the user's computer, as in ChatGPT on the web, whose code tool is a cloud sandbox, run nothing, not even in that code tool, and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai needs to run commands on your computer, and this chat can't. Ask in Codex or in a Work chat in the ChatGPT desktop app."
 
-When running in Codex's sandbox, get access outside it **before the first command below**; do not try the
+When running in Codex's sandbox, get access outside it **before the first Kombai command**; do not try the
 restricted command first. The commands need network access and write `~/.kombai`, npm's configured cache and
 the directory containing Codex's `config.toml` (`$CODEX_HOME`, else `~/.codex`; if the file is a symlink,
 resolve it and use its target's directory). The CLI saves through a temporary sibling of that target;

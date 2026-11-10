@@ -3,7 +3,7 @@ name: work-with-kombai
 description: Design UI with Kombai. Designs go on a Kombai canvas; design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding.
 ---
 
-When running in Codex's sandbox, get access outside it **before the first command below**; do not try the
+When running in Codex's sandbox, get access outside it **before the first Kombai command**; do not try the
 restricted command first. The commands need network access and write `~/.kombai` and npm's configured cache;
 `npx` may contact the package registry before Kombai starts.
 
