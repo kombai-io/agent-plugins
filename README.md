@@ -28,7 +28,8 @@ there even though the app's own prompts say "ChatGPT".
 When running in Codex's sandbox, the Codex plugin and standalone skill request approved
 execution outside it before the first `npx` call and for later CLI commands, using the execution
 tool's `sandbox_permissions: "require_escalated"` setting. npm may need network access before
-Kombai starts, and the CLI writes `~/.kombai` (and npm its cache, `~/.npm`). Where the chat cannot
+Kombai starts, and the CLI writes `~/.kombai` (and npm its configured cache, resolved with
+`npm config get cache` from the workspace root when in an npm workspace). Where the chat cannot
 approve escalations but offers Codex's `request_permissions` tool, the skills ask for network
 access and those write paths through it instead, before the first Kombai command of every reply:
 the ChatGPT and Codex apps give a chat with no project picked that tool, reject every escalation

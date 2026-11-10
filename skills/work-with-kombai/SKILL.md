@@ -4,8 +4,12 @@ description: Design UI with Kombai. Designs go on a Kombai canvas; design system
 ---
 
 When running in Codex's sandbox, get access outside it **before the first command below**; do not try the
-restricted command first. The commands need network access and write `~/.kombai` and npm's cache (`~/.npm`);
+restricted command first. The commands need network access and write `~/.kombai` and npm's configured cache;
 `npx` may contact the package registry before Kombai starts.
+
+Before requesting access, resolve npm's cache with the local config read `npm config get cache`
+(`npm.cmd config get cache` on Windows), from the workspace root when in an npm workspace. Request the
+returned directory, including any configured override; do not assume it is `~/.npm`.
 
 - If this chat can approve sandbox escalations, use `sandbox_permissions: "require_escalated"` on the
   execution tool call for the first command and every later Kombai CLI command.
