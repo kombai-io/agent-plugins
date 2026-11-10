@@ -18,8 +18,9 @@ returned directory, including any configured override; do not assume it is `~/.n
 - If it can't but has the `request_permissions` tool (as a ChatGPT or Codex app chat with no project picked
   does), call that before the first Kombai command of every reply, asking for network access and write access
   to those paths, then run the commands without escalation. A grant from before the latest user message is
-  gone. If the first Kombai command of a reply comes back with no output at all, it ran in the sandbox with no
-  network: call `request_permissions` and run it again. The first time in a chat, tell the user in one line
+  gone. No output alone does not mean network access failed. If execution returns a running session, poll it
+  instead of rerunning the command. Request access and retry only after a confirmed sandbox denial before
+  any write was sent; for an unknown write outcome, inspect state first. The first time in a chat, tell the user in one line
   that choosing **Approve for me** in the permissions menu under the message box, or picking a project, stops
   this prompt on every message.
 - If neither is available, or the user declines, run nothing and do not retry inside the sandbox. Tell the

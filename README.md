@@ -34,8 +34,9 @@ approve escalations but offers Codex's `request_permissions` tool, the skills as
 access and those write paths through it instead, before the first Kombai command of every reply:
 the ChatGPT and Codex apps give a chat with no project picked that tool, reject every escalation
 automatically even when its permissions menu reads "Ask for approval", and end the grant with the
-turn (in ChatGPT mode the card offers only "Allow once"). A reply's first Kombai command that comes
-back with no output is taken as one run in the sandbox without asking: the agent asks and runs it again. The
+turn (in ChatGPT mode the card offers only "Allow once"). Empty output alone does not trigger a retry:
+the agent polls a running execution session, and retries only a confirmed sandbox denial before a write was sent,
+after getting the required access. For an unknown write outcome, it checks state first. The
 first time in such a chat, the agent tells the user that "Approve for me" or a project stops the
 per-message prompt. If neither route works, the skills run nothing and tell the user to choose
 "Approve for me" in that menu. Existing Codex installations need the updated
