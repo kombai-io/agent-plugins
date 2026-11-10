@@ -253,6 +253,16 @@ client a plugin's skill installs Kombai's server for (`codex`, `claude-code`), s
 a CLI older than its skills. Then it rewrites every CLI it finds in those files, and runs the
 checks below. Commit the result; it changes no plugin version.
 
+From its first self-managing release (vscode-assistant `packages/cli/src/managed`), the pinned
+CLI is only the first hop: the plugin's `npx` line keeps a copy under `~/.kombai/cli/install`, and
+at each design request it asks Kombai's backend which version to be on and moves that copy forward,
+so a CLI fix reaches users without a plugin release. Every later command runs that copy through the
+launcher line the skill prints. Disclose it where a directory asks what the plugin downloads or runs:
+the CLI's `skill faq` (Setup and problems, Updates) says the same to users. Two rules for the pin
+once it names a self-managing release: never move it back to one from before (it could not update
+itself or read the backend's withdrawn versions), and never ahead of the backend's recommended
+version for that channel.
+
 `pnpm run check` (and Validate Plugins) runs `node scripts/cli-version.mjs check`, which fails
 unless every plugin pins the same released CLI and `skills/` and `README.md` name it and no other.
 Each plugin's validator fails the same way on its own folder and on the files its pack zips
