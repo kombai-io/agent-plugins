@@ -30,10 +30,14 @@ execution outside it before the first `npx` call and for later CLI commands, usi
 tool's `sandbox_permissions: "require_escalated"` setting. npm may need network access before
 Kombai starts, and the CLI writes `~/.kombai` (and npm its cache, `~/.npm`). Where the chat cannot
 approve escalations but offers Codex's `request_permissions` tool, the skills ask for network
-access and those write paths through it instead, once per turn: the ChatGPT and Codex apps give a
-chat with no project picked that tool, and reject every escalation automatically even when its
-permissions menu reads "Ask for approval". If neither works, the skills run nothing and tell the
-user to choose "Approve for me" in that menu. Existing Codex installations need the updated
+access and those write paths through it instead, before the first Kombai command of every reply:
+the ChatGPT and Codex apps give a chat with no project picked that tool, reject every escalation
+automatically even when its permissions menu reads "Ask for approval", and end the grant with the
+turn (in ChatGPT mode the card offers only "Allow once"). A reply's first Kombai command that comes
+back with no output is taken as one run in the sandbox without asking: the agent asks and runs it again. The
+first time in such a chat, the agent tells the user that "Approve for me" or a project stops the
+per-message prompt. If neither route works, the skills run nothing and tell the user to choose
+"Approve for me" in that menu. Existing Codex installations need the updated
 plugin or standalone skill to receive this guidance; upgrading only the CLI does not replace
 the bootstrap skill.
 

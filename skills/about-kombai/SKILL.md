@@ -10,8 +10,12 @@ restricted command first. The commands need network access and write `~/.kombai`
 - If this chat can approve sandbox escalations, use `sandbox_permissions: "require_escalated"` on the
   execution tool call for the first command and every later Kombai CLI command.
 - If it can't but has the `request_permissions` tool (as a ChatGPT or Codex app chat with no project picked
-  does), call that once per turn before the first Kombai command, asking for network access and write access to
-  those paths, then run the commands without escalation.
+  does), call that before the first Kombai command of every reply, asking for network access and write access
+  to those paths, then run the commands without escalation. A grant from before the latest user message is
+  gone. If the first Kombai command of a reply comes back with no output at all, it ran in the sandbox with no
+  network: call `request_permissions` and run it again. The first time in a chat, tell the user in one line
+  that choosing **Approve for me** in the permissions menu under the message box, or picking a project, stops
+  this prompt on every message.
 - If neither is available, or the user declines, run nothing and do not retry inside the sandbox. Tell the
   user only this, in one or two lines: Kombai needs network access to start, and they can allow it by choosing
   **Approve for me** in the permissions menu under the message box (in Codex in a terminal, by allowing network
