@@ -20,10 +20,14 @@ to it. It runs only when the user asks Kombai for an image or video (names Komba
 for the videos a taste run left as prompts once the user asked for AI video; never on its own, and a plain
 image request stays with the host's own image tool. It is not for stock photos or for designing a whole UI (that is `work-with-kombai`'s).
 
-**Release order:** this skill runs `kombai skill assets`, which a CLI has only from the release that ships
-vscode-assistant PR #4095. The skills' pinned CLI version must point at such a release
-(`pnpm run set-cli-version <version>`) before this skill reaches `main`: GitHub-sourced installs
-(`npx skills add ...`, `gemini skills install ...`, `agy plugin install ...`) read `main` directly.
+**Release order:** this skill needs a CLI release that ships vscode-assistant PR #4107, not only
+#4095. #4095 adds `kombai skill assets` and the `asset` commands. #4107 makes that text usable from
+this skill: it prints the run line, prices a video with a free check before asking the user, and
+generates only when the user asks Kombai. The skills' pinned CLI version must point at such a
+release (`pnpm run set-cli-version <version>`) before this skill reaches `main`: GitHub-sourced
+installs (`npx skills add ...`, `gemini skills install ...`, `agy plugin install ...`) read `main`
+directly. set-cli-version and `pnpm run check` refuse a CLI without the `assets` topic (#4095), but
+they can't tell whether a release has #4107: check its release notes before pinning it.
 
 The Codex and Claude Code plugins have a fourth, `get-started-with-kombai`, their onboarding: it sets
 up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
