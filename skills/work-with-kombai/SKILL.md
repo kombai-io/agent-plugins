@@ -3,13 +3,9 @@ name: work-with-kombai
 description: Design UI with Kombai. Designs go on a Kombai canvas; design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding.
 ---
 
-When running in Codex's sandbox, request approved execution outside it **before the first
-command below** and for every later Kombai CLI command. Use
-`sandbox_permissions: "require_escalated"` on the execution tool call. The commands need network
-access and write `~/.kombai`; `npx` may contact the package registry before Kombai starts.
-Do not try the restricted command first. If this chat cannot approve the required access,
-explain the restriction and wait for the user to change its permissions; do not retry inside
-the sandbox.
+When running in Codex's sandbox, first read `codex-access.md` beside this file and do what it says
+**before the first command below**: it says how to get network access without trying the restricted
+command first. Elsewhere, skip it.
 
 Run `npx -y @kombai/cli@0.1.5 skill` and follow what it prints; it is this skill's full text.
 

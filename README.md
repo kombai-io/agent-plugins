@@ -18,24 +18,55 @@ The Codex and Claude Code plugins have a third, `get-started-with-kombai`, their
 up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
 and ends with prompts to try (see [The canvas view](#the-canvas-view)).
 
+The Codex plugin needs Codex on the user's computer, and the Claude Code plugin needs Claude Code. ChatGPT on the web
+and Claude's chat can offer the same plugins but have no shell on the user's computer, so every skill of those two
+plugins opens with a notice: where the chat has no such shell the agent runs nothing and says where to ask instead
+(`CHAT_NOTICES` in `scripts/cli-view.mjs`; their validators check it). The Codex notice is keyed on the shell, not on
+the app's name: the ChatGPT desktop app runs Codex on the user's computer (its Work chats and Codex), so Kombai works
+there even though the app's own prompts say "ChatGPT".
+
 When running in Codex's sandbox, the Codex plugin and standalone skill request approved
 execution outside it before the first `npx` call and for later CLI commands, using the execution
 tool's `sandbox_permissions: "require_escalated"` setting. npm may need network access before
-Kombai starts, and the CLI writes `~/.kombai`. Existing Codex installations need the updated
+Kombai starts, and the CLI writes `~/.kombai` (and npm its configured cache, resolved with
+`npm config get cache` from the workspace root when in an npm workspace). Where the chat cannot
+approve escalations but offers Codex's `request_permissions` tool, the skills ask for network
+access and those write paths through it instead: the ChatGPT and Codex apps give a chat with no
+project picked that tool and reject every escalation automatically, even when its permissions menu
+reads "Ask for approval". The grant can end with the turn (in ChatGPT mode the card offers only
+"Allow once"; Codex mode also offers "Allow this conversation"), so before a reply's first Kombai
+command or design-file write the agent runs `node -p "'network_off='+(process.env.CODEX_SANDBOX_NETWORK_DISABLED||0)"` and
+asks again only when it prints `network_off=1`. Empty output alone does not trigger a retry: the agent polls a
+running execution session, checks the network the same way when a command exits with no output, and retries only
+a confirmed sandbox denial before a write was sent; for an unknown write outcome, it checks state first. When a later reply in such a chat has to ask again, it shows Kombai's `access_card`
+where it is available (the CLI's card: Approve for me, a project, or Codex mode stops the
+per-message prompt; only the `blocked` card has a Continue button, since the request is done
+by then); no line of text asks it to relay that tip, which agents
+ignored in testing. If neither
+route works, the skills run nothing and show that card with reason `blocked`, or tell the user to
+choose "Approve for me" in that menu. Existing Codex installations need the updated
 plugin or standalone skill to receive this guidance; upgrading only the CLI does not replace
 the bootstrap skill.
+
+Codex setup resolves `config.toml` under `$CODEX_HOME` (else `~/.codex`) and follows a config symlink to its
+target. It requests the target's directory because the CLI saves through a temporary sibling and rename.
+The same grant is required for standalone setup and existing-view upgrades; skills request any missing
+write access before later commands need it.
 
 The skills differ between hosts in that sandbox guidance (the paragraphs before the line that runs
 `npx`, and the "The network is blocked" bullet); the Codex workflow skill also has its own
 description and a paragraph on showing the canvas beside the chat. `scripts/skills.test.mjs`
 checks that every copy shares the rest of the standalone skill's text, that each carries its own
 host's guidance before the first command and no other host's, and that the Claude Code and Cursor
-copies have no guidance beyond the generic bullet. The VS Code, Antigravity and Gemini CLI
+copies have no guidance beyond the generic bullet. The standalone skill runs in any agent, so its
+Codex guidance sits in `codex-access.md` beside each `SKILL.md`, which only points at it ("when
+running in Codex's sandbox, first read …"); every other agent skips it. The test checks that file
+matches the Codex plugin's inline guidance and that `SKILL.md` holds none of it. The VS Code, Antigravity and Gemini CLI
 validators check their host's guidance too:
 
 | Host | What the skill says about the sandbox |
 | --- | --- |
-| Codex (and the standalone skill) | request `sandbox_permissions: "require_escalated"` before the first command |
+| Codex (and the standalone skill, in its `codex-access.md`) | request `sandbox_permissions: "require_escalated"` before the first command, or, where escalations are off, network and write access through `request_permissions` |
 | VS Code | set `requestUnsandboxedExecution: true` (never `requestAllowNetwork`) on the terminal tool call when VS Code's terminal sandbox is on |
 | Antigravity | request to run outside Antigravity's sandbox from the first try; a headless `agy -p` run needs `command(...)` allow rules unless its permission mode approves the commands |
 | Gemini CLI | the workflow skill checks `$SANDBOX` before the first command and, if it is set, asks the user to restart without the sandbox; the FAQ skill does the same after a command fails. With tool sandboxing, both pass `additional_permissions` on the first command |
@@ -84,7 +115,8 @@ npx skills add kombai-io/agent-plugins --skill about-kombai
 
 The CLI discovers [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md) and
 [`skills/about-kombai/SKILL.md`](skills/about-kombai/SKILL.md) before the same-named skills inside the host plugins. It calls the same CLI and works in any
-agent that can run `npx`; its Codex permission guidance applies only when running in Codex.
+agent that can run `npx`; its Codex permission guidance is in `codex-access.md` beside each
+`SKILL.md`, which only an agent in Codex's sandbox reads (`npx skills add` installs it with the skill).
 It registers no MCP server, so the agent opens the
 canvas in its own browser panel or the user's browser rather than in a view beside the chat.
 The existing plugin marketplaces and packages continue to use their host-specific skills under

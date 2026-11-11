@@ -3,6 +3,8 @@ name: get-started-with-kombai
 description: Kombai's onboarding in Claude Code. Sets up Kombai's MCP server if this Claude Code doesn't have it yet (it shows Kombai's design-brief cards in the Claude desktop app), checks the user is signed in, and shows prompts to try. Use right after the Kombai plugin is installed, and whenever the user asks to set Kombai up, get started with it, or see what to try. Not for design requests; those are work-with-kombai's.
 ---
 
+**Claude Code only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in Claude's chat (claude.ai, or the Chat tab of the Claude desktop or mobile app) rather than Claude Code, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai's plugin works only in Claude Code, not in Claude's chat. Install it in Claude Code and ask there."
+
 The user can run this as often as they like. Do each step without asking first, and do no design work here.
 
 Every path below ends with a short message and then the prompts to try. Put each prompt in a code block of its own,

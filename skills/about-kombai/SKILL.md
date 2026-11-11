@@ -3,13 +3,9 @@ name: about-kombai
 description: Answer the user's questions about Kombai itself (what it is, which agents it works with, accounts and guest mode, credits and plans, where designs and data live, sharing, privacy, updates and support). Use when the user asks about Kombai rather than for design work.
 ---
 
-When running in Codex's sandbox, request approved execution outside it **before the first
-command below** and for every later Kombai CLI command. Use
-`sandbox_permissions: "require_escalated"` on the execution tool call. The commands need network
-access and write `~/.kombai`; `npx` may contact the package registry before Kombai starts.
-Do not try the restricted command first. If this chat cannot approve the required access,
-explain the restriction and wait for the user to change its permissions; do not retry inside
-the sandbox.
+When running in Codex's sandbox, first read `codex-access.md` beside this file and do what it says
+**before the first command below**: it says how to get network access without trying the restricted
+command first. Elsewhere, skip it.
 
 Run `npx -y @kombai/cli@0.1.5 skill faq` and answer from what it prints; it is this skill's full text.
 

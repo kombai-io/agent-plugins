@@ -4,7 +4,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { ANTIGRAVITY_SANDBOX } from './antigravity-plugin.mjs';
-import { FAQ_SKILL, skillGuidance, WORKFLOW_SKILL } from './cli-view.mjs';
+import { CHAT_NOTICES, CODEX_REFUSAL, FAQ_SKILL, skillGuidance, WORKFLOW_SKILL } from './cli-view.mjs';
 import { GEMINI_SANDBOX } from './gemini-cli-plugin.mjs';
 import { VSCODE_UNSANDBOXED } from './vscode-plugin.mjs';
 
@@ -30,19 +30,33 @@ const NETWORK_BULLET = /^- \*\*The network is blocked\*\*.*$/m;
 const GENERIC_BULLET =
   '- **The network is blocked** (a sandboxed shell). Ask for network access the way your client does; Node is not missing.';
 const DESCRIPTION = /^description: .+\n/m;
+// The standalone copy runs in any agent, so it keeps its Codex guidance in a file beside SKILL.md that only an agent
+// in Codex's sandbox reads; SKILL.md points at it. Its first two paragraphs are a heading and who should read it.
+const CODEX_ACCESS_FILE = 'codex-access.md';
+const CODEX_POINTER = `first read \`${CODEX_ACCESS_FILE}\` beside this file`;
 
-// A skill in four parts: its frontmatter; its host guidance (between the frontmatter and the line that runs the CLI);
-// its network bullet, which is the host's too; and the body every copy shares (from that line on, less the bullet).
+// The copies that open every skill with a notice that they work only in their own agent (cli-view.mjs).
+const NOTICES = { 'plugins/codex': CHAT_NOTICES.codex, 'plugins/claude-code': CHAT_NOTICES['claude-code'] };
+
+// A skill in four parts: its frontmatter; its host guidance (between the frontmatter and the line that runs the CLI,
+// less the Codex or Claude Code notice, checked on its own); its network bullet, which is the host's too; and the body
+// every copy shares (from that line on, less the bullet).
 function parts(copy, skill) {
   const text = fs.readFileSync(path.join(root, copy, 'skills', skill, 'SKILL.md'), 'utf8');
   const frontmatter = text.match(/^---\n[\s\S]*?\n---\n/)?.[0];
   const bullet = text.match(NETWORK_BULLET)?.[0];
   const guidance = skillGuidance(text);
   assert.ok(frontmatter && bullet && guidance, `${copy}/${skill}: frontmatter, guidance and network bullet`);
+  const notice = NOTICES[copy];
+  const own = guidance.slice(frontmatter.length);
+  const accessFile = path.join(root, copy, 'skills', skill, CODEX_ACCESS_FILE);
+  const access = fs.existsSync(accessFile) ? fs.readFileSync(accessFile, 'utf8') : null;
   return {
-    text,
+    text: access ? `${text}\n${access}` : text,
+    // The Codex guidance itself: inline for a Codex plugin's copy, in codex-access.md for the standalone one.
+    codexGuidance: access ? access.split('\n\n').slice(2).join('\n\n').trim() : null,
     frontmatter,
-    guidance: guidance.slice(frontmatter.length).trim(),
+    guidance: (notice ? own.replace(`\n${notice}\n`, '') : own).trim(),
     bullet,
     body: text.slice(guidance.length).replace(NETWORK_BULLET, ''),
   };
@@ -82,8 +96,10 @@ for (const skill of [WORKFLOW_SKILL, FAQ_SKILL]) {
         assert.equal(own.guidance, '', `${copy}/${skill}: guidance`);
         assert.equal(own.bullet, GENERIC_BULLET, `${copy}/${skill}: network bullet`);
       } else {
-        // Before the first command, not only in a later bullet.
-        assert.ok(own.guidance.includes(marker), `${copy}/${skill}: guidance before the first command`);
+        // Before the first command, not only in a later bullet: inline, or a pointer to the file that holds it.
+        const before = copy === '.' ? own.codexGuidance : own.guidance;
+        assert.ok(before?.includes(marker), `${copy}/${skill}: guidance before the first command`);
+        if (copy === '.') assert.ok(own.guidance.includes(CODEX_POINTER), `${skill}: points at ${CODEX_ACCESS_FILE}`);
         if (copy !== '.') assert.notEqual(own.bullet, GENERIC_BULLET, `${copy}/${skill}: network bullet`);
       }
       if (marker === CODEX_ESCALATION) {
@@ -91,14 +107,50 @@ for (const skill of [WORKFLOW_SKILL, FAQ_SKILL]) {
           .split('\n\n')
           .filter((paragraph) => !paragraph.includes('canvas_app'))
           .join('\n\n');
-        assert.equal(guidance, standalone.guidance, `${copy}/${skill}: Codex guidance`);
+        if (copy !== '.') assert.equal(guidance, standalone.codexGuidance, `${copy}/${skill}: Codex guidance`);
       }
     }
   });
 }
 
+test('the Codex and Claude Code copies open every skill with their own chat notice, and no other copy has one', () => {
+  for (const copy of Object.keys(COPIES)) {
+    for (const skill of fs.readdirSync(path.join(root, copy, 'skills'))) {
+      const text = fs.readFileSync(path.join(root, copy, 'skills', skill, 'SKILL.md'), 'utf8');
+      const opening = text.replace(/^---\n[\s\S]*?\n---\n\n/, '').split('\n\n')[0];
+      if (NOTICES[copy]) {
+        assert.equal(opening, NOTICES[copy], `${copy}/${skill}: opening paragraph`);
+      } else {
+        assert.ok(!text.includes("Kombai's plugin works only in") && !text.includes(CODEX_REFUSAL), `${copy}/${skill}: no chat notice`);
+      }
+    }
+  }
+  // Codex's is keyed on a shell on the user's computer, not on the app's name: the ChatGPT desktop app runs Codex there.
+  assert.ok(CHAT_NOTICES.codex.includes(`"${CODEX_REFUSAL}"`), 'the Codex notice quotes its refusal');
+  assert.match(CHAT_NOTICES.codex, /ChatGPT desktop app \(its Work chats and Codex\)[^.]*carry on there/);
+  assert.match(CODEX_REFUSAL, /Codex or in a Work chat in the ChatGPT desktop app/);
+  assert.match(
+    CHAT_NOTICES['claude-code'],
+    /"Kombai's plugin works only in Claude Code, not in Claude's chat\. Install it in Claude Code and ask there\."/,
+  );
+  assert.ok(!/Claude/.test(CHAT_NOTICES.codex), 'the Codex notice names no Claude product');
+  assert.ok(!/Codex|ChatGPT/.test(CHAT_NOTICES['claude-code']), 'the Claude Code notice names no OpenAI product');
+});
+
 test("each copy's two skills share one network bullet", () => {
   for (const copy of Object.keys(COPIES)) {
     assert.equal(parts(copy, WORKFLOW_SKILL).bullet, parts(copy, FAQ_SKILL).bullet, copy);
   }
+});
+
+test('the standalone skills keep Codex-only guidance out of SKILL.md, in one shared codex-access.md', () => {
+  const files = [WORKFLOW_SKILL, FAQ_SKILL].map((skill) => {
+    const skillText = fs.readFileSync(path.join(root, 'skills', skill, 'SKILL.md'), 'utf8');
+    // Every agent reads SKILL.md: none of the Codex mechanics, only the pointer.
+    for (const word of ['request_permissions', 'access_card', 'CODEX_SANDBOX_NETWORK_DISABLED', 'config.toml']) {
+      assert.ok(!skillText.includes(word), `skills/${skill}/SKILL.md: ${word}`);
+    }
+    return fs.readFileSync(path.join(root, 'skills', skill, CODEX_ACCESS_FILE), 'utf8');
+  });
+  assert.equal(files[0], files[1], `both standalone skills carry the same ${CODEX_ACCESS_FILE}`);
 });
