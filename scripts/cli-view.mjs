@@ -14,6 +14,11 @@ export const WORKFLOW_SKILL = 'work-with-kombai';
 export const FAQ_SKILL = 'about-kombai';
 export const ASSETS_SKILL = 'generate-assets-with-kombai';
 const SKILL_TOPICS = { [WORKFLOW_SKILL]: '', [FAQ_SKILL]: ' faq', [ASSETS_SKILL]: ' assets' };
+/** The CLI's skill topic each skill prints, by skill: `kombai skill` alone prints the `overview` topic. The pinned CLI
+ *  must have every one (cli-version.mjs). */
+export const SKILL_CLI_TOPICS = Object.fromEntries(
+  Object.entries(SKILL_TOPICS).map(([name, topic]) => [name, topic.trim() || 'overview']),
+);
 /** The CLI's npm package. */
 export const CLI_NAME = '@kombai/cli';
 /** A released CLI version: x.y.z, no tag, range or prerelease. What a plugin's `cli.package` pins. */

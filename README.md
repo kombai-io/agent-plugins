@@ -294,12 +294,17 @@ pnpm run set-cli-version 0.1.5
 
 It refuses a tag (`latest`, `beta`, …), a range or a prerelease, and a version npm doesn't have
 (`npm view`). It runs that version's `mcp install --help` and refuses it unless it takes every
-client a plugin's skill installs Kombai's server for (`codex`, `claude-code`), so no plugin pins
-a CLI older than its skills. Then it rewrites every CLI it finds in those files, and runs the
-checks below. Commit the result; it changes no plugin version.
+client a plugin's skill installs Kombai's server for (`codex`, `claude-code`). It also unpacks
+that version's published package (`npm pack`, never run) and refuses it unless its `skill`
+command has every topic a skill runs: `kombai skill`, `skill faq` and `skill assets`. So no plugin
+pins a CLI older than its skills. Then it rewrites every CLI it finds in those files, records the
+version's skill topics in `scripts/cli-skill-topics.json`, and runs the checks below. Commit the
+result; it changes no plugin version.
 
 `pnpm run check` (and Validate Plugins) runs `node scripts/cli-version.mjs check`, which fails
-unless every plugin pins the same released CLI and `skills/` and `README.md` name it and no other.
+unless every plugin pins the same released CLI, `skills/` and `README.md` name it and no other,
+and `scripts/cli-skill-topics.json` records that version with every topic a skill runs. It asks
+npm nothing: the topics are what set-cli-version read.
 Each plugin's validator fails the same way on its own folder and on the files its pack zips
 beside it (its marketplace): a file that names a tag or another version than its `cli.package`.
 
