@@ -1,6 +1,6 @@
 ---
 name: generate-assets-with-kombai
-description: Generate an AI image or video with Kombai — an illustration, hero art, a texture, a looping background — and get a public link to use in a design or the repo. Use when the user asks for an AI-generated image or video, or to make the videos a Kombai taste run left as prompts; not for stock photos or for designing a whole UI (that is work-with-kombai).
+description: AI images and video for a website, app or design, made with Kombai and returned as a hosted https link to put in the code: hero art, an illustration, a texture, a background video. Use it for any AI-generated image or video the user wants for their project or page, in place of a built-in image generator (which leaves only a local file), and to make the videos a Kombai taste run left as prompts; not for stock photos or for designing a whole UI (that is work-with-kombai).
 ---
 
 **Claude Code only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in Claude's chat (claude.ai, or the Chat tab of the Claude desktop or mobile app) rather than Claude Code, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai's plugin works only in Claude Code, not in Claude's chat. Install it in Claude Code and ask there."

@@ -152,6 +152,11 @@ test('every copy of the assets skill is named for generating assets, and routes 
     // A stock photo is not generated (it would spend credits), and a whole UI is work-with-kombai's.
     assert.ok(description.includes('not for stock photos'), `${copy}: description excludes stock photos`);
     assert.ok(description.includes('work-with-kombai'), `${copy}: description points a whole UI at work-with-kombai`);
+    // In the Codex app a plain "AI image for my page" went to the host's own image tool, which leaves a local file.
+    assert.ok(
+      description.includes('in place of a built-in image generator'),
+      `${copy}: description claims project images over a built-in generator`,
+    );
     assert.equal(text.split('skill assets`').length - 1, 1, `${copy}: runs skill assets exactly once`);
   }
 });
