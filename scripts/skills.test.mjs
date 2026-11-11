@@ -30,6 +30,10 @@ const NETWORK_BULLET = /^- \*\*The network is blocked\*\*.*$/m;
 const GENERIC_BULLET =
   '- **The network is blocked** (a sandboxed shell). Ask for network access the way your client does; Node is not missing.';
 const DESCRIPTION = /^description: .+\n/m;
+// The standalone copy runs in any agent, so it keeps its Codex guidance in a file beside SKILL.md that only an agent
+// in Codex's sandbox reads; SKILL.md points at it. Its first two paragraphs are a heading and who should read it.
+const CODEX_ACCESS_FILE = 'codex-access.md';
+const CODEX_POINTER = `first read \`${CODEX_ACCESS_FILE}\` beside this file`;
 
 // The copies that open every skill with a notice that they work only in their own agent (cli-view.mjs).
 const NOTICES = { 'plugins/codex': CHAT_NOTICES.codex, 'plugins/claude-code': CHAT_NOTICES['claude-code'] };
@@ -45,8 +49,12 @@ function parts(copy, skill) {
   assert.ok(frontmatter && bullet && guidance, `${copy}/${skill}: frontmatter, guidance and network bullet`);
   const notice = NOTICES[copy];
   const own = guidance.slice(frontmatter.length);
+  const accessFile = path.join(root, copy, 'skills', skill, CODEX_ACCESS_FILE);
+  const access = fs.existsSync(accessFile) ? fs.readFileSync(accessFile, 'utf8') : null;
   return {
-    text,
+    text: access ? `${text}\n${access}` : text,
+    // The Codex guidance itself: inline for a Codex plugin's copy, in codex-access.md for the standalone one.
+    codexGuidance: access ? access.split('\n\n').slice(2).join('\n\n').trim() : null,
     frontmatter,
     guidance: (notice ? own.replace(`\n${notice}\n`, '') : own).trim(),
     bullet,
@@ -88,8 +96,10 @@ for (const skill of [WORKFLOW_SKILL, FAQ_SKILL]) {
         assert.equal(own.guidance, '', `${copy}/${skill}: guidance`);
         assert.equal(own.bullet, GENERIC_BULLET, `${copy}/${skill}: network bullet`);
       } else {
-        // Before the first command, not only in a later bullet.
-        assert.ok(own.guidance.includes(marker), `${copy}/${skill}: guidance before the first command`);
+        // Before the first command, not only in a later bullet: inline, or a pointer to the file that holds it.
+        const before = copy === '.' ? own.codexGuidance : own.guidance;
+        assert.ok(before?.includes(marker), `${copy}/${skill}: guidance before the first command`);
+        if (copy === '.') assert.ok(own.guidance.includes(CODEX_POINTER), `${skill}: points at ${CODEX_ACCESS_FILE}`);
         if (copy !== '.') assert.notEqual(own.bullet, GENERIC_BULLET, `${copy}/${skill}: network bullet`);
       }
       if (marker === CODEX_ESCALATION) {
@@ -97,7 +107,7 @@ for (const skill of [WORKFLOW_SKILL, FAQ_SKILL]) {
           .split('\n\n')
           .filter((paragraph) => !paragraph.includes('canvas_app'))
           .join('\n\n');
-        assert.equal(guidance, standalone.guidance, `${copy}/${skill}: Codex guidance`);
+        if (copy !== '.') assert.equal(guidance, standalone.codexGuidance, `${copy}/${skill}: Codex guidance`);
       }
     }
   });
@@ -131,4 +141,16 @@ test("each copy's two skills share one network bullet", () => {
   for (const copy of Object.keys(COPIES)) {
     assert.equal(parts(copy, WORKFLOW_SKILL).bullet, parts(copy, FAQ_SKILL).bullet, copy);
   }
+});
+
+test('the standalone skills keep Codex-only guidance out of SKILL.md, in one shared codex-access.md', () => {
+  const files = [WORKFLOW_SKILL, FAQ_SKILL].map((skill) => {
+    const skillText = fs.readFileSync(path.join(root, 'skills', skill, 'SKILL.md'), 'utf8');
+    // Every agent reads SKILL.md: none of the Codex mechanics, only the pointer.
+    for (const word of ['request_permissions', 'access_card', 'CODEX_SANDBOX_NETWORK_DISABLED', 'config.toml']) {
+      assert.ok(!skillText.includes(word), `skills/${skill}/SKILL.md: ${word}`);
+    }
+    return fs.readFileSync(path.join(root, 'skills', skill, CODEX_ACCESS_FILE), 'utf8');
+  });
+  assert.equal(files[0], files[1], `both standalone skills carry the same ${CODEX_ACCESS_FILE}`);
 });

@@ -57,12 +57,15 @@ The skills differ between hosts in that sandbox guidance (the paragraphs before 
 description and a paragraph on showing the canvas beside the chat. `scripts/skills.test.mjs`
 checks that every copy shares the rest of the standalone skill's text, that each carries its own
 host's guidance before the first command and no other host's, and that the Claude Code and Cursor
-copies have no guidance beyond the generic bullet. The VS Code, Antigravity and Gemini CLI
+copies have no guidance beyond the generic bullet. The standalone skill runs in any agent, so its
+Codex guidance sits in `codex-access.md` beside each `SKILL.md`, which only points at it ("when
+running in Codex's sandbox, first read …"); every other agent skips it. The test checks that file
+matches the Codex plugin's inline guidance and that `SKILL.md` holds none of it. The VS Code, Antigravity and Gemini CLI
 validators check their host's guidance too:
 
 | Host | What the skill says about the sandbox |
 | --- | --- |
-| Codex (and the standalone skill) | request `sandbox_permissions: "require_escalated"` before the first command, or, where escalations are off, network and write access through `request_permissions` |
+| Codex (and the standalone skill, in its `codex-access.md`) | request `sandbox_permissions: "require_escalated"` before the first command, or, where escalations are off, network and write access through `request_permissions` |
 | VS Code | set `requestUnsandboxedExecution: true` (never `requestAllowNetwork`) on the terminal tool call when VS Code's terminal sandbox is on |
 | Antigravity | request to run outside Antigravity's sandbox from the first try; a headless `agy -p` run needs `command(...)` allow rules unless its permission mode approves the commands |
 | Gemini CLI | the workflow skill checks `$SANDBOX` before the first command and, if it is set, asks the user to restart without the sandbox; the FAQ skill does the same after a command fails. With tool sandboxing, both pass `additional_permissions` on the first command |
@@ -111,7 +114,8 @@ npx skills add kombai-io/agent-plugins --skill about-kombai
 
 The CLI discovers [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md) and
 [`skills/about-kombai/SKILL.md`](skills/about-kombai/SKILL.md) before the same-named skills inside the host plugins. It calls the same CLI and works in any
-agent that can run `npx`; its Codex permission guidance applies only when running in Codex.
+agent that can run `npx`; its Codex permission guidance is in `codex-access.md` beside each
+`SKILL.md`, which only an agent in Codex's sandbox reads (`npx skills add` installs it with the skill).
 It registers no MCP server, so the agent opens the
 canvas in its own browser panel or the user's browser rather than in a view beside the chat.
 The existing plugin marketplaces and packages continue to use their host-specific skills under
