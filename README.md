@@ -290,6 +290,17 @@ unless every plugin pins the same released CLI and `skills/` and `README.md` nam
 Each plugin's validator fails the same way on its own folder and on the files its pack zips
 beside it (its marketplace): a file that names a tag or another version than its `cli.package`.
 
+From its first self-managing release (vscode-assistant `packages/cli/src/managed`), the pinned
+CLI is only the first hop: the plugin's `npx` line keeps a copy under `~/.kombai/cli/install`, and
+at each design request it asks Kombai's backend which version to be on and moves that copy forward,
+so a CLI fix reaches users without a plugin release. Every later command runs that copy through the
+launcher line the skill prints. Disclose it where a directory asks what the plugin downloads or runs:
+the CLI's `skill faq` (Setup and problems, Updates) says the same to users. Two rules for the pin
+once it names a self-managing release: never move it back to one from before (it could not update
+itself or read the backend's withdrawn versions), and never ahead of the backend's recommended
+version for that channel (the `recommended` that `GET /design/cli/version?channel=latest` on
+Kombai's API answers).
+
 ## CI and packaging
 
 **Validate Plugins** runs the release-script tests, the pinned-CLI check and all plugin validators on pushes and
