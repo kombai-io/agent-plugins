@@ -32,7 +32,7 @@ Gemini CLI then asks the user to trust that folder and to confirm the install; a
 
 Gemini CLI does not update a local install by itself. When a new version lands in the folder you installed from (after `git pull` in a checkout, say), run `gemini extensions update kombai`, or `/extensions update kombai` inside Gemini CLI; Gemini CLI sees an update only when the version in `gemini-extension.json` changes. For a ZIP unpacked to a new folder, run `gemini extensions uninstall kombai`, then install the new folder. In a checkout, `gemini extensions link ./plugins/gemini-cli` installs it as a link instead, which always reads the folder.
 
-To install only the two skills, straight from GitHub, without the extension:
+To install only the skills, straight from GitHub, without the extension:
 
 ```sh
 gemini skills install https://github.com/kombai-io/agent-plugins --path plugins/gemini-cli/skills
@@ -42,13 +42,13 @@ They go to `~/.gemini/skills` (`--scope workspace` puts them in the project), an
 
 ## Using it
 
-In an interactive session, Gemini CLI's model activates a skill when the request matches its description, and asks the user first (in YOLO mode, `--yolo` or `--approval-mode=yolo`, it does not ask). `/skills list` shows both skills. A headless `gemini -p` run has no skill, shell or file-writing tool, so the design workflow runs there only in YOLO mode, or with a policy that allows `activate_skill`, `run_shell_command` for `echo` and `npx -y @kombai/cli@0.1.5` (the workflow skill first runs `echo "$SANDBOX"`), and `write_file` and `replace` (the agent writes each design's files). Pass the policy with `--policy <file>`, or put it in `~/.gemini/policies/`.
+In an interactive session, Gemini CLI's model activates a skill when the request matches its description, and asks the user first (in YOLO mode, `--yolo` or `--approval-mode=yolo`, it does not ask). `/skills list` shows the skills. A headless `gemini -p` run has no skill, shell or file-writing tool, so the design workflow runs there only in YOLO mode, or with a policy that allows `activate_skill`, `run_shell_command` for `echo` and `npx -y @kombai/cli@0.1.5` (the workflow skill first runs `echo "$SANDBOX"`), and `write_file` and `replace` (the agent writes each design's files). Pass the policy with `--policy <file>`, or put it in `~/.gemini/policies/`.
 
 A skill with the same name takes precedence over the extension's: one in the project's `.agents/skills` or `.gemini/skills` (in trusted folders), or in `~/.agents/skills` or `~/.gemini/skills`. Gemini CLI warns about the conflict and names both files; the user should remove one copy. Such copies come from `npx skills add` (the project's `.agents/skills`, or `~/.agents/skills` with `-g`) and from the Kombai desktop app's Gemini CLI and Codex switches (`~/.gemini/skills`, `~/.agents/skills`). They carry Codex's sandbox guidance instead of Gemini CLI's. Turn the app's switch off rather than deleting its copy: the app writes it again at its next start.
 
 Gemini CLI runs sandboxed when it is started with `-s`/`--sandbox`, when `GEMINI_SANDBOX` is set, or when `tools.sandbox` is set in a user, project or system `settings.json`; it then sets `$SANDBOX`. Its sandboxes block writes outside the project, which the CLI needs for `~/.kombai`, and some block the network. So before running anything, the workflow skill checks `$SANDBOX`, and if it is set, asks the user to restart Gemini CLI as `GEMINI_SANDBOX=false gemini` (without `-s`), which starts it unsandboxed whatever the settings say, or to run Kombai in their own terminal. With Gemini CLI's per-command tool sandboxing (`security.toolSandboxing`) instead, the skills pass `additional_permissions` (network access and writes to `~/.kombai` and `~/.npm`) on the first Kombai command, and Gemini CLI asks the user once; allowing it for the session covers the later commands.
 
-The extension registers no MCP server (`cli.view` is off in `kombai.package.json`): Gemini CLI does not show MCP App views. It ships no `GEMINI.md`, so the only thing it adds to each session's prompt is its two skills' names and descriptions; a skill's instructions load only when Gemini CLI activates it. The skill opens the canvas in the user's default browser.
+The extension registers no MCP server (`cli.view` is off in `kombai.package.json`): Gemini CLI does not show MCP App views. It ships no `GEMINI.md`, so the only thing it adds to each session's prompt is its skills' names and descriptions; a skill's instructions load only when Gemini CLI activates it. The skill opens the canvas in the user's default browser.
 
 Signing in happens in the browser: the CLI opens Kombai's sign-in page and shows a match code to compare.
 

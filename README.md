@@ -18,6 +18,11 @@ A third skill, `generate-assets-with-kombai`, runs `npx -y @kombai/cli@0.1.5 ski
 what it prints: generating an AI image or video for a design or the repo, and getting a public link
 to it. It is not for stock photos or for designing a whole UI (that is `work-with-kombai`'s).
 
+**Release order:** this skill needs a CLI that has `kombai skill assets` (vscode-assistant PR #4095). No
+released Kombai CLI has it yet, so run `pnpm run set-cli-version <that release>` before this lands on
+`main`: GitHub-sourced installs (`npx skills add ...`, `gemini skills install ...`, `agy plugin install ...`)
+read `main` directly, and would otherwise get a skill whose command fails.
+
 The Codex and Claude Code plugins have a fourth, `get-started-with-kombai`, their onboarding: it sets
 up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
 and ends with prompts to try (see [The canvas view](#the-canvas-view)).
@@ -119,7 +124,8 @@ npx skills add kombai-io/agent-plugins --skill generate-assets-with-kombai
 ```
 
 The CLI discovers [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md) and
-[`skills/about-kombai/SKILL.md`](skills/about-kombai/SKILL.md) before the same-named skills inside the host plugins. It calls the same CLI and works in any
+[`skills/about-kombai/SKILL.md`](skills/about-kombai/SKILL.md) and
+[`skills/generate-assets-with-kombai/SKILL.md`](skills/generate-assets-with-kombai/SKILL.md) before the same-named skills inside the host plugins. It calls the same CLI and works in any
 agent that can run `npx`; its Codex permission guidance is in `codex-access.md` beside each
 `SKILL.md`, which only an agent in Codex's sandbox reads (`npx skills add` installs it with the skill).
 It registers no MCP server, so the agent opens the
