@@ -6,7 +6,7 @@ Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.1.5 skil
 
 Its `about-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 
-Its `generate-assets-with-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill assets` and follows what it prints to generate an AI image or video and get a public link to use. It runs only when the user asks Kombai for one, or for the videos a taste run left as prompts, never on its own (not for stock photos or whole-UI design).
+Its `generate-assets-with-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill assets` and follows what it prints to generate an AI image or video and get a public link to use. It runs only when the user asks Kombai for one, or for the videos a taste run left as prompts once the user asked for AI video, never on its own (not for stock photos or whole-UI design).
 
 **Installed kombai in VS Code from this repository before this plugin existed (0.1.0)?** VS Code installed the Claude Code plugin (`plugins/claude-code`) then, and keeps loading it after updates. Run **Chat: Update Plugins**, uninstall every kombai entry in the Extensions view (`@agentPlugins`), then install kombai again. Installing it without uninstalling first adds a second copy that stays disabled, and turning that copy on switches the old one off only in the current workspace.
 
