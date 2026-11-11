@@ -1,6 +1,6 @@
 ---
 name: generate-assets-with-kombai
-description: AI images and video for a website, app or design, made with Kombai and returned as a hosted https link to put in the code: hero art, an illustration, a texture, a background video. Use it for any AI-generated image or video the user wants for their project or page, in place of a built-in image generator (which leaves only a local file), and to make the videos a Kombai taste run left as prompts; not for stock photos or for designing a whole UI (that is work-with-kombai).
+description: Generate an AI image or video with Kombai and get a hosted https link to put in the code: hero art, an illustration, a texture, a background video. Use it only when the user asks for Kombai to make the image or video (names Kombai or picks this skill), or to make the videos a Kombai taste run left as prompts once the user asked for AI video. Never on your own: an image request that does not name Kombai is not for this skill (use the host's own image tool, if it has one); not for stock photos or for designing a whole UI (that is work-with-kombai).
 ---
 
 Gemini CLI's sandbox (on when `$SANDBOX` is set) blocks writes outside the project, and some sandbox

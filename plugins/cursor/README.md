@@ -4,7 +4,7 @@ This plugin's `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@
 
 Its `about-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 
-Its `generate-assets-with-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill assets` and follows what it prints to generate an AI image or video and get a public link to use (not for stock photos or whole-UI design).
+Its `generate-assets-with-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill assets` and follows what it prints to generate an AI image or video and get a public link to use. It runs only when the user asks Kombai for one, or for the videos a taste run left as prompts, never on its own (not for stock photos or whole-UI design).
 
 The plugin registers no MCP server: the skill opens the canvas in Cursor's browser panel or the user's browser. The CLI's canvas view is off for Cursor (`cli.view` in `kombai.package.json`) until Cursor shows MCP App views; the repository README's "The canvas view" says how to turn it on.
 
