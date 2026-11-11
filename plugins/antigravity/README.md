@@ -6,6 +6,8 @@ Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.1.5 skil
 
 Its `about-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 
+Its `generate-assets-with-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill assets` and follows what it prints to generate an AI image or video and get a public link to use (not for stock photos or whole-UI design).
+
 ## Install
 
 With the `agy` CLI, install from this folder's GitHub URL; the app picks the plugin up too:
@@ -37,7 +39,7 @@ Brought the Kombai Gemini CLI extension across with `agy plugin import gemini` (
 
 ## Using it
 
-The agent picks a skill by its description. To call one directly, type `/kombai:work-with-kombai` or `/kombai:about-kombai`.
+The agent picks a skill by its description. To call one directly, type `/kombai:work-with-kombai`, `/kombai:about-kombai` or `/kombai:generate-assets-with-kombai`.
 
 A standalone `work-with-kombai` or `about-kombai` skill does not replace this plugin's: Antigravity lists it next to `kombai:work-with-kombai` and `kombai:about-kombai`, with the same description, and it carries Codex's sandbox guidance instead of Antigravity's. Such copies come from a project's `.agents/skills` (`npx skills add`), from `~/.gemini/config/skills` (the Kombai desktop app's Antigravity switch) and, in agy, from `~/.gemini/skills` (the app's Gemini CLI switch). Remove the `npx skills` copy, and turn the app's switch off rather than deleting its copy (the app writes it again at its next start); or type `/kombai:work-with-kombai`.
 

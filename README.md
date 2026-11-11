@@ -14,7 +14,11 @@ A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.1.5 skill faq` and an
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
 live, sharing, updates and support.
 
-The Codex and Claude Code plugins have a third, `get-started-with-kombai`, their onboarding: it sets
+A third skill, `generate-assets-with-kombai`, runs `npx -y @kombai/cli@0.1.5 skill assets` and follows
+what it prints: generating an AI image or video for a design or the repo, and getting a public link
+to it. It is not for stock photos or for designing a whole UI (that is `work-with-kombai`'s).
+
+The Codex and Claude Code plugins have a fourth, `get-started-with-kombai`, their onboarding: it sets
 up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
 and ends with prompts to try (see [The canvas view](#the-canvas-view)).
 
@@ -101,7 +105,7 @@ plugin folder's GitHub URL (`agy plugin install https://github.com/kombai-io/age
 Gemini CLI installs an extension from a folder or a git repository whose root holds
 `gemini-extension.json`, and not from a `.zip`, so it installs `plugins/gemini-cli` from a checkout
 or the folder in an unzipped Build Plugins ZIP; `gemini skills install
-https://github.com/kombai-io/agent-plugins --path plugins/gemini-cli/skills` installs just the two
+https://github.com/kombai-io/agent-plugins --path plugins/gemini-cli/skills` installs just its
 skills straight from GitHub.
 
 ## Install with the skills CLI
@@ -111,6 +115,7 @@ For a platform-independent workflow skill, use Vercel's `skills` CLI:
 ```sh
 npx skills add kombai-io/agent-plugins --skill work-with-kombai
 npx skills add kombai-io/agent-plugins --skill about-kombai
+npx skills add kombai-io/agent-plugins --skill generate-assets-with-kombai
 ```
 
 The CLI discovers [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md) and

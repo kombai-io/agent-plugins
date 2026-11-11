@@ -6,6 +6,8 @@ Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.1.5 skil
 
 Its `about-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 
+Its `generate-assets-with-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill assets` and follows what it prints to generate an AI image or video and get a public link to use (not for stock photos or whole-UI design).
+
 ## Install
 
 `gemini extensions install` takes a local folder or a git repository whose root holds `gemini-extension.json`, so it cannot install this folder from the repository's GitHub URL, and it does not take a `.zip`.

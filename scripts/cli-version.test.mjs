@@ -87,9 +87,15 @@ test('set-cli-version pins the version in every plugin and every file that names
     for (const host of Object.keys(PLUGINS)) {
       assert.ok(result.changed.includes(`plugins/${host}/kombai.package.json`), host);
       assert.ok(result.changed.includes(`plugins/${host}/skills/work-with-kombai/SKILL.md`), host);
+      assert.ok(result.changed.includes(`plugins/${host}/skills/generate-assets-with-kombai/SKILL.md`), host);
       assert.ok(result.changed.includes(`plugins/${host}/README.md`), host);
     }
-    for (const file of ['README.md', 'skills/work-with-kombai/SKILL.md', 'skills/about-kombai/SKILL.md']) {
+    for (const file of [
+      'README.md',
+      'skills/work-with-kombai/SKILL.md',
+      'skills/about-kombai/SKILL.md',
+      'skills/generate-assets-with-kombai/SKILL.md',
+    ]) {
       assert.ok(result.changed.includes(file), file);
     }
     const text = Object.values(snapshot(root)).join('\n');

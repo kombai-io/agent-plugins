@@ -6,6 +6,8 @@ Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.1.5 skil
 
 Its `about-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 
+Its `generate-assets-with-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill assets` and follows what it prints to generate an AI image or video and get a public link to use (not for stock photos or whole-UI design).
+
 **Installed kombai in VS Code from this repository before this plugin existed (0.1.0)?** VS Code installed the Claude Code plugin (`plugins/claude-code`) then, and keeps loading it after updates. Run **Chat: Update Plugins**, uninstall every kombai entry in the Extensions view (`@agentPlugins`), then install kombai again. Installing it without uninstalling first adds a second copy that stays disabled, and turning that copy on switches the old one off only in the current workspace.
 
 ## Install
@@ -30,7 +32,7 @@ VS Code caches the marketplace listing for up to 8 hours (on VS Code 1.133 or la
 
 ## Using it
 
-The agent picks a skill by its description. To call one directly, type `/kombai:work-with-kombai` or `/kombai:about-kombai` in chat.
+The agent picks a skill by its description. To call one directly, type `/kombai:work-with-kombai`, `/kombai:about-kombai` or `/kombai:generate-assets-with-kombai` in chat.
 
 A standalone skill with the same name replaces the plugin's in the agent's skill list, with no warning in chat: one in the workspace's `.agents/skills`, `.github/skills` or `.claude/skills`, or in `~/.agents/skills`, `~/.copilot/skills` or `~/.claude/skills`. Such copies come from `npx skills add` (the project's `.agents/skills`, or `~/.agents/skills` with `-g`) and from the Kombai desktop app's VS Code, Codex and Claude Code switches (`~/.copilot/skills`, `~/.agents/skills`, `~/.claude/skills`). They carry Codex's sandbox guidance instead of VS Code's, which matters when VS Code's terminal sandbox is on. Remove the `npx skills` copy, and turn the app's switch off rather than deleting its copy (the app writes it again at its next start); or type `/kombai:work-with-kombai`, which always loads this plugin's skill.
 
