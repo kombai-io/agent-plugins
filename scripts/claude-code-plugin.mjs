@@ -64,6 +64,7 @@ export function validateClaudeCodePlugin(root = workspaceRoot, { team = false } 
     '.claude-plugin/plugin.json',
     'skills/work-with-kombai/SKILL.md',
     'skills/about-kombai/SKILL.md',
+    'skills/generate-assets-with-kombai/SKILL.md',
     `skills/${SETUP_SKILL}/SKILL.md`,
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Claude plugin file: ${file}`);

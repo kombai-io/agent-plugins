@@ -71,6 +71,7 @@ function checkTeamArchive(archive, pluginDir) {
     for (const [skill, topic] of [
       ['work-with-kombai', ''],
       ['about-kombai', ' faq'],
+      ['generate-assets-with-kombai', ' assets'],
     ]) {
       const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
       assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);

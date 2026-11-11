@@ -4,7 +4,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { ANTIGRAVITY_SANDBOX } from './antigravity-plugin.mjs';
-import { CHAT_NOTICES, CODEX_REFUSAL, FAQ_SKILL, skillGuidance, WORKFLOW_SKILL } from './cli-view.mjs';
+import { ASSETS_SKILL, CHAT_NOTICES, CODEX_REFUSAL, FAQ_SKILL, skillGuidance, WORKFLOW_SKILL } from './cli-view.mjs';
 import { GEMINI_SANDBOX } from './gemini-cli-plugin.mjs';
 import { VSCODE_UNSANDBOXED } from './vscode-plugin.mjs';
 
@@ -67,7 +67,7 @@ test('every plugin has a row in the skill copies table', () => {
   assert.deepEqual(plugins.map((name) => `plugins/${name}`), Object.keys(COPIES).filter((copy) => copy !== '.').sort());
 });
 
-for (const skill of [WORKFLOW_SKILL, FAQ_SKILL]) {
+for (const skill of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
   test(`every copy of ${skill} shares the standalone text outside its host guidance`, () => {
     const standalone = parts('.', skill);
     for (const copy of Object.keys(COPIES)) {
@@ -137,14 +137,27 @@ test('the Codex and Claude Code copies open every skill with their own chat noti
   assert.ok(!/Codex|ChatGPT/.test(CHAT_NOTICES['claude-code']), 'the Claude Code notice names no OpenAI product');
 });
 
-test("each copy's two skills share one network bullet", () => {
+test("each copy's skills share one network bullet", () => {
   for (const copy of Object.keys(COPIES)) {
     assert.equal(parts(copy, WORKFLOW_SKILL).bullet, parts(copy, FAQ_SKILL).bullet, copy);
+    assert.equal(parts(copy, ASSETS_SKILL).bullet, parts(copy, FAQ_SKILL).bullet, copy);
+  }
+});
+
+test('every copy of the assets skill is named for generating assets, and routes stock photos and whole-UI design elsewhere', () => {
+  for (const copy of Object.keys(COPIES)) {
+    const text = fs.readFileSync(path.join(root, copy, 'skills', ASSETS_SKILL, 'SKILL.md'), 'utf8');
+    assert.match(text, /^name: generate-assets-with-kombai\r?$/m, `${copy}: name`);
+    const description = text.match(/^description: (.+)$/m)?.[1] ?? '';
+    // A stock photo is not generated (it would spend credits), and a whole UI is work-with-kombai's.
+    assert.ok(description.includes('not for stock photos'), `${copy}: description excludes stock photos`);
+    assert.ok(description.includes('work-with-kombai'), `${copy}: description points a whole UI at work-with-kombai`);
+    assert.equal(text.split('skill assets`').length - 1, 1, `${copy}: runs skill assets exactly once`);
   }
 });
 
 test('the standalone skills keep Codex-only guidance out of SKILL.md, in one shared codex-access.md', () => {
-  const files = [WORKFLOW_SKILL, FAQ_SKILL].map((skill) => {
+  const files = [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL].map((skill) => {
     const skillText = fs.readFileSync(path.join(root, 'skills', skill, 'SKILL.md'), 'utf8');
     // Every agent reads SKILL.md: none of the Codex mechanics, only the pointer.
     for (const word of ['request_permissions', 'access_card', 'CODEX_SANDBOX_NETWORK_DISABLED', 'config.toml']) {
@@ -152,5 +165,6 @@ test('the standalone skills keep Codex-only guidance out of SKILL.md, in one sha
     }
     return fs.readFileSync(path.join(root, 'skills', skill, CODEX_ACCESS_FILE), 'utf8');
   });
-  assert.equal(files[0], files[1], `both standalone skills carry the same ${CODEX_ACCESS_FILE}`);
+  assert.equal(files[0], files[1], `standalone skills carry the same ${CODEX_ACCESS_FILE}`);
+  assert.equal(files[0], files[2], `standalone skills carry the same ${CODEX_ACCESS_FILE}`);
 });

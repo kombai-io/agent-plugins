@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kombai assets"
+  short_description: "Generate AI images and videos."
+  default_prompt: "Use $generate-assets-with-kombai to generate an image for this project."

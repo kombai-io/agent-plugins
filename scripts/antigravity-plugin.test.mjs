@@ -13,7 +13,7 @@ import {
   packAntigravityPlugin,
   validateAntigravityPlugin,
 } from './antigravity-plugin.mjs';
-import { cliViewMcpConfig, FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { ASSETS_SKILL, cliViewMcpConfig, FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
 import { pinnedCliPackage } from './cli-version.mjs';
 
 /** The released CLI the source pins. */
@@ -226,7 +226,7 @@ test('Antigravity validation checks the plugin identity, license and files', () 
   }
 });
 
-for (const skill of [WORKFLOW_SKILL, FAQ_SKILL]) {
+for (const skill of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
   test(`the Antigravity ${skill} skill must ask to run outside the sandbox`, () => {
     fixture((root) => {
       const skillPath = path.join(root, PLUGIN, 'skills', skill, 'SKILL.md');
@@ -248,6 +248,7 @@ test('an Antigravity team pack runs the CLI team build', () => {
       for (const [skill, topic] of [
         [WORKFLOW_SKILL, ''],
         [FAQ_SKILL, ' faq'],
+        [ASSETS_SKILL, ' assets'],
       ]) {
         const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
         assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);

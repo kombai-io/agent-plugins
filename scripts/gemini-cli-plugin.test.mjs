@@ -14,7 +14,7 @@ import {
   packGeminiCliPlugin,
   validateGeminiCliPlugin,
 } from './gemini-cli-plugin.mjs';
-import { cliViewMcpConfig, FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { ASSETS_SKILL, cliViewMcpConfig, FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
 import { pinnedCliPackage } from './cli-version.mjs';
 
 /** The released CLI the source pins. */
@@ -178,7 +178,7 @@ test('Gemini CLI validation checks the extension identity, license and files', (
   }
 });
 
-for (const skill of [WORKFLOW_SKILL, FAQ_SKILL]) {
+for (const skill of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
   test(`the Gemini CLI ${skill} skill carries the sandbox note and nothing Gemini CLI substitutes`, () => {
     fixture((root) => {
       const skillPath = path.join(root, PLUGIN, 'skills', skill, 'SKILL.md');
@@ -231,6 +231,7 @@ test('a Gemini CLI team pack runs the CLI team build', () => {
       for (const [skill, topic] of [
         [WORKFLOW_SKILL, ''],
         [FAQ_SKILL, ' faq'],
+        [ASSETS_SKILL, ' assets'],
       ]) {
         const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
         assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
