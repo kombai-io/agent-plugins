@@ -13,12 +13,16 @@ temporary file beside it); `npx` may contact the package registry before Kombai 
 - If this chat can approve sandbox escalations, use `sandbox_permissions: "require_escalated"` on the
   execution tool call for the first command and every later Kombai CLI command.
 - If it can't but has the `request_permissions` tool (as a ChatGPT or Codex app chat with no project picked
-  does), call that before the first Kombai command of every reply, asking for network access and write access
-  to those paths, then run the commands without escalation. A grant from before the latest user message is
-  gone. If the first Kombai command of a reply comes back with no output at all, it ran in the sandbox with no
-  network: call `request_permissions` and run it again. The first time in a chat, once the reply's Kombai work
+  does), get the access through that, asking for network access and write access to those paths, then run the
+  commands without escalation. Its grant can end with the reply, so before the first Kombai command or
+  design-file write of each reply, run `echo network_off=${CODEX_SANDBOX_NETWORK_DISABLED:-0}` on its own: if
+  it prints `network_off=1`, call `request_permissions` first; if `network_off=0`, the earlier grant still
+  holds, so don't ask again. If a Kombai command exits with no output at all, check the same way and ask before
+  running it again; one that hasn't exited is still running, so wait for it. If a later reply in the chat has
+  to call `request_permissions` again (asking twice in one reply doesn't count), once that reply's Kombai work
   is done, call Kombai's `access_card` tool with reason `granted` where it is there (in Codex, find it in
-  `ALL_TOOLS`): it shows the user how to stop this prompt on every message, with a Continue button.
+  `ALL_TOOLS`), once per chat: it shows the user how to stop this prompt on every message, with a Continue
+  button.
 - If neither is available, or the user declines, run nothing and do not retry inside the sandbox. Where
   Kombai's `access_card` tool is there, call it with reason `blocked` (it shows how to allow Kombai, with a
   Continue button that sends "Continue" here) and end your turn with one line. Otherwise tell the user only
@@ -78,7 +82,7 @@ If a command fails before it prints anything:
 - **`npx` or `node` not found.** Kombai needs Node.js 20 or later. Tell the user, give them the steps for their OS
   (macOS: `brew install node`, or the LTS installer from https://nodejs.org; Windows: `winget install
   OpenJS.NodeJS.LTS`; Linux: nvm, then `nvm install --lts`), and wait; do not install Node yourself.
-- **The network is blocked** (a sandboxed shell). Request approved execution outside the sandbox as above; do not
-  retry inside it.
+- **The network is blocked** (a sandboxed shell). Get access as above; do not retry inside the
+  sandbox without it.
 
 If `mcp install codex` answers an error, tell the user what it says in one line.

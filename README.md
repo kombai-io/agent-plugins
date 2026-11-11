@@ -30,14 +30,16 @@ execution outside it before the first `npx` call and for later CLI commands, usi
 tool's `sandbox_permissions: "require_escalated"` setting. npm may need network access before
 Kombai starts, and the CLI writes `~/.kombai` (and npm its cache, `~/.npm`). Where the chat cannot
 approve escalations but offers Codex's `request_permissions` tool, the skills ask for network
-access and those write paths through it instead, before the first Kombai command of every reply:
-the ChatGPT and Codex apps give a chat with no project picked that tool, reject every escalation
-automatically even when its permissions menu reads "Ask for approval", and end the grant with the
-turn (in ChatGPT mode the card offers only "Allow once"). A reply's first Kombai command that comes
-back with no output is taken as one run in the sandbox without asking: the agent asks and runs it again. The
-first time in such a chat, the agent shows Kombai's `access_card` where it is available (the CLI's
-card: Approve for me, a project, or Codex mode stops the per-message prompt, with a Continue
-button); no line of text asks it to relay that tip, which agents ignored in testing. If neither
+access and those write paths through it instead: the ChatGPT and Codex apps give a chat with no
+project picked that tool and reject every escalation automatically, even when its permissions menu
+reads "Ask for approval". The grant can end with the turn (in ChatGPT mode the card offers only
+"Allow once"; Codex mode also offers "Allow this conversation"), so before a reply's first Kombai
+command or design-file write the agent runs `echo network_off=${CODEX_SANDBOX_NETWORK_DISABLED:-0}` and
+asks again only when it prints `network_off=1`. A Kombai command that exits with no output is checked the same way before it
+is run again. When a later reply in such a chat has to ask again, it shows Kombai's `access_card`
+where it is available (the CLI's card: Approve for me, a project, or Codex mode stops the
+per-message prompt, with a Continue button); no line of text asks it to relay that tip, which agents
+ignored in testing. If neither
 route works, the skills run nothing and show that card with reason `blocked`, or tell the user to
 choose "Approve for me" in that menu. Existing Codex installations need the updated
 plugin or standalone skill to receive this guidance; upgrading only the CLI does not replace

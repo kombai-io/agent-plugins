@@ -182,20 +182,13 @@ export function skillGuidance(text) {
 export const SETUP_SKILL = 'get-started-with-kombai';
 
 /** What the agent tells a user who runs the plugin for `agent` in `chat` (Claude's chat for Claude Code). */
-export const chatRefusal = (agent, chat) =>
+const chatRefusal = (agent, chat) =>
   `Kombai's plugin works only in ${agent}, not in ${chat}. Install it in ${agent} and ask there.`;
 const chatNotice = (agent, chat, where) =>
   `**${agent} only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in ${chat} (${where}) ` +
   `rather than ${agent}, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no ` +
   `design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other ` +
   `help): "${chatRefusal(agent, chat)}"`;
-/**
- * The paragraph every skill of the Codex and Claude Code plugins opens with, each naming only its own agent. OpenAI's directory and Anthropic's plugin
- * catalog also offer these plugins in their chat apps, which have no shell on the user's computer, so the skill could
- * never run there: the agent says where Kombai works instead. It names the chat apps rather than listing where the
- * plugin may run, so an older VS Code install that still loads the Claude Code plugin (README.md) keeps working.
- * Keyed by plugin folder.
- */
 /**
  * What the Codex plugin tells a user whose chat can't run commands on their computer. The ChatGPT desktop app runs Codex
  * on the user's computer (its Work chats and Codex), so the refusal is keyed on that, not on the app's name.
@@ -210,6 +203,14 @@ const codexNotice =
   "ChatGPT on the web, whose code tool is a cloud sandbox, run nothing, not even in that code tool, and do no " +
   'design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other ' +
   `help): "${CODEX_REFUSAL}"`;
+/**
+ * The paragraph every skill of the Codex and Claude Code plugins opens with, each naming only its own agent. OpenAI's
+ * directory and Anthropic's plugin catalog also offer these plugins in their chat apps, which have no shell on the
+ * user's computer, so the skill could never run there: the agent says where Kombai works instead. The Claude Code
+ * notice names Claude's chat rather than listing where the plugin may run, so an older VS Code install that still
+ * loads the Claude Code plugin (README.md) keeps working; the Codex notice is keyed on a shell on the user's computer.
+ * Keyed by plugin folder.
+ */
 export const CHAT_NOTICES = {
   codex: codexNotice,
   'claude-code': chatNotice(
