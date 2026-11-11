@@ -161,9 +161,13 @@ test('every copy of the assets skill is named for generating assets, and routes 
     assert.ok(description.includes('not for stock photos'), `${copy}: description excludes stock photos`);
     assert.ok(description.includes('work-with-kombai'), `${copy}: description points a whole UI at work-with-kombai`);
     // Generation spends the user's credits, so it runs only when asked for: the user names Kombai or picks the skill,
-    // or a taste run left video prompts. A plain image request stays with the host's own image tool.
+    // or a taste run left video prompts. A plain image or video request stays with the host's own tool.
     assert.ok(description.includes('only when the user asks for Kombai'), `${copy}: description requires an explicit ask`);
     assert.ok(description.includes('Never on your own'), `${copy}: description forbids generating unasked`);
+    assert.ok(
+      description.includes('an image or video request that does not name Kombai is not for this skill'),
+      `${copy}: description leaves an image or video request that does not name Kombai to the host`,
+    );
     assert.ok(!description.includes('in place of a built-in image generator'), `${copy}: description does not claim the host's images`);
     assert.equal(text.split('skill assets`').length - 1, 1, `${copy}: runs skill assets exactly once`);
   }

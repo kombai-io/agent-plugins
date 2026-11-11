@@ -18,7 +18,7 @@ A third skill, `generate-assets-with-kombai`, runs `npx -y @kombai/cli@0.1.5 ski
 what it prints: generating an AI image or video for a design or the repo, and getting a public link
 to it. It runs only when the user asks Kombai for an image or video (names Kombai or picks the skill), or
 for the videos a taste run left as prompts once the user asked for AI video; never on its own, and a plain
-image request stays with the host's own image tool. It is not for stock photos or for designing a whole UI (that is `work-with-kombai`'s).
+image or video request stays with the host's own tool. It is not for stock photos or for designing a whole UI (that is `work-with-kombai`'s).
 
 **Release order:** this skill needs a CLI release that ships vscode-assistant PR #4107, not only
 #4095. #4095 adds `kombai skill assets` and the `asset` commands. #4107 makes that text usable from
