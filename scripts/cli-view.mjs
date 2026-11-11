@@ -255,8 +255,17 @@ export function checkSkills(pluginRoot, host, extra = []) {
     const skill = fs.readFileSync(path.join(skillRoot, name, 'SKILL.md'), 'utf8');
     assert(new RegExp(`^---\\r?\\n[\\s\\S]*?^name: ${name}\\r?$`, 'm').test(skill), `${host} ${name} skill name is missing.`);
     assert(/^description: \S.+$/m.test(skill), `${host} ${name} skill description is missing.`);
+    const description = skill.match(/^description: (.+)$/m)?.[1] ?? '';
+    assert(
+      !UNQUOTED_YAML_BREAKER_RE.test(description),
+      `${host} ${name} skill description is an unquoted YAML value, so it can't hold ": " or " #": the hosts' YAML ` +
+        'parsers reject the frontmatter.',
+    );
   }
 }
+
+/** What ends an unquoted YAML value early: ": " starts a mapping (a parse error) and " #" a comment. */
+export const UNQUOTED_YAML_BREAKER_RE = /:\s|\s#/;
 
 // The team build of a plugin, for colleagues trying a CLI beta before it is released: the same plugin, running the
 // newest beta from npm's `beta` tag (vscode-assistant's Publish CLI `beta` action, run from `preprod`), which

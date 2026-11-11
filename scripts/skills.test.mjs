@@ -4,7 +4,15 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { ANTIGRAVITY_SANDBOX } from './antigravity-plugin.mjs';
-import { ASSETS_SKILL, CHAT_NOTICES, CODEX_REFUSAL, FAQ_SKILL, skillGuidance, WORKFLOW_SKILL } from './cli-view.mjs';
+import {
+  ASSETS_SKILL,
+  CHAT_NOTICES,
+  CODEX_REFUSAL,
+  FAQ_SKILL,
+  skillGuidance,
+  UNQUOTED_YAML_BREAKER_RE,
+  WORKFLOW_SKILL,
+} from './cli-view.mjs';
 import { GEMINI_SANDBOX } from './gemini-cli-plugin.mjs';
 import { VSCODE_UNSANDBOXED } from './vscode-plugin.mjs';
 
@@ -158,6 +166,18 @@ test('every copy of the assets skill is named for generating assets, and routes 
     assert.ok(description.includes('Never on your own'), `${copy}: description forbids generating unasked`);
     assert.ok(!description.includes('in place of a built-in image generator'), `${copy}: description does not claim the host's images`);
     assert.equal(text.split('skill assets`').length - 1, 1, `${copy}: runs skill assets exactly once`);
+  }
+});
+
+test("every skill's description is an unquoted YAML value that parses: no \": \" or \" #\" in it", () => {
+  for (const copy of Object.keys(COPIES)) {
+    const skillsRoot = path.join(root, copy, 'skills');
+    for (const skill of fs.readdirSync(skillsRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory())) {
+      const text = fs.readFileSync(path.join(skillsRoot, skill.name, 'SKILL.md'), 'utf8');
+      const description = text.match(/^description: (.+)$/m)?.[1] ?? '';
+      assert.ok(description, `${copy}/${skill.name}: description`);
+      assert.doesNotMatch(description, UNQUOTED_YAML_BREAKER_RE, `${copy}/${skill.name}: description`);
+    }
   }
 });
 
