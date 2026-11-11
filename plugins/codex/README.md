@@ -50,6 +50,6 @@ payload and cannot be registered directly as a marketplace; use a 0.3.5 or later
 
 Signing in happens in the browser: the CLI opens Kombai's sign-in page and shows a match code to compare. The plugin never requests credentials in chat or stores them in MCP arguments.
 
-The skills are [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md) [`skills/about-kombai/SKILL.md`](skills/about-kombai/SKILL.md) and [`skills/generate-assets-with-kombai/SKILL.md`](skills/generate-assets-with-kombai/SKILL.md).
+The skills are [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md), [`skills/about-kombai/SKILL.md`](skills/about-kombai/SKILL.md) and [`skills/generate-assets-with-kombai/SKILL.md`](skills/generate-assets-with-kombai/SKILL.md).
 
 Licensed under the [MIT License](LICENSE).

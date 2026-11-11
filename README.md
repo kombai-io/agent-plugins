@@ -18,10 +18,10 @@ A third skill, `generate-assets-with-kombai`, runs `npx -y @kombai/cli@0.1.5 ski
 what it prints: generating an AI image or video for a design or the repo, and getting a public link
 to it. It is not for stock photos or for designing a whole UI (that is `work-with-kombai`'s).
 
-**Release order:** this skill needs a CLI that has `kombai skill assets` (vscode-assistant PR #4095). No
-released Kombai CLI has it yet, so run `pnpm run set-cli-version <that release>` before this lands on
-`main`: GitHub-sourced installs (`npx skills add ...`, `gemini skills install ...`, `agy plugin install ...`)
-read `main` directly, and would otherwise get a skill whose command fails.
+**Release order:** this skill runs `kombai skill assets`, which a CLI has only from the release that ships
+vscode-assistant PR #4095. The skills' pinned CLI version must point at such a release
+(`pnpm run set-cli-version <version>`) before this skill reaches `main`: GitHub-sourced installs
+(`npx skills add ...`, `gemini skills install ...`, `agy plugin install ...`) read `main` directly.
 
 The Codex and Claude Code plugins have a fourth, `get-started-with-kombai`, their onboarding: it sets
 up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
@@ -123,7 +123,7 @@ npx skills add kombai-io/agent-plugins --skill about-kombai
 npx skills add kombai-io/agent-plugins --skill generate-assets-with-kombai
 ```
 
-The CLI discovers [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md) and
+The CLI discovers [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md),
 [`skills/about-kombai/SKILL.md`](skills/about-kombai/SKILL.md) and
 [`skills/generate-assets-with-kombai/SKILL.md`](skills/generate-assets-with-kombai/SKILL.md) before the same-named skills inside the host plugins. It calls the same CLI and works in any
 agent that can run `npx`; its Codex permission guidance is in `codex-access.md` beside each
