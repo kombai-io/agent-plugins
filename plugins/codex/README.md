@@ -14,7 +14,7 @@ escalations are rejected automatically, so the skill asks for network access and
 `~/.kombai`, npm's cache and the directory containing Codex's `config.toml` (following a config symlink
 to its target; the CLI saves through a temporary sibling there) through Codex's `request_permissions` tool
 instead. That grant can end with the turn, so before a reply's first Kombai command the skill checks
-`echo network_off=${CODEX_SANDBOX_NETWORK_DISABLED:-0}` and asks again only when it prints `network_off=1`;
+`node -p "'network_off='+(process.env.CODEX_SANDBOX_NETWORK_DISABLED||0)"` and asks again only when it prints `network_off=1`;
 when a later reply in a chat has to ask again, it shows Kombai's `access_card` (reason `granted`). If the tool is missing or declined,
 it shows that card with reason `blocked`, or, without Kombai's view, tells the user to choose
 "Approve for me" in the permissions menu. Update the installed plugin to receive this bootstrap

@@ -35,7 +35,7 @@ access and those write paths through it instead: the ChatGPT and Codex apps give
 project picked that tool and reject every escalation automatically, even when its permissions menu
 reads "Ask for approval". The grant can end with the turn (in ChatGPT mode the card offers only
 "Allow once"; Codex mode also offers "Allow this conversation"), so before a reply's first Kombai
-command or design-file write the agent runs `echo network_off=${CODEX_SANDBOX_NETWORK_DISABLED:-0}` and
+command or design-file write the agent runs `node -p "'network_off='+(process.env.CODEX_SANDBOX_NETWORK_DISABLED||0)"` and
 asks again only when it prints `network_off=1`. Empty output alone does not trigger a retry: the agent polls a
 running execution session, checks the network the same way when a command exits with no output, and retries only
 a confirmed sandbox denial before a write was sent; for an unknown write outcome, it checks state first. When a later reply in such a chat has to ask again, it shows Kombai's `access_card`

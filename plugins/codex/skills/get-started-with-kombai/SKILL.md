@@ -20,7 +20,7 @@ returned directory, including any configured override; do not assume it is `~/.n
 - If it can't but has the `request_permissions` tool (as a ChatGPT or Codex app chat with no project picked
   does), get the access through that, asking for network access and write access to those paths, then run the
   commands without escalation. Its grant can end with the reply, so before the first Kombai command or
-  design-file write of each reply, run `echo network_off=${CODEX_SANDBOX_NETWORK_DISABLED:-0}` on its own: if
+  design-file write of each reply, run `node -p "'network_off='+(process.env.CODEX_SANDBOX_NETWORK_DISABLED||0)"` on its own: if
   it prints `network_off=1`, call `request_permissions` first; if `network_off=0`, the earlier grant still
   holds, so don't ask again. No output alone does not mean the network was off: if execution returns a
   running session, poll it instead of rerunning the command. If a Kombai command exits with no output, check the
