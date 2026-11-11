@@ -5,9 +5,13 @@ description: Design UI with Kombai. Designs go on a Kombai canvas, which the Cod
 
 **Needs a shell on the user's computer.** Kombai runs its CLI in a shell on the user's computer. Codex has one wherever it runs: the ChatGPT desktop app (its Work chats and Codex), the Codex CLI and the IDE extension, so carry on there, whatever the app is called. Only if this chat has no shell on the user's computer, as in ChatGPT on the web, whose code tool is a cloud sandbox, run nothing, not even in that code tool, and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai needs to run commands on your computer, and this chat can't. Ask in Codex or in a Work chat in the ChatGPT desktop app."
 
-When running in Codex's sandbox, get access outside it **before the first command below**; do not try the
-restricted command first. The commands need network access and write `~/.kombai` and npm's cache (`~/.npm`);
+When running in Codex's sandbox, get access outside it **before the first Kombai command**; do not try the
+restricted command first. The commands need network access and write `~/.kombai` and npm's configured cache;
 `npx` may contact the package registry before Kombai starts.
+
+Before requesting access, resolve npm's cache with the local config read `npm config get cache`
+(`npm.cmd config get cache` on Windows), from the workspace root when in an npm workspace. Request the
+returned directory, including any configured override; do not assume it is `~/.npm`.
 
 - If this chat can approve sandbox escalations, use `sandbox_permissions: "require_escalated"` on the
   execution tool call for the first command and every later Kombai CLI command.
@@ -16,12 +20,18 @@ restricted command first. The commands need network access and write `~/.kombai`
   commands without escalation. Its grant can end with the reply, so before the first Kombai command or
   design-file write of each reply, run `echo network_off=${CODEX_SANDBOX_NETWORK_DISABLED:-0}` on its own: if
   it prints `network_off=1`, call `request_permissions` first; if `network_off=0`, the earlier grant still
-  holds, so don't ask again. If a Kombai command exits with no output at all, check the same way and ask before
-  running it again; one that hasn't exited is still running, so wait for it. If a later reply in the chat has
+  holds, so don't ask again. No output alone does not mean the network was off: if execution returns a
+  running session, poll it instead of rerunning the command. If a Kombai command exits with no output, check the
+  same way: only if it prints `network_off=1` did it never start, so ask and run it again. Retry only a
+  confirmed sandbox denial before any write was sent; for an unknown write outcome, inspect state first. If a later reply in the chat has
   to call `request_permissions` again (asking twice in one reply doesn't count), once that reply's Kombai work
   is done, call Kombai's `access_card` tool with reason `granted` where it is there (in Codex, find it in
   `ALL_TOOLS`), once per chat: it shows the user how to stop this prompt on every message, with a Continue
   button.
+- Before any later command needs another write path, request the missing access first. Every
+  `mcp install codex`, including an existing view's upgrade or setup from the standalone skill, needs the
+  directory containing `config.toml` under `$CODEX_HOME` (else `~/.codex`), following a config symlink to
+  its target's directory. The CLI creates a temporary sibling there before replacing the config.
 - If neither is available, or the user declines, run nothing and do not retry inside the sandbox. Where
   Kombai's `access_card` tool is there, call it with reason `blocked` (it shows how to allow Kombai, with a
   Continue button that sends "Continue" here) and end your turn with one line. Otherwise tell the user only
@@ -33,7 +43,9 @@ restricted command first. The commands need network access and write `~/.kombai`
 `canvas_app` tool. Codex lists no MCP tool up front, so search inside exec with
 `ALL_TOOLS.filter((t) => t.name.endsWith('canvas_app'))`. If it doesn't exist, Kombai's view isn't set up in Codex
 yet: set it up without asking, with `npx -y @kombai/cli@0.1.5 mcp install codex` (outside the sandbox, like every
-Kombai command; through `request_permissions`, ask for write access to the folder holding Codex's `config.toml` too (`$CODEX_HOME`, else `~/.codex`)), tell the user in one line, then follow its `next`. When it answers `notStarting: true` (Kombai's
+Kombai command; through `request_permissions`, also request the directory containing Codex's `config.toml`
+under `$CODEX_HOME`, else `~/.codex`, resolving a config symlink to its target's directory for the temporary
+sibling the CLI writes), tell the user in one line, then follow its `next`. When it answers `notStarting: true` (Kombai's
 server isn't starting in Codex) or `codexApp: false` (this Codex isn't the app, so it shows no view), its `next` starts
 no new task: follow it, and carry on in this task as it says. Otherwise it moves the work to a new task: one offer,
 with a link that opens it with the request filled in, and on yes a new task that carries the request; the new task's
