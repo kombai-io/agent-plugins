@@ -98,11 +98,12 @@ export function pinnedCliPackage(root = workspaceRoot) {
   return distinct[0];
 }
 
-/** The skill topics a CLI's `skill` command prints (its TOPICS), from its bundle; null when they can't be read. */
+/** The skill topics a CLI's `skill` command prints (its TOPICS), from its bundle; null when they can't be read, or
+ *  when the bundle has more than one TOPICS and which is the skill command's can't be told. */
 export function skillTopicsIn(bundle) {
-  const literal = /\bTOPICS = \{([^}]*)\}/.exec(bundle);
-  if (!literal) return null;
-  const keys = literal[1]
+  const literals = [...bundle.matchAll(/\bTOPICS = \{([^}]*)\}/g)];
+  if (literals.length !== 1) return null;
+  const keys = literals[0][1]
     .split(',')
     .map((entry) => entry.trim())
     .filter(Boolean)
@@ -145,9 +146,13 @@ export function checkCliVersion(root = workspaceRoot) {
   assert(fs.existsSync(topicsFile), `${CLI_TOPICS_FILE} is missing: run pnpm run set-cli-version ${version}.`);
   const declared = readJson(topicsFile);
   assert(
-    declared.version === version && Array.isArray(declared.topics),
+    declared.version === version,
     `${CLI_TOPICS_FILE} lists the skill topics of ${CLI_NAME}@${declared.version}, but the plugins pin ${cliPackage}: ` +
       `run pnpm run set-cli-version ${version}.`,
+  );
+  assert(
+    Array.isArray(declared.topics),
+    `${CLI_TOPICS_FILE} has no topics list: run pnpm run set-cli-version ${version}.`,
   );
   assertSkillTopics(cliPackage, declared.topics);
   return cliPackage;
@@ -213,7 +218,12 @@ export function npmRegistryWith(run) {
       try {
         const packed = run('npm', ['pack', spec, '--json'], { cwd: dir });
         if (packed.status !== 0) throw new Error(`npm pack ${spec} failed: ${packed.stderr.trim()}`);
-        const tarball = JSON.parse(packed.stdout)[0]?.filename;
+        let tarball;
+        try {
+          tarball = JSON.parse(packed.stdout)[0]?.filename;
+        } catch {
+          tarball = undefined;
+        }
         assert(typeof tarball === 'string', `npm pack ${spec} named no tarball: ${packed.stdout.trim()}`);
         const unpacked = run('tar', ['-xzf', tarball], { cwd: dir });
         if (unpacked.status !== 0) throw new Error(`tar couldn't unpack ${tarball}: ${unpacked.stderr.trim()}`);

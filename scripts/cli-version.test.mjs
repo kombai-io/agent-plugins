@@ -473,6 +473,8 @@ test('check fails when the recorded topics are for another version, or missing',
   fixture((root) => {
     recordTopics(root, '0.0.1', EVERY_TOPIC);
     assert.throws(() => checkCliVersion(root), /lists the skill topics of @kombai\/cli@0\.0\.1, but the plugins pin/);
+    fs.writeFileSync(path.join(root, CLI_TOPICS_FILE), JSON.stringify({ version: pinnedCliPackage(root).split('@').pop() }));
+    assert.throws(() => checkCliVersion(root), /cli-skill-topics\.json has no topics list/);
     fs.rmSync(path.join(root, CLI_TOPICS_FILE));
     assert.throws(() => checkCliVersion(root), /cli-skill-topics\.json is missing: run pnpm run set-cli-version/);
   });
@@ -492,6 +494,8 @@ test("reads a CLI bundle's skill topics, and nothing from a bundle it can't read
   assert.deepEqual(skillTopicsIn("const TOPICS = { overview, 'sign-in': signIn, assets };"), ['overview', 'sign-in', 'assets']);
   assert.equal(skillTopicsIn('const topics = {};'), null);
   assert.equal(skillTopicsIn('TOPICS = { ...more, faq: faq_default }'), null);
+  // Two of them: which is the skill command's can't be told.
+  assert.equal(skillTopicsIn('TOPICS = { faq: a };\nTOPICS = { assets: b };'), null);
 });
 
 test("reads the skill topics from the published package, unpacked and never run", () => {
@@ -512,6 +516,10 @@ test("reads the skill topics from the published package, unpacked and never run"
   assert.throws(
     () => npmRegistryWith(() => ({ status: 1, stdout: '', stderr: 'npm error code ENOTFOUND' })).skillTopics('9.9.9'),
     /npm pack @kombai\/cli@9\.9\.9 failed: npm error code ENOTFOUND/,
+  );
+  assert.throws(
+    () => npmRegistryWith(() => ({ status: 0, stdout: 'npm notice\n', stderr: '' })).skillTopics('9.9.9'),
+    /npm pack @kombai\/cli@9\.9\.9 named no tarball: npm notice/,
   );
   const unreadable = npmRegistryWith((command, args, { cwd }) => {
     if (command === 'npm') return { status: 0, stdout: '[{"filename":"kombai-cli-9.9.9.tgz"}]', stderr: '' };
