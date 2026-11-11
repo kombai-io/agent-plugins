@@ -40,7 +40,8 @@ asks again only when it prints `network_off=1`. Empty output alone does not trig
 running execution session, checks the network the same way when a command exits with no output, and retries only
 a confirmed sandbox denial before a write was sent; for an unknown write outcome, it checks state first. When a later reply in such a chat has to ask again, it shows Kombai's `access_card`
 where it is available (the CLI's card: Approve for me, a project, or Codex mode stops the
-per-message prompt, with a Continue button); no line of text asks it to relay that tip, which agents
+per-message prompt; only the `blocked` card has a Continue button, since the request is done
+by then); no line of text asks it to relay that tip, which agents
 ignored in testing. If neither
 route works, the skills run nothing and show that card with reason `blocked`, or tell the user to
 choose "Approve for me" in that menu. Existing Codex installations need the updated
