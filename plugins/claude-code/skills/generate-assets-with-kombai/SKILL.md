@@ -5,7 +5,12 @@ description: Generate an AI image or video with Kombai and get a hosted https li
 
 **Claude Code only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in Claude's chat (claude.ai, or the Chat tab of the Claude desktop or mobile app) rather than Claude Code, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai's plugin works only in Claude Code, not in Claude's chat. Install it in Claude Code and ask there."
 
-Run `npx -y @kombai/cli@0.1.5 skill assets` and follow what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.2.0 skill assets` and follow what it prints; it is this skill's full text.
+
+**Sign-in compatibility:** If `sign_in_card` is available, use `reason: "assets"` only when its
+advertised `reason` values include `assets`; otherwise use `reason: "account"`. This overrides the
+reason in the printed assets and sign-in instructions. Without that tool, follow the printed
+sign-in instructions.
 
 If that command fails before it prints anything:
 

@@ -3,7 +3,12 @@ name: generate-assets-with-kombai
 description: Generate an AI image or video with Kombai and get a hosted https link to put in the code — hero art, an illustration, a texture, a background video. Use it only when the user asks for Kombai to make the image or video (names Kombai or picks this skill), or to make the videos a Kombai taste run left as prompts once the user asked for AI video. Never on your own — an image or video request that does not name Kombai is not for this skill (use the host's own image or video tool, if it has one); not for stock photos or for designing a whole UI (that is work-with-kombai).
 ---
 
-Run `npx -y @kombai/cli@0.1.5 skill assets` and follow what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.2.0 skill assets` and follow what it prints; it is this skill's full text.
+
+**Sign-in compatibility:** If `sign_in_card` is available, use `reason: "assets"` only when its
+advertised `reason` values include `assets`; otherwise use `reason: "account"`. This overrides the
+reason in the printed assets and sign-in instructions. Without that tool, follow the printed
+sign-in instructions.
 
 If that command fails before it prints anything:
 

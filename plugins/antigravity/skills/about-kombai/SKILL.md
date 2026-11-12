@@ -16,7 +16,7 @@ on business and enterprise accounts) in Antigravity's permission settings; for a
 Windows, where commands run as `npx.cmd`. Answering the approval prompt with "always allow" covers
 only the Kombai version this skill runs now.
 
-Run `npx -y @kombai/cli@0.1.5 skill faq` and answer from what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.2.0 skill faq` and answer from what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 

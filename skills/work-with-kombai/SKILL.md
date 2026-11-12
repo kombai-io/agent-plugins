@@ -7,7 +7,7 @@ When running in Codex's sandbox, first read `codex-access.md` beside this file a
 **before the first command below**: it says how to get network access without trying the restricted
 command first. Elsewhere, skip it.
 
-Run `npx -y @kombai/cli@0.1.5 skill` and follow what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.2.0 skill` and follow what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 

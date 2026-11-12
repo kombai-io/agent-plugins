@@ -39,10 +39,10 @@ returned directory, including any configured override; do not assume it is `~/.n
   for me** in the permissions menu under the message box (in Codex in a terminal, by allowing network access
   in its approval settings), then sending their message again.
 
-**First, before anything else, even `npx -y @kombai/cli@0.1.5 skill`:** in the Codex app, look for Kombai's
+**First, before anything else, even `npx -y @kombai/cli@0.2.0 skill`:** in the Codex app, look for Kombai's
 `canvas_app` tool. Codex lists no MCP tool up front, so search inside exec with
 `ALL_TOOLS.filter((t) => t.name.endsWith('canvas_app'))`. If it doesn't exist, Kombai's view isn't set up in Codex
-yet: set it up without asking, with `npx -y @kombai/cli@0.1.5 mcp install codex` (outside the sandbox, like every
+yet: set it up without asking, with `npx -y @kombai/cli@0.2.0 mcp install codex` (outside the sandbox, like every
 Kombai command; through `request_permissions`, also request the directory containing Codex's `config.toml`
 under `$CODEX_HOME`, else `~/.codex`, resolving a config symlink to its target's directory for the temporary
 sibling the CLI writes), tell the user in one line, then follow its `next`. When it answers `notStarting: true` (Kombai's
@@ -58,7 +58,7 @@ Once `canvas_app` exists, it is the only way to show a canvas here: call it with
 the chat. No browser, no in-app browser, and no canvas link unless the user asks for one; show no link when the view
 isn't there either.
 
-Run `npx -y @kombai/cli@0.1.5 skill` and follow what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.2.0 skill` and follow what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 

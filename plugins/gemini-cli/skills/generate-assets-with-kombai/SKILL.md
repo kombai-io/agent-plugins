@@ -18,7 +18,12 @@ allow it for the session; later Kombai commands then run with it, so do not pass
 user declines, stop and explain that Kombai needs it. If there is no such parameter and `$SANDBOX`
 is empty, Kombai is not sandboxed: report a permission or network error as it is.
 
-Run `npx -y @kombai/cli@0.1.5 skill assets` and follow what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.2.0 skill assets` and follow what it prints; it is this skill's full text.
+
+**Sign-in compatibility:** If `sign_in_card` is available, use `reason: "assets"` only when its
+advertised `reason` values include `assets`; otherwise use `reason: "account"`. This overrides the
+reason in the printed assets and sign-in instructions. Without that tool, follow the printed
+sign-in instructions.
 
 If that command fails before it prints anything:
 

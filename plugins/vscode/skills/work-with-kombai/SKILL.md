@@ -16,7 +16,7 @@ off the terminal sandbox, if their organization allows it, and wait. In GitHub C
 installs this same plugin, run the command in its sandbox first; if the sandbox blocks it, ask for
 the bypass Copilot CLI offers.
 
-Run `npx -y @kombai/cli@0.1.5 skill` and follow what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.2.0 skill` and follow what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 

@@ -5,7 +5,7 @@ description: Answer the user's questions about Kombai itself (what it is, which 
 
 **Claude Code only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in Claude's chat (claude.ai, or the Chat tab of the Claude desktop or mobile app) rather than Claude Code, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai's plugin works only in Claude Code, not in Claude's chat. Install it in Claude Code and ask there."
 
-Run `npx -y @kombai/cli@0.1.5 skill faq` and answer from what it prints; it is this skill's full text.
+Run `npx -y @kombai/cli@0.2.0 skill faq` and answer from what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 

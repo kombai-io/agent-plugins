@@ -7,20 +7,21 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 and release tooling.
 
 Each plugin's `work-with-kombai` skill runs the Kombai CLI
-(`npx -y @kombai/cli@0.1.5 skill`), which prints the full instructions for designing on a hosted
+(`npx -y @kombai/cli@0.2.0 skill`), which prints the full instructions for designing on a hosted
 Kombai canvas. The CLI needs Node.js 20 or later.
 
-A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.1.5 skill faq` and answers the user's
+A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.2.0 skill faq` and answers the user's
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
 live, sharing, updates and support.
 
-A third skill, `generate-assets-with-kombai`, runs `npx -y @kombai/cli@0.1.5 skill assets` and follows
+A third skill, `generate-assets-with-kombai`, runs `npx -y @kombai/cli@0.2.0 skill assets` and follows
 what it prints: generating an AI image or video for a design or the repo, and getting a public link
 to it. It runs only when the user asks Kombai for an image or video (names Kombai or picks the skill), or
 for the videos a taste run left as prompts once the user asked for AI video; never on its own, and a plain
 image or video request stays with the host's own tool. It is not for stock photos or for designing a whole UI (that is `work-with-kombai`'s).
 
-**Release order:** this skill needs a CLI release that ships vscode-assistant PR #4107, not only
+**Release order:** the pinned CLI 0.2.0 includes vscode-assistant PR #4107 and #4095. Future pins must
+keep both changes: this skill needs a CLI release that ships #4107, not only
 #4095. #4095 adds `kombai skill assets` and the `asset` commands. #4107 makes that text usable from
 this skill: it prints the run line, prices a video with a free check before asking the user, and
 generates only when the user asks Kombai. The skills' pinned CLI version must point at such a
@@ -28,6 +29,11 @@ release (`pnpm run set-cli-version <version>`) before this skill reaches `main`:
 installs (`npx skills add ...`, `gemini skills install ...`, `agy plugin install ...`) read `main`
 directly. set-cli-version and `pnpm run check` refuse a CLI without the `assets` topic (#4095), but
 they can't tell whether a release has #4107: check its release notes before pinning it.
+
+The asset skill checks the advertised sign-in card reasons before using the new `assets` reason.
+An existing MCP server that does not support it receives `account` instead, so guests can sign in
+without first replacing their running server. This rule takes precedence over the CLI text;
+without the card tool, the CLI's normal sign-in instructions apply.
 
 The Codex and Claude Code plugins have a fourth, `get-started-with-kombai`, their onboarding: it sets
 up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
@@ -286,14 +292,14 @@ and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling check
 
 OpenAI's and Anthropic's plugin directories refuse a plugin that runs a floating npm tag (the
 CLI's `latest`), so the source pins one released CLI: every plugin's `cli.package`
-is `@kombai/cli@0.1.5`, the same in all six, and every file that names the CLI (the skills under
+is `@kombai/cli@0.2.0`, the same in all six, and every file that names the CLI (the skills under
 `plugins/` and `skills/`, the READMEs, `agents/openai.yaml`, the marketplaces) names that one.
 Describe a tag without the package name in front of it (the CLI's `latest` tag): the check reads
 any package name followed by a tag as one the plugins run, and set-cli-version would rewrite it. Move them all with
 one command:
 
 ```sh
-pnpm run set-cli-version 0.1.5
+pnpm run set-cli-version 0.2.0
 ```
 
 It refuses a tag (`latest`, `beta`, …), a range or a prerelease, and a version npm doesn't have
