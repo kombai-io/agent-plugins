@@ -56,6 +56,7 @@ export function validateCursorPlugin(root = workspaceRoot, { team = false } = {}
     '.cursor-plugin/plugin.json',
     'skills/work-with-kombai/SKILL.md',
     'skills/about-kombai/SKILL.md',
+    'skills/generate-assets-with-kombai/SKILL.md',
     'assets/logo.png',
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Cursor plugin file: ${file}`);

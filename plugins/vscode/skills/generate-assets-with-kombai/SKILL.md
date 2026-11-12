@@ -1,0 +1,36 @@
+---
+name: generate-assets-with-kombai
+description: Generate an AI image or video with Kombai and get a hosted https link to put in the code — hero art, an illustration, a texture, a background video. Use it only when the user asks for Kombai to make the image or video (names Kombai or picks this skill), or to make the videos a Kombai taste run left as prompts once the user asked for AI video. Never on your own — an image or video request that does not name Kombai is not for this skill (use the host's own image or video tool, if it has one); not for stock photos or for designing a whole UI (that is work-with-kombai).
+---
+
+When VS Code runs terminal commands in its sandbox, set `requestUnsandboxedExecution: true` and
+`requestUnsandboxedExecutionReason: "Kombai needs network access and writes ~/.kombai"` on the
+terminal tool call **for the first command below** and for every later Kombai CLI command. `npx` may
+contact the package registry before Kombai starts. Do not try the sandboxed command first, and do
+not use `requestAllowNetwork` for Kombai commands, even if VS Code suggests it: the sandbox keeps
+the npm cache (`~/.npm`) and `~/.kombai` unwritable, so they still fail. If the terminal tool has no
+`requestUnsandboxedExecution` (VS Code says `chat.agent.sandbox.allowUnsandboxedCommands` turns it
+off), or the user declines, do not retry inside the sandbox: explain that every Kombai command has
+to run outside it, ask the user to turn on `chat.agent.sandbox.allowUnsandboxedCommands` or to turn
+off the terminal sandbox, if their organization allows it, and wait. In GitHub Copilot CLI, which
+installs this same plugin, run the command in its sandbox first; if the sandbox blocks it, ask for
+the bypass Copilot CLI offers.
+
+Run `npx -y @kombai/cli@0.2.0 skill assets` and follow what it prints; it is this skill's full text.
+
+**Sign-in compatibility:** If `sign_in_card` is available, use `reason: "assets"` only when its
+advertised `reason` values include `assets`; otherwise use `reason: "account"`. This overrides the
+reason in the printed assets and sign-in instructions. Without that tool, follow the printed
+sign-in instructions.
+
+If that command fails before it prints anything:
+
+- **`npx` or `node` not found.** Kombai needs Node.js 20 or later. Tell the user, give them the steps for their OS, and wait; do not install Node yourself.
+  - macOS: `brew install node` if Homebrew is installed, otherwise the LTS installer from https://nodejs.org.
+  - Windows: `winget install OpenJS.NodeJS.LTS`, otherwise the LTS .msi from https://nodejs.org.
+  - Linux: nvm (https://github.com/nvm-sh/nvm), then `nvm install --lts`. The distro's package is often older than 20.
+
+  When they say it is installed, run the command again. If `node` is still not found, ask them to restart this agent or its editor, so it picks up the new PATH; do not ask them to install again.
+- **`CLI_NODE_TOO_OLD`.** The same steps upgrade Node; with nvm, `nvm install --lts` then `nvm alias default lts/*`. If the error comes back after an upgrade, an older `node` is first on PATH: show the user `which -a node` (`where node` on Windows).
+- **Windows PowerShell says running scripts is disabled.** Run `npx.cmd` in place of `npx`.
+- **The network is blocked** (a sandboxed terminal; in VS Code, npm `E403 403 Forbidden` from registry.npmjs.org, or npm `EPERM` with advice to `sudo chown` its cache). The command ran inside the sandbox. In VS Code, retry it once with `requestUnsandboxedExecution: true` as above, never with `requestAllowNetwork`; in GitHub Copilot CLI, retry it with the sandbox bypass it offers. Do not pass on npm's `sudo chown` advice; the cache is not root-owned. Node is not missing.

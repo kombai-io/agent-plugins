@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpVsCodeVersion, packVsCodePlugin, validateVsCodePlugin, VSCODE_UNSANDBOXED } from './vscode-plugin.mjs';
-import { FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { ASSETS_SKILL, FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
 import { pinnedCliPackage } from './cli-version.mjs';
 
 /** The released CLI the source pins. */
@@ -93,6 +93,7 @@ test('the VS Code ZIP holds only its marketplace, its plugin and the license', (
       `${PLUGIN}/kombai.package.json`,
       `${PLUGIN}/plugin.json`,
       `${PLUGIN}/skills/${FAQ_SKILL}/SKILL.md`,
+      `${PLUGIN}/skills/${ASSETS_SKILL}/SKILL.md`,
       `${PLUGIN}/skills/${WORKFLOW_SKILL}/SKILL.md`,
     ]);
   });
@@ -236,7 +237,7 @@ test('VS Code validation checks the plugin identity, license and files', () => {
   }
 });
 
-for (const skill of [WORKFLOW_SKILL, FAQ_SKILL]) {
+for (const skill of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
   test(`the VS Code ${skill} skill must ask to run outside the terminal sandbox before the first command`, () => {
     fixture((root) => {
       const skillPath = path.join(root, PLUGIN, 'skills', skill, 'SKILL.md');
@@ -266,6 +267,7 @@ test('a VS Code team pack runs the CLI team build', () => {
       for (const [skill, topic] of [
         [WORKFLOW_SKILL, ''],
         [FAQ_SKILL, ' faq'],
+        [ASSETS_SKILL, ' assets'],
       ]) {
         const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
         assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);

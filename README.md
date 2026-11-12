@@ -7,14 +7,35 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 and release tooling.
 
 Each plugin's `work-with-kombai` skill runs the Kombai CLI
-(`npx -y @kombai/cli@0.1.5 skill`), which prints the full instructions for designing on a hosted
+(`npx -y @kombai/cli@0.2.0 skill`), which prints the full instructions for designing on a hosted
 Kombai canvas. The CLI needs Node.js 20 or later.
 
-A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.1.5 skill faq` and answers the user's
+A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.2.0 skill faq` and answers the user's
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
 live, sharing, updates and support.
 
-The Codex and Claude Code plugins have a third, `get-started-with-kombai`, their onboarding: it sets
+A third skill, `generate-assets-with-kombai`, runs `npx -y @kombai/cli@0.2.0 skill assets` and follows
+what it prints: generating an AI image or video for a design or the repo, and getting a public link
+to it. It runs only when the user asks Kombai for an image or video (names Kombai or picks the skill), or
+for the videos a taste run left as prompts once the user asked for AI video; never on its own, and a plain
+image or video request stays with the host's own tool. It is not for stock photos or for designing a whole UI (that is `work-with-kombai`'s).
+
+**Release order:** the pinned CLI 0.2.0 includes vscode-assistant PR #4107 and #4095. Future pins must
+keep both changes: this skill needs a CLI release that ships #4107, not only
+#4095. #4095 adds `kombai skill assets` and the `asset` commands. #4107 makes that text usable from
+this skill: it prints the run line, prices a video with a free check before asking the user, and
+generates only when the user asks Kombai. The skills' pinned CLI version must point at such a
+release (`pnpm run set-cli-version <version>`) before this skill reaches `main`: GitHub-sourced
+installs (`npx skills add ...`, `gemini skills install ...`, `agy plugin install ...`) read `main`
+directly. set-cli-version and `pnpm run check` refuse a CLI without the `assets` topic (#4095), but
+they can't tell whether a release has #4107: check its release notes before pinning it.
+
+The asset skill checks the advertised sign-in card reasons before using the new `assets` reason.
+An existing MCP server that does not support it receives `account` instead, so guests can sign in
+without first replacing their running server. This rule takes precedence over the CLI text;
+without the card tool, the CLI's normal sign-in instructions apply.
+
+The Codex and Claude Code plugins have a fourth, `get-started-with-kombai`, their onboarding: it sets
 up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
 and ends with prompts to try (see [The canvas view](#the-canvas-view)).
 
@@ -101,7 +122,7 @@ plugin folder's GitHub URL (`agy plugin install https://github.com/kombai-io/age
 Gemini CLI installs an extension from a folder or a git repository whose root holds
 `gemini-extension.json`, and not from a `.zip`, so it installs `plugins/gemini-cli` from a checkout
 or the folder in an unzipped Build Plugins ZIP; `gemini skills install
-https://github.com/kombai-io/agent-plugins --path plugins/gemini-cli/skills` installs just the two
+https://github.com/kombai-io/agent-plugins --path plugins/gemini-cli/skills` installs just its
 skills straight from GitHub.
 
 ## Install with the skills CLI
@@ -111,10 +132,12 @@ For a platform-independent workflow skill, use Vercel's `skills` CLI:
 ```sh
 npx skills add kombai-io/agent-plugins --skill work-with-kombai
 npx skills add kombai-io/agent-plugins --skill about-kombai
+npx skills add kombai-io/agent-plugins --skill generate-assets-with-kombai
 ```
 
-The CLI discovers [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md) and
-[`skills/about-kombai/SKILL.md`](skills/about-kombai/SKILL.md) before the same-named skills inside the host plugins. It calls the same CLI and works in any
+The CLI discovers [`skills/work-with-kombai/SKILL.md`](skills/work-with-kombai/SKILL.md),
+[`skills/about-kombai/SKILL.md`](skills/about-kombai/SKILL.md) and
+[`skills/generate-assets-with-kombai/SKILL.md`](skills/generate-assets-with-kombai/SKILL.md) before the same-named skills inside the host plugins. It calls the same CLI and works in any
 agent that can run `npx`; its Codex permission guidance is in `codex-access.md` beside each
 `SKILL.md`, which only an agent in Codex's sandbox reads (`npx skills add` installs it with the skill).
 It registers no MCP server, so the agent opens the
@@ -269,24 +292,29 @@ and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling check
 
 OpenAI's and Anthropic's plugin directories refuse a plugin that runs a floating npm tag (the
 CLI's `latest`), so the source pins one released CLI: every plugin's `cli.package`
-is `@kombai/cli@0.1.5`, the same in all six, and every file that names the CLI (the skills under
+is `@kombai/cli@0.2.0`, the same in all six, and every file that names the CLI (the skills under
 `plugins/` and `skills/`, the READMEs, `agents/openai.yaml`, the marketplaces) names that one.
 Describe a tag without the package name in front of it (the CLI's `latest` tag): the check reads
 any package name followed by a tag as one the plugins run, and set-cli-version would rewrite it. Move them all with
 one command:
 
 ```sh
-pnpm run set-cli-version 0.1.5
+pnpm run set-cli-version 0.2.0
 ```
 
 It refuses a tag (`latest`, `beta`, …), a range or a prerelease, and a version npm doesn't have
 (`npm view`). It runs that version's `mcp install --help` and refuses it unless it takes every
-client a plugin's skill installs Kombai's server for (`codex`, `claude-code`), so no plugin pins
-a CLI older than its skills. Then it rewrites every CLI it finds in those files, and runs the
-checks below. Commit the result; it changes no plugin version.
+client a plugin's skill installs Kombai's server for (`codex`, `claude-code`). It also unpacks
+that version's published package (`npm pack`, never run) and refuses it unless its `skill`
+command has every topic a skill runs: `kombai skill`, `skill faq` and `skill assets`. So no plugin
+pins a CLI older than its skills. Then it rewrites every CLI it finds in those files, records the
+version's skill topics in `scripts/cli-skill-topics.json`, and runs the checks below. Commit the
+result; it changes no plugin version.
 
 `pnpm run check` (and Validate Plugins) runs `node scripts/cli-version.mjs check`, which fails
-unless every plugin pins the same released CLI and `skills/` and `README.md` name it and no other.
+unless every plugin pins the same released CLI, `skills/` and `README.md` name it and no other,
+and `scripts/cli-skill-topics.json` records that version with every topic a skill runs. It asks
+npm nothing: the topics are what set-cli-version read.
 Each plugin's validator fails the same way on its own folder and on the files its pack zips
 beside it (its marketplace): a file that names a tag or another version than its `cli.package`.
 

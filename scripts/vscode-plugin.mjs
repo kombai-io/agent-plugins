@@ -9,6 +9,7 @@ import {
   filesBesidePlugin,
   checkPluginFiles,
   checkSkills,
+  ASSETS_SKILL,
   FAQ_SKILL,
   readPluginFile,
   skillGuidance,
@@ -52,6 +53,7 @@ const PLUGIN_FILES = [
   'plugin.json',
   `skills/${WORKFLOW_SKILL}/SKILL.md`,
   `skills/${FAQ_SKILL}/SKILL.md`,
+  `skills/${ASSETS_SKILL}/SKILL.md`,
 ];
 // VS Code's terminal sandbox blocks the network and writes outside the workspace; the skill asks for this way out.
 export const VSCODE_UNSANDBOXED = 'requestUnsandboxedExecution: true';
@@ -109,7 +111,7 @@ export function validateVsCodePlugin(root = workspaceRoot, { team = false } = {}
   );
   checkCliContract(pluginRoot, contract, 'VS Code', { team, root, shipped: filesBesidePlugin(PACKAGE_FILES) });
   checkSkills(pluginRoot, 'VS Code');
-  for (const name of [WORKFLOW_SKILL, FAQ_SKILL]) {
+  for (const name of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
     const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');
     assert(
       skillGuidance(skill).includes(VSCODE_UNSANDBOXED),

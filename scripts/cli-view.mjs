@@ -8,10 +8,17 @@ import { spawnSync } from 'node:child_process';
 // vscode-assistant's packages/cli/src/mcp/client-gate.js); a plugin only registers the server, and only while its
 // kombai.package.json has `cli.view` on. Turning it on for another host: README.md, "Adding a host to the canvas view".
 export const CLI_VIEW_SERVER = 'kombai';
-// Each plugin's skills, both stubs over the CLI's text: the workflow runs `kombai skill`, the FAQ `kombai skill faq`.
+// Each plugin's skills, all stubs over the CLI's text: the workflow runs `kombai skill`, the FAQ `kombai skill faq`, the
+// asset generation one `kombai skill assets`.
 export const WORKFLOW_SKILL = 'work-with-kombai';
 export const FAQ_SKILL = 'about-kombai';
-const SKILL_TOPICS = { [WORKFLOW_SKILL]: '', [FAQ_SKILL]: ' faq' };
+export const ASSETS_SKILL = 'generate-assets-with-kombai';
+const SKILL_TOPICS = { [WORKFLOW_SKILL]: '', [FAQ_SKILL]: ' faq', [ASSETS_SKILL]: ' assets' };
+/** The CLI's skill topic each skill prints, by skill: `kombai skill` alone prints the `overview` topic. The pinned CLI
+ *  must have every one (cli-version.mjs). */
+export const SKILL_CLI_TOPICS = Object.fromEntries(
+  Object.entries(SKILL_TOPICS).map(([name, topic]) => [name, topic.trim() || 'overview']),
+);
 /** The CLI's npm package. */
 export const CLI_NAME = '@kombai/cli';
 /** A released CLI version: x.y.z, no tag, range or prerelease. What a plugin's `cli.package` pins. */
@@ -235,7 +242,7 @@ export function checkChatNotice(pluginRoot, host, notice) {
 }
 
 /**
- * Check that a plugin ships exactly the workflow and FAQ skills, plus the host's own `extra` ones, each named in its
+ * Check that a plugin ships exactly the workflow, FAQ and asset skills, plus the host's own `extra` ones, each named in its
  * frontmatter and described.
  */
 export function checkSkills(pluginRoot, host, extra = []) {
@@ -247,14 +254,23 @@ export function checkSkills(pluginRoot, host, extra = []) {
     .sort();
   assert(
     JSON.stringify(names) === JSON.stringify([...Object.keys(SKILL_TOPICS), ...extra].sort()),
-    `${host} plugin must contain the ${[WORKFLOW_SKILL, FAQ_SKILL, ...extra].join(', ')} skills, and no other.`,
+    `${host} plugin must contain the ${[WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL, ...extra].join(', ')} skills, and no other.`,
   );
   for (const name of names) {
     const skill = fs.readFileSync(path.join(skillRoot, name, 'SKILL.md'), 'utf8');
     assert(new RegExp(`^---\\r?\\n[\\s\\S]*?^name: ${name}\\r?$`, 'm').test(skill), `${host} ${name} skill name is missing.`);
     assert(/^description: \S.+$/m.test(skill), `${host} ${name} skill description is missing.`);
+    const description = skill.match(/^description: (.+)$/m)?.[1] ?? '';
+    assert(
+      !UNQUOTED_YAML_BREAKER_RE.test(description),
+      `${host} ${name} skill description is an unquoted YAML value, so it can't hold ": " or " #": the hosts' YAML ` +
+        'parsers reject the frontmatter.',
+    );
   }
 }
+
+/** What ends an unquoted YAML value early: ": " starts a mapping (a parse error) and " #" a comment. */
+export const UNQUOTED_YAML_BREAKER_RE = /:\s|\s#/;
 
 // The team build of a plugin, for colleagues trying a CLI beta before it is released: the same plugin, running the
 // newest beta from npm's `beta` tag (vscode-assistant's Publish CLI `beta` action, run from `preprod`), which

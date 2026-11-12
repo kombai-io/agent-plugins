@@ -7,17 +7,21 @@
 //
 //   1. refuses a tag (`latest`, `beta`, …), a range or a prerelease: the plugins are release plugins (team builds run
 //      the beta from a staged copy, `pack --team`);
-//   2. checks the version on npm: it exists, and its `mcp install` takes every client a plugin's skill runs it for
-//      (Codex: `codex`, Claude Code: `claude-code`), so no plugin pins a CLI older than its skills;
-//   3. names `@kombai/cli@<version>` in place of whatever CLI version or tag each file under PINNED_PATHS names;
+//   2. checks the version on npm: it exists, its `mcp install` takes every client a plugin's skill runs it for
+//      (Codex: `codex`, Claude Code: `claude-code`), and its published dist has every skill topic a skill prints
+//      (`skill`, `skill faq`, `skill assets`), so no plugin pins a CLI older than its skills;
+//   3. names `@kombai/cli@<version>` in place of whatever CLI version or tag each file under PINNED_PATHS names, and
+//      records that version's skill topics in CLI_TOPICS_FILE;
 //   4. checks the result: `check` below, and every plugin's validator.
 //
 // `node scripts/cli-version.mjs check` (part of `pnpm run check`) fails unless every plugin pins the same released
-// CLI and every file outside the plugins (CHECKED_PATHS) names that one and no other. Each plugin's validator checks
-// its own folder and the files its pack zips beside it (its marketplace) the same way, so `pnpm run check`, which
-// runs both, reads each file once.
+// CLI, every file outside the plugins (CHECKED_PATHS) names that one and no other, and CLI_TOPICS_FILE records that
+// version with every skill topic a skill prints. It reads no network: the topics are what set-cli-version read from
+// npm. Each plugin's validator checks its own folder and the files its pack zips beside it (its marketplace) the same
+// way, so `pnpm run check`, which runs both, reads each file once.
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -30,6 +34,7 @@ import {
   isReleaseCliPackage,
   PINNABLE_REFERENCE_RE,
   RELEASE_VERSION_RE,
+  SKILL_CLI_TOPICS,
   strayCliReferences,
   textOf,
   withoutFullStop,
@@ -55,6 +60,9 @@ export const PLUGINS = {
 export const PINNED_PATHS = ['plugins', 'skills', 'README.md', '.agents', '.claude-plugin', '.cursor-plugin', '.github/plugin'];
 /** The pinned paths no plugin validator reads, which `check` reads instead. */
 export const CHECKED_PATHS = ['skills', 'README.md'];
+/** The pinned CLI's version and its skill topics, as set-cli-version read them from its published dist: what `check`
+ *  holds the skills to without asking npm. Written by set-cli-version only. */
+export const CLI_TOPICS_FILE = 'scripts/cli-skill-topics.json';
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -90,9 +98,40 @@ export function pinnedCliPackage(root = workspaceRoot) {
   return distinct[0];
 }
 
+/** The skill topics a CLI's `skill` command prints (its TOPICS), from its bundle; null when they can't be read, or
+ *  when the bundle has more than one TOPICS and which is the skill command's can't be told. */
+export function skillTopicsIn(bundle) {
+  const literals = [...bundle.matchAll(/\bTOPICS = \{([^}]*)\}/g)];
+  if (literals.length !== 1) return null;
+  const keys = literals[0][1]
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => /^(?:"([^"]+)"|'([^']+)'|([A-Za-z_$][\w$]*))\s*(?::|$)/.exec(entry));
+  return keys.length > 0 && keys.every(Boolean) ? keys.map(([, double, single, bare]) => double ?? single ?? bare) : null;
+}
+
+/** Fail unless `topics`, those of `cliPackage`, include every skill topic a skill prints, naming the first missing. */
+function assertSkillTopics(cliPackage, topics) {
+  for (const [skill, topic] of Object.entries(SKILL_CLI_TOPICS)) {
+    assert(
+      topics.includes(topic),
+      `${cliPackage} has no \`${topic}\` skill topic, which the ${skill} skill runs ` +
+        `(\`kombai skill${topic === 'overview' ? '' : ` ${topic}`}\`): pin a CLI release that has it ` +
+        `(pnpm run set-cli-version <x.y.z>). Its topics: ${topics.join(', ')}.`,
+    );
+  }
+}
+
+/** The text CLI_TOPICS_FILE holds for `version` and its `topics`. */
+function topicsFileText(version, topics) {
+  return `${JSON.stringify({ version, topics }, null, 2)}\n`;
+}
+
 /**
- * Check that every plugin pins the same released CLI and every file outside the plugins (CHECKED_PATHS) names it and
- * no other: no tag, no other version. The plugin validators check the rest. Returns the pinned package.
+ * Check that every plugin pins the same released CLI, every file outside the plugins (CHECKED_PATHS) names it and no
+ * other (no tag, no other version), and CLI_TOPICS_FILE says that version has every skill topic a skill prints. The
+ * plugin validators check the rest. Returns the pinned package.
  */
 export function checkCliVersion(root = workspaceRoot) {
   const cliPackage = pinnedCliPackage(root);
@@ -102,6 +141,20 @@ export function checkCliVersion(root = workspaceRoot) {
     cliPackage,
     'Every file must name only the CLI the plugins pin',
   );
+  const version = cliPackage.slice(CLI_NAME.length + 1);
+  const topicsFile = path.join(root, CLI_TOPICS_FILE);
+  assert(fs.existsSync(topicsFile), `${CLI_TOPICS_FILE} is missing: run pnpm run set-cli-version ${version}.`);
+  const declared = readJson(topicsFile);
+  assert(
+    declared.version === version,
+    `${CLI_TOPICS_FILE} lists the skill topics of ${CLI_NAME}@${declared.version}, but the plugins pin ${cliPackage}: ` +
+      `run pnpm run set-cli-version ${version}.`,
+  );
+  assert(
+    Array.isArray(declared.topics),
+    `${CLI_TOPICS_FILE} has no topics list: run pnpm run set-cli-version ${version}.`,
+  );
+  assertSkillTopics(cliPackage, declared.topics);
   return cliPackage;
 }
 
@@ -125,10 +178,10 @@ export function requiredInstallClients(root = workspaceRoot) {
   return [...clients].sort();
 }
 
-function spawn(command, args) {
-  // npm and npx are .cmd files on Windows, which Node runs only through a shell; every argument here is a constant or
-  // a checked x.y.z, so none needs quoting.
-  const result = spawnSync(command, args, { encoding: 'utf8', shell: process.platform === 'win32' });
+function spawn(command, args, { cwd } = {}) {
+  // npm and npx are .cmd files on Windows, which Node runs only through a shell; every argument here is a constant, a
+  // checked x.y.z or a file name npm made from them, so none needs quoting. A folder goes in `cwd`, never an argument.
+  const result = spawnSync(command, args, { cwd, encoding: 'utf8', shell: process.platform === 'win32' });
   if (result.error) throw result.error;
   return result;
 }
@@ -137,8 +190,8 @@ function spawn(command, args) {
 const NPM_ERROR_RE = /npm (?:error|ERR!)/;
 
 /**
- * npm as this script asks it, through `run` (spawnSync's result shape): whether a version exists, and what its
- * `mcp install --help` prints. A failing npm says why rather than passing for "no such version".
+ * npm as this script asks it, through `run` (spawnSync's result shape): whether a version exists, what its
+ * `mcp install --help` prints, and its skill topics. A failing npm says why rather than passing for "no such version".
  */
 export function npmRegistryWith(run) {
   return {
@@ -154,6 +207,39 @@ export function npmRegistryWith(run) {
         throw new Error(`npx couldn't run ${CLI_NAME}@${version}: ${result.stderr.trim()}`);
       }
       return `${result.stdout}\n${result.stderr}`;
+    },
+    /**
+     * The skill topics of `version`, read from its published package's bundle (its `bin`), never run: a CLI that runs
+     * may hand the command to another version installed on this machine, and answer for that one.
+     */
+    skillTopics(version) {
+      const spec = `${CLI_NAME}@${version}`;
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-cli-dist-'));
+      try {
+        const packed = run('npm', ['pack', spec, '--json'], { cwd: dir });
+        if (packed.status !== 0) throw new Error(`npm pack ${spec} failed: ${packed.stderr.trim()}`);
+        let tarball;
+        try {
+          tarball = JSON.parse(packed.stdout)[0]?.filename;
+        } catch {
+          tarball = undefined;
+        }
+        assert(typeof tarball === 'string', `npm pack ${spec} named no tarball: ${packed.stdout.trim()}`);
+        const unpacked = run('tar', ['-xzf', tarball], { cwd: dir });
+        if (unpacked.status !== 0) throw new Error(`tar couldn't unpack ${tarball}: ${unpacked.stderr.trim()}`);
+        const manifest = readJson(path.join(dir, 'package', 'package.json'));
+        const bin = typeof manifest.bin === 'string' ? manifest.bin : manifest.bin?.kombai;
+        assert(typeof bin === 'string', `${spec} names no kombai bin in its package.json.`);
+        const topics = skillTopicsIn(fs.readFileSync(path.join(dir, 'package', bin), 'utf8'));
+        assert(
+          topics !== null,
+          `Couldn't read the skill topics (TOPICS) in ${spec}'s ${bin}: see how that release's skill command lists them, ` +
+            'and teach skillTopicsIn to read it.',
+        );
+        return topics;
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
     },
   };
 }
@@ -190,6 +276,9 @@ export function setCliVersion(version, { root = workspaceRoot, npm = npmRegistry
   }
 
   const cliPackage = `${CLI_NAME}@${version}`;
+  const topics = npm.skillTopics(version);
+  assertSkillTopics(cliPackage, topics);
+
   const originals = [];
   try {
     for (const { file, text } of pinnedFiles(root)) {
@@ -200,6 +289,13 @@ export function setCliVersion(version, { root = workspaceRoot, npm = npmRegistry
         fs.writeFileSync(file, next);
       }
     }
+    const topicsFile = path.join(root, CLI_TOPICS_FILE);
+    const previous = fs.existsSync(topicsFile) ? fs.readFileSync(topicsFile, 'utf8') : null;
+    const recorded = topicsFileText(version, topics);
+    if (recorded !== previous) {
+      originals.push({ file: topicsFile, text: previous });
+      fs.writeFileSync(topicsFile, recorded);
+    }
     checkCliVersion(root);
     for (const validate of Object.values(PLUGINS)) validate(root);
   } catch (error) {
@@ -207,7 +303,9 @@ export function setCliVersion(version, { root = workspaceRoot, npm = npmRegistry
     const failed = [];
     for (const { file, text } of originals) {
       try {
-        fs.writeFileSync(file, text);
+        // A file that wasn't there (null) goes again.
+        if (text === null) fs.rmSync(file, { force: true });
+        else fs.writeFileSync(file, text);
       } catch (restoreError) {
         failed.push(restoreError);
       }

@@ -7,6 +7,7 @@ import {
   checkCliContract,
   checkPluginFiles,
   checkSkills,
+  ASSETS_SKILL,
   FAQ_SKILL,
   readPluginFile,
   skillGuidance,
@@ -34,6 +35,7 @@ const PLUGIN_FILES = [
   'kombai.package.json',
   `skills/${WORKFLOW_SKILL}/SKILL.md`,
   `skills/${FAQ_SKILL}/SKILL.md`,
+  `skills/${ASSETS_SKILL}/SKILL.md`,
 ];
 // Gemini CLI's sandbox blocks writes to ~/.kombai (and, in some profiles, the network); the skill says what to do.
 export const GEMINI_SANDBOX = "Gemini CLI's sandbox (on when `$SANDBOX` is set)";
@@ -82,7 +84,7 @@ export function checkGeminiCliPluginDir(pluginRoot, { team = false } = {}) {
   checkPluginFiles(pluginRoot, PLUGIN_FILES, 'Gemini CLI extension');
   checkCliContract(pluginRoot, contract, 'Gemini CLI', { team });
   checkSkills(pluginRoot, 'Gemini CLI');
-  for (const name of [WORKFLOW_SKILL, FAQ_SKILL]) {
+  for (const name of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
     const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');
     assert(
       skillGuidance(skill).includes(GEMINI_SANDBOX),

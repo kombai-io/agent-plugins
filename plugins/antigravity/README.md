@@ -2,9 +2,11 @@
 
 This plugin is for Google Antigravity: the Antigravity app, the `agy` CLI and the Antigravity IDE all load plugins from `~/.gemini/config/plugins/`.
 
-Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.1.5 skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
+Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.2.0 skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
 
-Its `about-kombai` skill runs `npx -y @kombai/cli@0.1.5 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
+Its `about-kombai` skill runs `npx -y @kombai/cli@0.2.0 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
+
+Its `generate-assets-with-kombai` skill runs `npx -y @kombai/cli@0.2.0 skill assets` and follows what it prints to generate an AI image or video and get a public link to use. It runs only when the user asks Kombai for one, or for the videos a taste run left as prompts once the user asked for AI video, never on its own (not for stock photos or whole-UI design).
 
 ## Install
 
@@ -37,9 +39,9 @@ Brought the Kombai Gemini CLI extension across with `agy plugin import gemini` (
 
 ## Using it
 
-The agent picks a skill by its description. To call one directly, type `/kombai:work-with-kombai` or `/kombai:about-kombai`.
+The agent picks a skill by its description. To call one directly, type `/kombai:work-with-kombai`, `/kombai:about-kombai` or `/kombai:generate-assets-with-kombai`.
 
-A standalone `work-with-kombai` or `about-kombai` skill does not replace this plugin's: Antigravity lists it next to `kombai:work-with-kombai` and `kombai:about-kombai`, with the same description, and it carries Codex's sandbox guidance instead of Antigravity's. Such copies come from a project's `.agents/skills` (`npx skills add`), from `~/.gemini/config/skills` (the Kombai desktop app's Antigravity switch) and, in agy, from `~/.gemini/skills` (the app's Gemini CLI switch). Remove the `npx skills` copy, and turn the app's switch off rather than deleting its copy (the app writes it again at its next start); or type `/kombai:work-with-kombai`.
+A standalone Kombai skill of the same name does not replace this plugin's: Antigravity lists it next to the plugin's `kombai:<skill>` entry (for example `kombai:work-with-kombai`), with the same description, and it carries Codex's sandbox guidance instead of Antigravity's. Such copies come from a project's `.agents/skills` (`npx skills add`), from `~/.gemini/config/skills` (the Kombai desktop app's Antigravity switch) and, in agy, from `~/.gemini/skills` (the app's Gemini CLI switch). Remove the `npx skills` copy, and turn the app's switch off rather than deleting its copy (the app writes it again at its next start); or type `/kombai:work-with-kombai` (or the plugin's other skill names).
 
 Antigravity's sandbox has no network by default, and the CLI downloads from npm and writes `~/.kombai`, so the skills ask Antigravity to run each Kombai command outside the sandbox. Depending on the user's permission preset, Antigravity approves that by itself or asks the user. To approve Kombai's commands ahead of time, add the Allow rules `command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)` and `command(kombai)` (`unsandboxed(...)` on business and enterprise accounts) in Antigravity's permission settings; for agy, with `/permissions` or under `permissions.allow` in `~/.gemini/antigravity-cli/settings.json`. Antigravity matches a rule's words against the command's whole words, so a rule naming one CLI version (as "always allow" on a prompt saves) stops matching when the plugin moves to a new CLI; the `regex:` rule, whose words are each matched as a whole regular expression, takes any version, and `npx(.cmd)?` covers Windows, where commands run as `npx.cmd`. If Antigravity still asks for a command a rule should cover, as can happen on Windows, approve the prompt.
 

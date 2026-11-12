@@ -5,10 +5,11 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { filesBesidePlugin, stageTeamBuild } from './cli-view.mjs';
+import { ASSETS_SKILL, filesBesidePlugin, SKILL_CLI_TOPICS, stageTeamBuild } from './cli-view.mjs';
 import { packCodexPlugin } from './codex-plugin.mjs';
 import {
   checkCliVersion,
+  CLI_TOPICS_FILE,
   installClients,
   npmRegistryWith,
   pinnedCliPackage,
@@ -16,6 +17,7 @@ import {
   PLUGINS,
   requiredInstallClients,
   setCliVersion,
+  skillTopicsIn,
 } from './cli-version.mjs';
 
 // The tag the source used to run, spelled in two parts so a repository grep for it finds nothing.
@@ -23,7 +25,16 @@ const LATEST = `@kombai/cli@${'latest'}`;
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// A copy of the repository, without what git ignores.
+/** The skill topics of a CLI that has every one the skills run, and one more. */
+const EVERY_TOPIC = [...Object.values(SKILL_CLI_TOPICS), 'brief'];
+
+/** Write CLI_TOPICS_FILE under `root`: `topics` for `version`. */
+function recordTopics(root, version, topics) {
+  fs.writeFileSync(path.join(root, CLI_TOPICS_FILE), `${JSON.stringify({ version, topics }, null, 2)}\n`);
+}
+
+// A copy of the repository, without what git ignores. Its pinned CLI has every skill topic, whatever the source's
+// pin has: the source's own pin is the first test's.
 function fixture(run) {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-cli-version-test-'));
   const root = path.join(temp, 'agent-plugins');
@@ -33,17 +44,22 @@ function fixture(run) {
       filter: (from) =>
         !['.git', 'node_modules', 'dist', '.DS_Store'].includes(path.basename(from)) && !from.endsWith('.zip'),
     });
+    recordTopics(root, pinnedCliPackage(root).split('@').pop(), EVERY_TOPIC);
     run(root);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }
 }
 
-/** npm as the script asks it: whether a version exists, and what its `mcp install --help` prints. */
 /** A release no pin in this repository ever names, so a test that moves the pin always moves it. */
 const NEXT = '9.9.9';
 
-function fakeNpm({ published = ['0.1.4', '0.1.5', '0.1.5-beta.1', NEXT], help = 'kombai mcp install codex|claude-code' } = {}) {
+/** npm as the script asks it: whether a version exists, what its `mcp install --help` prints, and its skill topics. */
+function fakeNpm({
+  published = ['0.1.4', '0.1.5', '0.1.5-beta.1', NEXT],
+  help = 'kombai mcp install codex|claude-code',
+  topics = EVERY_TOPIC,
+} = {}) {
   const asked = [];
   return {
     asked,
@@ -52,6 +68,7 @@ function fakeNpm({ published = ['0.1.4', '0.1.5', '0.1.5-beta.1', NEXT], help = 
       asked.push(version);
       return help;
     },
+    skillTopics: () => topics,
   };
 }
 
@@ -87,9 +104,15 @@ test('set-cli-version pins the version in every plugin and every file that names
     for (const host of Object.keys(PLUGINS)) {
       assert.ok(result.changed.includes(`plugins/${host}/kombai.package.json`), host);
       assert.ok(result.changed.includes(`plugins/${host}/skills/work-with-kombai/SKILL.md`), host);
+      assert.ok(result.changed.includes(`plugins/${host}/skills/generate-assets-with-kombai/SKILL.md`), host);
       assert.ok(result.changed.includes(`plugins/${host}/README.md`), host);
     }
-    for (const file of ['README.md', 'skills/work-with-kombai/SKILL.md', 'skills/about-kombai/SKILL.md']) {
+    for (const file of [
+      'README.md',
+      'skills/work-with-kombai/SKILL.md',
+      'skills/about-kombai/SKILL.md',
+      'skills/generate-assets-with-kombai/SKILL.md',
+    ]) {
       assert.ok(result.changed.includes(file), file);
     }
     const text = Object.values(snapshot(root)).join('\n');
@@ -401,4 +424,118 @@ test('tells a network failure from a version npm does not have', () => {
     npmRegistryWith(answers(1, '{"error":{"code":"CLI_UNKNOWN_COMMAND"}}', '')).installHelp('0.1.3'),
     /CLI_UNKNOWN_COMMAND/,
   );
+});
+
+test('set-cli-version records the skill topics it read for the version it pins', () => {
+  fixture((root) => {
+    const result = setCliVersion(NEXT, { root, npm: fakeNpm() });
+    assert.ok(result.changed.includes(CLI_TOPICS_FILE));
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, CLI_TOPICS_FILE), 'utf8')), {
+      version: NEXT,
+      topics: EVERY_TOPIC,
+    });
+  });
+});
+
+test('set-cli-version refuses a CLI without a skill topic a skill runs, and names it', () => {
+  fixture((root) => {
+    const before = snapshot(root);
+    const recorded = fs.readFileSync(path.join(root, CLI_TOPICS_FILE), 'utf8');
+    const withoutAssets = EVERY_TOPIC.filter((topic) => topic !== SKILL_CLI_TOPICS[ASSETS_SKILL]);
+    assert.throws(
+      () => setCliVersion(NEXT, { root, npm: fakeNpm({ topics: withoutAssets }) }),
+      new RegExp(
+        `@kombai/cli@${NEXT.replaceAll('.', '\\.')} has no \`assets\` skill topic, which the generate-assets-with-kombai ` +
+          'skill runs \\(`kombai skill assets`\\)',
+      ),
+    );
+    assert.throws(
+      () => setCliVersion(NEXT, { root, npm: fakeNpm({ topics: ['faq', 'assets'] }) }),
+      /has no `overview` skill topic, which the work-with-kombai skill runs \(`kombai skill`\)/,
+    );
+    assert.deepEqual(snapshot(root), before);
+    assert.equal(fs.readFileSync(path.join(root, CLI_TOPICS_FILE), 'utf8'), recorded);
+  });
+});
+
+test('check fails when the pinned CLI has no skill topic a skill runs, naming the topic', () => {
+  fixture((root) => {
+    const version = pinnedCliPackage(root).split('@').pop();
+    recordTopics(root, version, ['overview', 'brief', 'faq']);
+    assert.throws(
+      () => checkCliVersion(root),
+      /has no `assets` skill topic, which the generate-assets-with-kombai skill runs \(`kombai skill assets`\): pin a CLI release that has it/,
+    );
+  });
+});
+
+test('check fails when the recorded topics are for another version, or missing', () => {
+  fixture((root) => {
+    recordTopics(root, '0.0.1', EVERY_TOPIC);
+    assert.throws(() => checkCliVersion(root), /lists the skill topics of @kombai\/cli@0\.0\.1, but the plugins pin/);
+    fs.writeFileSync(path.join(root, CLI_TOPICS_FILE), JSON.stringify({ version: pinnedCliPackage(root).split('@').pop() }));
+    assert.throws(() => checkCliVersion(root), /cli-skill-topics\.json has no topics list/);
+    fs.rmSync(path.join(root, CLI_TOPICS_FILE));
+    assert.throws(() => checkCliVersion(root), /cli-skill-topics\.json is missing: run pnpm run set-cli-version/);
+  });
+});
+
+test("reads a CLI bundle's skill topics, and nothing from a bundle it can't read", () => {
+  // As esbuild writes the published bundles (0.1.1 to 0.1.5).
+  const bundle = `    init_sign_in();
+    TOPICS = {
+      overview: overview_default,
+      brief: brief_default,
+      "design-system": design_system_default,
+      faq: faq_default
+    };
+    RUN = \`Commands\`;`;
+  assert.deepEqual(skillTopicsIn(bundle), ['overview', 'brief', 'design-system', 'faq']);
+  assert.deepEqual(skillTopicsIn("const TOPICS = { overview, 'sign-in': signIn, assets };"), ['overview', 'sign-in', 'assets']);
+  assert.equal(skillTopicsIn('const topics = {};'), null);
+  assert.equal(skillTopicsIn('TOPICS = { ...more, faq: faq_default }'), null);
+  // Two of them: which is the skill command's can't be told.
+  assert.equal(skillTopicsIn('TOPICS = { faq: a };\nTOPICS = { assets: b };'), null);
+});
+
+test("reads the skill topics from the published package, unpacked and never run", () => {
+  const calls = [];
+  const npm = npmRegistryWith((command, args, { cwd }) => {
+    calls.push([command, ...args]);
+    if (command === 'npm') return { status: 0, stdout: '[{"filename":"kombai-cli-9.9.9.tgz"}]', stderr: '' };
+    fs.mkdirSync(path.join(cwd, 'package', 'dist'), { recursive: true });
+    fs.writeFileSync(path.join(cwd, 'package', 'package.json'), '{"bin":{"kombai":"dist/kombai.mjs"}}');
+    fs.writeFileSync(path.join(cwd, 'package', 'dist', 'kombai.mjs'), 'TOPICS = { overview: a, faq: b, assets: c };');
+    return { status: 0, stdout: '', stderr: '' };
+  });
+  assert.deepEqual(npm.skillTopics('9.9.9'), ['overview', 'faq', 'assets']);
+  assert.deepEqual(calls, [
+    ['npm', 'pack', '@kombai/cli@9.9.9', '--json'],
+    ['tar', '-xzf', 'kombai-cli-9.9.9.tgz'],
+  ]);
+  assert.throws(
+    () => npmRegistryWith(() => ({ status: 1, stdout: '', stderr: 'npm error code ENOTFOUND' })).skillTopics('9.9.9'),
+    /npm pack @kombai\/cli@9\.9\.9 failed: npm error code ENOTFOUND/,
+  );
+  assert.throws(
+    () => npmRegistryWith(() => ({ status: 0, stdout: 'npm notice\n', stderr: '' })).skillTopics('9.9.9'),
+    /npm pack @kombai\/cli@9\.9\.9 named no tarball: npm notice/,
+  );
+  const unreadable = npmRegistryWith((command, args, { cwd }) => {
+    if (command === 'npm') return { status: 0, stdout: '[{"filename":"kombai-cli-9.9.9.tgz"}]', stderr: '' };
+    fs.mkdirSync(path.join(cwd, 'package'), { recursive: true });
+    fs.writeFileSync(path.join(cwd, 'package', 'package.json'), '{"bin":{"kombai":"kombai.mjs"}}');
+    fs.writeFileSync(path.join(cwd, 'package', 'kombai.mjs'), 'export {};');
+    return { status: 0, stdout: '', stderr: '' };
+  });
+  assert.throws(() => unreadable.skillTopics('9.9.9'), /Couldn't read the skill topics \(TOPICS\) in @kombai\/cli@9\.9\.9's kombai\.mjs/);
+});
+
+test("a pin that doesn't validate takes away a topics file it wrote where there was none", () => {
+  fixture((root) => {
+    fs.rmSync(path.join(root, CLI_TOPICS_FILE));
+    fs.appendFileSync(path.join(root, 'skills/work-with-kombai/SKILL.md'), '\nSee @kombai-io/cli@1.0.0.\n');
+    assert.throws(() => setCliVersion(NEXT, { root, npm: fakeNpm() }), /@kombai-io\/cli@1\.0\.0/);
+    assert.equal(fs.existsSync(path.join(root, CLI_TOPICS_FILE)), false);
+  });
 });

@@ -7,6 +7,7 @@ import {
   checkCliContract,
   checkPluginFiles,
   checkSkills,
+  ASSETS_SKILL,
   FAQ_SKILL,
   isFile,
   readPluginFile,
@@ -74,6 +75,7 @@ const PLUGIN_FILES = [
   'kombai.package.json',
   `skills/${WORKFLOW_SKILL}/SKILL.md`,
   `skills/${FAQ_SKILL}/SKILL.md`,
+  `skills/${ASSETS_SKILL}/SKILL.md`,
 ];
 // Antigravity's sandbox has no network and Kombai writes ~/.kombai; the skill asks to run outside it.
 export const ANTIGRAVITY_SANDBOX = 'When Antigravity runs terminal commands in its sandbox';
@@ -163,7 +165,7 @@ export function checkAntigravityPluginDir(pluginRoot, { team = false } = {}) {
   checkPluginFiles(pluginRoot, [...PLUGIN_FILES, logo], 'Antigravity plugin');
   checkCliContract(pluginRoot, contract, 'Antigravity', { team });
   checkSkills(pluginRoot, 'Antigravity');
-  for (const name of [WORKFLOW_SKILL, FAQ_SKILL]) {
+  for (const name of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
     const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');
     assert(
       skillGuidance(skill).includes(ANTIGRAVITY_SANDBOX),
