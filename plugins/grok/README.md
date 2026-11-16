@@ -1,8 +1,8 @@
 # Kombai for Grok Build
 
-This plugin is for xAI's Grok Build CLI. It is listed in xAI's official marketplace (`xai-official`,
-[xai-org/plugin-marketplace](https://github.com/xai-org/plugin-marketplace)), whose catalog entry points at this
-folder (`path: plugins/grok`) pinned to one commit of this repository.
+This plugin is for xAI's Grok Build CLI. xAI's official marketplace (`xai-official`,
+[xai-org/plugin-marketplace](https://github.com/xai-org/plugin-marketplace)) lists a third-party plugin with a catalog
+entry that points at its folder (here `path: plugins/grok`), pinned to one commit of this repository.
 
 Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.2.0 skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
 
@@ -20,11 +20,15 @@ grok plugin install kombai@xai-official
 
 Or open `/marketplace` in Grok Build and search for Kombai.
 
+From a checkout of the repository, before it is listed or to try a change: `grok --plugin-dir ./plugins/grok`.
+
 ## Releasing an update
 
 The marketplace pins a commit, so a change here reaches Grok Build users only after the catalog's `sha` moves to a
-commit that has it. xAI's bot bumps listed plugins' pins daily; otherwise, open a PR to xai-org/plugin-marketplace
-that changes the entry's `sha` and regenerates its index.
+commit that has it. xAI's bot moves a listed plugin's pin daily, but only when the `version` in
+`.grok-plugin/plugin.json` changed: a commit with the same version is skipped. So bump the version with every change
+that should ship (`pnpm run version:grok <x.y.z>`), a new CLI pin included. Otherwise, open a PR to
+xai-org/plugin-marketplace that changes the entry's `sha` and regenerates its index.
 
 The skills carry no sandbox guidance beyond "ask for network access the way your client does". The plugin registers
 no MCP server: the skill opens the canvas in the user's browser.

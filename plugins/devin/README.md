@@ -2,7 +2,7 @@
 
 This plugin is for Cognition's Devin CLI and Devin Desktop. Devin's marketplace
 ([CognitionAI/devin-marketplace](https://github.com/CognitionAI/devin-marketplace)) lists a third-party plugin as a
-`git-subdir` entry pointing at this folder (`path: plugins/devin`), pinned to one commit of this repository.
+`git-subdir` entry pointing at its folder (here `path: plugins/devin`), pinned to one commit of this repository.
 
 Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.2.0 skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
 
@@ -16,13 +16,17 @@ Its `generate-assets-with-kombai` skill runs `npx -y @kombai/cli@0.2.0 skill ass
 devin plugins install kombai-io/agent-plugins#plugins/devin
 ```
 
-From a checkout of the repository: `devin plugins install --local ./plugins/devin`.
+That adds the plugin to your personal plugins, so it follows you to every computer you sign in to Devin on. From a
+checkout of the repository: `devin plugins install --local ./plugins/devin`, which stays on that computer.
 
-In the Devin web app, use **Customize → Plugins → Add plugin → From repository** with `kombai-io/agent-plugins` and
-the subdirectory `plugins/devin`. Once Kombai is in Devin's marketplace, install it from the Marketplace list instead.
+The manifest sets [`"platforms": ["local"]`](https://docs.devin.ai/cli/extensibility/plugins/overview#platforms): the
+plugin loads in the Devin CLI and Devin Desktop, not in cloud Devin sessions, because the CLI signs in through the
+browser on the user's computer and opens the canvas there.
 
-The manifest sets `"platforms": ["local"]`: the plugin loads in the Devin CLI and Devin Desktop, not in cloud Devin
-sessions, because the CLI signs in through the browser on the user's computer and opens the canvas there.
+Installing from the Devin web app (**Customize → Plugins → Add plugin → From repository** with
+`kombai-io/agent-plugins` and the subdirectory `plugins/devin`, or the Marketplace list once Kombai is in it) adds it
+to your personal plugins the same way: use it from the Devin CLI or Devin Desktop, since a cloud session does not load
+it.
 
 ## Using it
 

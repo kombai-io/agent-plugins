@@ -129,13 +129,17 @@ skills straight from GitHub.
 Grok Build and Devin list third-party plugins in a marketplace repository their vendor owns:
 xAI's [xai-org/plugin-marketplace](https://github.com/xai-org/plugin-marketplace) (`xai-official`)
 and Cognition's [CognitionAI/devin-marketplace](https://github.com/CognitionAI/devin-marketplace).
-Each lists Kombai with an entry that points at its plugin folder (`plugins/grok`, `plugins/devin`)
-pinned to a full commit SHA of this repository, added by a PR to that repository. Neither host
-installs a ZIP from this repository, so these two plugins have no pack command or Build Plugins
-checkbox: the folder at the pinned commit is the release. A change reaches their users only after
-the marketplace's pin moves to a commit that has it (xAI's bot bumps listed pins daily; Devin's
-needs a PR). Grok Build reads `.grok-plugin/plugin.json`; Devin reads `.devin-plugin/plugin.json`,
-whose `"platforms": ["local"]` keeps the plugin to the Devin CLI and Devin Desktop.
+Once Kombai is listed, each has an entry that points at its plugin folder (`plugins/grok`,
+`plugins/devin`) pinned to a full commit SHA of this repository, added by a PR to that repository.
+Neither host installs a ZIP from this repository, so these two plugins have no pack command or
+Build Plugins checkbox: the folder at the pinned commit is the release. A change reaches their
+users only after the marketplace's pin moves to a commit that has it. xAI's bot moves a listed pin
+daily, but only when the plugin's `version` in `.grok-plugin/plugin.json` changed, so every change
+to `plugins/grok` that should ship needs `pnpm run version:grok <x.y.z>` (a new CLI pin from
+set-cli-version included); Devin's pin moves by a PR to its marketplace. Grok Build reads
+`.grok-plugin/plugin.json`; Devin reads `.devin-plugin/plugin.json`, whose
+[`"platforms": ["local"]`](https://docs.devin.ai/cli/extensibility/plugins/overview#platforms)
+keeps the plugin to the Devin CLI and Devin Desktop.
 
 ## Install with the skills CLI
 
@@ -274,6 +278,7 @@ For Cursor, use **From GitHub Repository** in Customize or copy `plugins/cursor`
 agy plugin install /absolute/path/to/agent-plugins/plugins/antigravity
 gemini extensions install /absolute/path/to/agent-plugins/plugins/gemini-cli
 devin plugins install --local /absolute/path/to/agent-plugins/plugins/devin
+grok --plugin-dir /absolute/path/to/agent-plugins/plugins/grok
 ```
 
 VS Code uses a local plugin folder where it is (it adds the path to `chat.pluginLocations`), so
@@ -324,7 +329,8 @@ that version's published package (`npm pack`, never run) and refuses it unless i
 command has every topic a skill runs: `kombai skill`, `skill faq` and `skill assets`. So no plugin
 pins a CLI older than its skills. Then it rewrites every CLI it finds in those files, records the
 version's skill topics in `scripts/cli-skill-topics.json`, and runs the checks below. Commit the
-result; it changes no plugin version.
+result; it changes no plugin version. Grok Build's marketplace ships a new commit only when the
+plugin's version changed, so run `pnpm run version:grok <x.y.z>` too (the command says so).
 
 `pnpm run check` (and Validate Plugins) runs `node scripts/cli-version.mjs check`, which fails
 unless every plugin pins the same released CLI, `skills/` and `README.md` name it and no other,

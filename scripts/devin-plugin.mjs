@@ -85,7 +85,8 @@ export function checkDevinPluginDir(pluginRoot) {
   assert(typeof manifest.description === 'string' && manifest.description.trim(), 'Devin description is missing.');
   assert(manifest.license === 'MIT', 'Devin manifest license must be MIT.');
   assert(manifest.displayName === 'Kombai', 'Devin displayName must be Kombai.');
-  // Devin's marketplace guide: one sentence of about 60 to 130 characters, with no full stop at the end.
+  // Devin's marketplace guide: one sentence, ideally 60 to 130 characters and about 200 at most, with no full stop
+  // at the end.
   assert(
     manifest.description.length >= 60 && manifest.description.length <= 200 && !/\.\s*$/.test(manifest.description),
     'Devin description must be one sentence of 60 to 200 characters, without a trailing full stop.',
@@ -94,14 +95,20 @@ export function checkDevinPluginDir(pluginRoot) {
     typeof manifest.shortDescription === 'string' && manifest.shortDescription.trim(),
     'Devin shortDescription is missing.',
   );
+  // The marketplace's own check (its scripts/validate.py): a card's short description is 40 characters at most.
+  assert(manifest.shortDescription.length <= 40, 'Devin shortDescription must be 40 characters or fewer.');
   assert(isObject(manifest.author) && manifest.author.name === 'Kombai', 'Devin manifest author must be Kombai.');
   for (const key of ['homepage', 'repository']) assert(isHttps(manifest[key]), `Devin manifest ${key} must be an https URL.`);
   assert(
-    Array.isArray(manifest.keywords) && manifest.keywords.every((keyword) => typeof keyword === 'string' && keyword),
-    'Devin keywords must be a list of words.',
+    Array.isArray(manifest.keywords) &&
+      manifest.keywords.length > 0 &&
+      manifest.keywords.every((keyword) => typeof keyword === 'string' && keyword),
+    'Devin keywords must be a list of words, with at least one: the marketplace files the plugin under them.',
   );
   // The CLI signs in through the browser on the user's computer and opens the canvas there, which a cloud Devin
-  // session's machine is not; the plugin loads in the Devin CLI and Devin Desktop only.
+  // session's machine is not; the plugin loads in the Devin CLI and Devin Desktop only. `platforms` narrows where a
+  // plugin loads (https://docs.devin.ai/cli/extensibility/plugins/overview#platforms): "local" is those two, and
+  // Devin ignores a value it does not know, so the list is held to exactly this one.
   assert(
     JSON.stringify(manifest.platforms) === JSON.stringify(['local']),
     'Devin plugin must load only locally (platforms: ["local"]).',

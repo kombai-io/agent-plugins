@@ -10,6 +10,7 @@ import { packCodexPlugin } from './codex-plugin.mjs';
 import {
   checkCliVersion,
   CLI_TOPICS_FILE,
+  grokReleaseNote,
   installClients,
   npmRegistryWith,
   pinnedCliPackage,
@@ -538,4 +539,11 @@ test("a pin that doesn't validate takes away a topics file it wrote where there 
     assert.throws(() => setCliVersion(NEXT, { root, npm: fakeNpm() }), /@kombai-io\/cli@1\.0\.0/);
     assert.equal(fs.existsSync(path.join(root, CLI_TOPICS_FILE)), false);
   });
+});
+
+test('set-cli-version says to bump the Grok Build plugin when it changed that plugin', () => {
+  // xAI's bot moves a listed pin only when the plugin's version changed, and set-cli-version changes no version.
+  assert.match(grokReleaseNote(['README.md', 'plugins/grok/kombai.package.json']), /pnpm run version:grok <x\.y\.z>/);
+  assert.equal(grokReleaseNote(['README.md', 'plugins/devin/kombai.package.json']), null);
+  assert.equal(grokReleaseNote([]), null);
 });

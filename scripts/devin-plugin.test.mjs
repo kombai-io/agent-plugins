@@ -64,7 +64,10 @@ test('Devin validation checks the manifest', () => {
     [(data) => (data.description = 'Design UI with Kombai.'), /60 to 200 characters/],
     [(data) => (data.description += '.'), /without a trailing full stop/],
     [(data) => delete data.shortDescription, /shortDescription is missing/],
+    // Devin's marketplace cards take 40 characters.
+    [(data) => (data.shortDescription = 'x'.repeat(41)), /shortDescription must be 40 characters or fewer/],
     [(data) => (data.keywords = 'Design & Creative'), /keywords must be a list of words/],
+    [(data) => (data.keywords = []), /keywords must be a list of words/],
     // Kombai signs in through the browser on the user's computer, which a cloud session's machine is not.
     [(data) => delete data.platforms, /platforms: \["local"\]/],
     [(data) => (data.platforms = ['local', 'cloud']), /platforms: \["local"\]/],

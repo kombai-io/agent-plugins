@@ -17,6 +17,26 @@ function cli(script, args, env = {}) {
 
 // The commands Build Plugins runs for each host: `validate --github-output`, then `pack "$RUNNER_TEMP"` with or
 // without `--team`.
+// Grok Build and Devin install from a pinned commit of this repository, so their scripts only validate and bump:
+// Validate Plugins and `pnpm run check` run `validate`.
+for (const host of ['grok', 'devin']) {
+  test(`${host}: validate prints the version, and anything else is refused`, () => {
+    const script = path.join(scripts, `${host}-plugin.mjs`);
+    assert.match(cli(script, ['validate']), /^\d+\.\d+\.\d+$/);
+    for (const [args, usage] of [
+      [['validate', '--github-output'], /Usage: validate/],
+      [['bump'], /Usage: bump <version>/],
+      [['pack'], new RegExp(`Usage: ${host}-plugin\\.mjs <validate\\|bump>`)],
+      [[], new RegExp(`Usage: ${host}-plugin\\.mjs <validate\\|bump>`)],
+    ]) {
+      const result = spawnSync(process.execPath, [script, ...args], { encoding: 'utf8' });
+      assert.equal(result.status, 1, `${host}-plugin.mjs ${args.join(' ')}`);
+      assert.match(result.stderr, usage);
+      assert.equal(result.stdout, '');
+    }
+  });
+}
+
 for (const host of ['codex', 'claude-code', 'cursor', 'vscode', 'antigravity', 'gemini-cli']) {
   test(`${host}: validate --github-output and pack <dir> [--team] work as Build Plugins runs them`, () => {
     const out = fs.mkdtempSync(path.join(os.tmpdir(), `kombai-${host}-cli-`));
