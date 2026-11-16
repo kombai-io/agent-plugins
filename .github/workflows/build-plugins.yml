@@ -63,6 +63,16 @@ on:
         description: 'Optional Gemini CLI extension version for this build (leave blank to use the committed version)'
         default: ''
         required: false
+      build-opencode-plugin:
+        type: boolean
+        description: 'Build OpenCode plugin'
+        default: false
+        required: false
+      opencode-plugin-version:
+        type: string
+        description: 'Optional OpenCode plugin version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
       team-build:
         type: boolean
         description: 'Team build: the plugins run the newest CLI beta (@kombai/cli@beta on npm, on preprod), for colleagues'
@@ -292,5 +302,36 @@ jobs:
         with:
           name: kombai-gemini-cli-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
           path: ${{ runner.temp }}/kombai-gemini-cli-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-opencode-plugin:
+    if: ${{ inputs.build-opencode-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+      - name: Apply OpenCode plugin version
+        if: ${{ inputs.opencode-plugin-version != '' }}
+        env:
+          OPENCODE_PLUGIN_VERSION: ${{ inputs.opencode-plugin-version }}
+        run: node scripts/opencode-plugin.mjs bump "$OPENCODE_PLUGIN_VERSION"
+      - name: Test OpenCode plugin release checks
+        run: node --test scripts/opencode-plugin.test.mjs
+      - name: Validate OpenCode plugin
+        id: plugin-version
+        run: node scripts/opencode-plugin.mjs validate --github-output
+      - name: Package OpenCode plugin
+        run: node scripts/opencode-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+      - name: Upload OpenCode plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-opencode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-opencode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0

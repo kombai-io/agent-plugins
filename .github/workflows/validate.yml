@@ -34,3 +34,5 @@ jobs:
         run: node scripts/antigravity-plugin.mjs validate
       - name: Validate Gemini CLI extension
         run: node scripts/gemini-cli-plugin.mjs validate
+      - name: Validate OpenCode plugin
+        run: node scripts/opencode-plugin.mjs validate
