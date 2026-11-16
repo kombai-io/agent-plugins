@@ -2,8 +2,9 @@
 
 This standalone repository contains the [Codex](plugins/codex/README.md),
 [Claude Code](plugins/claude-code/README.md), [Cursor](plugins/cursor/README.md),
-[VS Code](plugins/vscode/README.md), [Antigravity](plugins/antigravity/README.md) and
-[OpenCode](plugins/opencode/README.md) plugins, the
+[VS Code](plugins/vscode/README.md), [Antigravity](plugins/antigravity/README.md),
+[OpenCode](plugins/opencode/README.md), [Grok Build](plugins/grok/README.md) and
+[Devin](plugins/devin/README.md) plugins, the
 [Gemini CLI](plugins/gemini-cli/README.md) extension, their marketplaces where the host has one,
 and release tooling.
 
@@ -95,7 +96,7 @@ validators check their host's guidance too:
 | VS Code | set `requestUnsandboxedExecution: true` (never `requestAllowNetwork`) on the terminal tool call when VS Code's terminal sandbox is on |
 | Antigravity | request to run outside Antigravity's sandbox from the first try; a headless `agy -p` run needs `command(...)` allow rules unless its permission mode approves the commands |
 | Gemini CLI | the workflow skill checks `$SANDBOX` before the first command and, if it is set, asks the user to restart without the sandbox; the FAQ skill does the same after a command fails. With tool sandboxing, both pass `additional_permissions` on the first command |
-| Claude Code, Cursor | nothing beyond "ask for network access the way your client does" |
+| Claude Code, Cursor, Grok Build, Devin | nothing beyond "ask for network access the way your client does" |
 | OpenCode | nothing beyond "ask for network access the way your client does" |
 
 The only MCP server a plugin may register is the CLI's canvas view (`kombai`), and only with
@@ -129,6 +130,21 @@ Gemini CLI installs an extension from a folder or a git repository whose root ho
 or the folder in an unzipped Build Plugins ZIP; `gemini skills install
 https://github.com/kombai-io/agent-plugins --path plugins/gemini-cli/skills` installs just its
 skills straight from GitHub.
+
+Grok Build and Devin list third-party plugins in a marketplace repository their vendor owns:
+xAI's [xai-org/plugin-marketplace](https://github.com/xai-org/plugin-marketplace) (`xai-official`)
+and Cognition's [CognitionAI/devin-marketplace](https://github.com/CognitionAI/devin-marketplace).
+Once Kombai is listed, each has an entry that points at its plugin folder (`plugins/grok`,
+`plugins/devin`) pinned to a full commit SHA of this repository, added by a PR to that repository.
+Neither host installs a ZIP from this repository, so these two plugins have no pack command or
+Build Plugins checkbox: the folder at the pinned commit is the release. A change reaches their
+users only after the marketplace's pin moves to a commit that has it. xAI's bot moves a listed pin
+daily, but only when the plugin's `version` in `.grok-plugin/plugin.json` changed, so every change
+to `plugins/grok` that should ship needs `pnpm run version:grok <x.y.z>` (a new CLI pin from
+set-cli-version included); Devin's pin moves by a PR to its marketplace. Grok Build reads
+`.grok-plugin/plugin.json`; Devin reads `.devin-plugin/plugin.json`, whose
+[`"platforms": ["local"]`](https://docs.devin.ai/cli/extensibility/plugins/overview#platforms)
+keeps the plugin to the Devin CLI and Devin Desktop.
 
 ## Install with the skills CLI
 
@@ -266,6 +282,8 @@ For Cursor, use **From GitHub Repository** in Customize or copy `plugins/cursor`
 # VS Code 1.128 or later: run "Chat: Install Plugin from Source" with /absolute/path/to/agent-plugins/plugins/vscode
 agy plugin install /absolute/path/to/agent-plugins/plugins/antigravity
 gemini extensions install /absolute/path/to/agent-plugins/plugins/gemini-cli
+devin plugins install --local /absolute/path/to/agent-plugins/plugins/devin
+grok --plugin-dir /absolute/path/to/agent-plugins/plugins/grok
 # OpenCode: add /absolute/path/to/agent-plugins/plugins/opencode to opencode.jsonc's plugins array
 ```
 
@@ -291,6 +309,8 @@ pnpm run version:vscode 0.1.1
 pnpm run version:antigravity 0.1.1
 pnpm run version:gemini-cli 0.1.1
 pnpm run version:opencode 0.1.1
+pnpm run version:grok 0.1.1
+pnpm run version:devin 0.1.1
 ```
 
 The scripts require an increasing `major.minor.patch` version. Each plugin's
@@ -302,7 +322,7 @@ and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling check
 
 OpenAI's and Anthropic's plugin directories refuse a plugin that runs a floating npm tag (the
 CLI's `latest`), so the source pins one released CLI: every plugin's `cli.package`
-is `@kombai/cli@0.2.0`, the same in all seven, and every file that names the CLI (the skills under
+is `@kombai/cli@0.2.0`, the same in all nine, and every file that names the CLI (the skills under
 `plugins/` and `skills/`, the READMEs, `agents/openai.yaml`, the marketplaces) names that one.
 Describe a tag without the package name in front of it (the CLI's `latest` tag): the check reads
 any package name followed by a tag as one the plugins run, and set-cli-version would rewrite it. Move them all with
@@ -319,7 +339,8 @@ that version's published package (`npm pack`, never run) and refuses it unless i
 command has every topic a skill runs: `kombai skill`, `skill faq` and `skill assets`. So no plugin
 pins a CLI older than its skills. Then it rewrites every CLI it finds in those files, records the
 version's skill topics in `scripts/cli-skill-topics.json`, and runs the checks below. Commit the
-result; it changes no plugin version.
+result; it changes no plugin version. Grok Build's marketplace ships a new commit only when the
+plugin's version changed, so run `pnpm run version:grok <x.y.z>` too (the command says so).
 
 `pnpm run check` (and Validate Plugins) runs `node scripts/cli-version.mjs check`, which fails
 unless every plugin pins the same released CLI, `skills/` and `README.md` name it and no other,
@@ -343,7 +364,8 @@ Kombai's API answers).
 
 **Validate Plugins** runs the release-script tests, the pinned-CLI check and all plugin validators on pushes and
 pull requests. **Build Plugins** is manually triggered and provides independent Codex,
-Claude Code, Cursor, VS Code, Antigravity, Gemini CLI and OpenCode build checkboxes. Select at least one. Each selected job
+Claude Code, Cursor, VS Code, Antigravity, Gemini CLI and OpenCode build checkboxes (Grok Build and Devin install
+from a pinned commit of this repository and have none). Select at least one. Each selected job
 runs its tests and validation before packaging and uploading its ZIP. No local command is required.
 
 Each build checkbox has an optional version input. Leave it blank to package the committed

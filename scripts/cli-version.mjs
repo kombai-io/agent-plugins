@@ -41,7 +41,9 @@ import {
 } from './cli-view.mjs';
 import { validateCodexPlugin } from './codex-plugin.mjs';
 import { validateCursorPlugin } from './cursor-plugin.mjs';
+import { validateDevinPlugin } from './devin-plugin.mjs';
 import { validateGeminiCliPlugin } from './gemini-cli-plugin.mjs';
+import { validateGrokPlugin } from './grok-plugin.mjs';
 import { validateOpenCodePlugin } from './opencode-plugin.mjs';
 import { validateVsCodePlugin } from './vscode-plugin.mjs';
 
@@ -55,6 +57,8 @@ export const PLUGINS = {
   vscode: validateVsCodePlugin,
   antigravity: validateAntigravityPlugin,
   'gemini-cli': validateGeminiCliPlugin,
+  grok: validateGrokPlugin,
+  devin: validateDevinPlugin,
   opencode: validateOpenCodePlugin,
 };
 /** What names the CLI the plugins run, and set-cli-version moves: every text file under these (folders, or a file).
@@ -322,6 +326,17 @@ export function setCliVersion(version, { root = workspaceRoot, npm = npmRegistry
   return { cliPackage, changed: originals.map(({ file }) => path.relative(root, file).split(path.sep).join('/')) };
 }
 
+/**
+ * What to do after a pin that changed the Grok Build plugin, or null when it did not: xAI's marketplace bot moves a
+ * listed plugin's pinned commit only when the plugin's version changed, and set-cli-version changes no plugin version.
+ */
+export function grokReleaseNote(changed) {
+  return changed.some((file) => file.startsWith('plugins/grok/'))
+    ? "plugins/grok changed: xAI's marketplace ships a new commit only when the plugin's version changed, so run " +
+        'pnpm run version:grok <x.y.z> before committing.'
+    : null;
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const [, , command, value, ...extra] = process.argv;
@@ -330,7 +345,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       console.log(checkCliVersion());
     } else if (command === 'set') {
       assert(value && extra.length === 0, 'Usage: cli-version.mjs set <x.y.z>');
-      console.log(JSON.stringify(setCliVersion(value), null, 2));
+      const result = setCliVersion(value);
+      console.log(JSON.stringify(result, null, 2));
+      const note = grokReleaseNote(result.changed);
+      if (note) console.error(note);
     } else {
       throw new Error('Usage: cli-version.mjs <check|set <x.y.z>>');
     }
