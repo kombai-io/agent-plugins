@@ -3,7 +3,8 @@
 This standalone repository contains the [Codex](plugins/codex/README.md),
 [Claude Code](plugins/claude-code/README.md), [Cursor](plugins/cursor/README.md),
 [VS Code](plugins/vscode/README.md), [Antigravity](plugins/antigravity/README.md),
-[Grok Build](plugins/grok/README.md) and [Devin](plugins/devin/README.md) plugins, the
+[OpenCode](plugins/opencode/README.md), [Grok Build](plugins/grok/README.md) and
+[Devin](plugins/devin/README.md) plugins, the
 [Gemini CLI](plugins/gemini-cli/README.md) extension, their marketplaces where the host has one,
 and release tooling.
 
@@ -39,6 +40,9 @@ without the card tool, the CLI's normal sign-in instructions apply.
 The Codex and Claude Code plugins have a fourth, `get-started-with-kombai`, their onboarding: it sets
 up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
 and ends with prompts to try (see [The canvas view](#the-canvas-view)).
+
+OpenCode also includes `get-started-with-kombai`. Its onboarding checks sign-in and suggests first
+requests; its browser-canvas plugin has no host MCP connection to install.
 
 The Codex plugin needs Codex on the user's computer, and the Claude Code plugin needs Claude Code. ChatGPT on the web
 and Claude's chat can offer the same plugins but have no shell on the user's computer, so every skill of those two
@@ -93,6 +97,7 @@ validators check their host's guidance too:
 | Antigravity | request to run outside Antigravity's sandbox from the first try; a headless `agy -p` run needs `command(...)` allow rules unless its permission mode approves the commands |
 | Gemini CLI | the workflow skill checks `$SANDBOX` before the first command and, if it is set, asks the user to restart without the sandbox; the FAQ skill does the same after a command fails. With tool sandboxing, both pass `additional_permissions` on the first command |
 | Claude Code, Cursor, Grok Build, Devin | nothing beyond "ask for network access the way your client does" |
+| OpenCode | nothing beyond "ask for network access the way your client does" |
 
 The only MCP server a plugin may register is the CLI's canvas view (`kombai`), and only with
 `cli.view` on, which no plugin has today. The Codex plugin's skill adds it to the user's own Codex
@@ -279,10 +284,14 @@ agy plugin install /absolute/path/to/agent-plugins/plugins/antigravity
 gemini extensions install /absolute/path/to/agent-plugins/plugins/gemini-cli
 devin plugins install --local /absolute/path/to/agent-plugins/plugins/devin
 grok --plugin-dir /absolute/path/to/agent-plugins/plugins/grok
+# OpenCode: add /absolute/path/to/agent-plugins/plugins/opencode to opencode.jsonc's plugins array
 ```
 
 VS Code uses a local plugin folder where it is (it adds the path to `chat.pluginLocations`), so
 keep the folder in place while it is installed.
+
+After the OpenCode plugin reaches `main`, install it directly from this repository with
+`opencode plugin add 'github:kombai-io/agent-plugins#main::path:plugins/opencode'`.
 
 See each plugin README for its setup.
 
@@ -299,6 +308,7 @@ pnpm run version:cursor 0.1.1
 pnpm run version:vscode 0.1.1
 pnpm run version:antigravity 0.1.1
 pnpm run version:gemini-cli 0.1.1
+pnpm run version:opencode 0.1.1
 pnpm run version:grok 0.1.1
 pnpm run version:devin 0.1.1
 ```
@@ -312,7 +322,7 @@ and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling check
 
 OpenAI's and Anthropic's plugin directories refuse a plugin that runs a floating npm tag (the
 CLI's `latest`), so the source pins one released CLI: every plugin's `cli.package`
-is `@kombai/cli@0.2.0`, the same in all eight, and every file that names the CLI (the skills under
+is `@kombai/cli@0.2.0`, the same in all nine, and every file that names the CLI (the skills under
 `plugins/` and `skills/`, the READMEs, `agents/openai.yaml`, the marketplaces) names that one.
 Describe a tag without the package name in front of it (the CLI's `latest` tag): the check reads
 any package name followed by a tag as one the plugins run, and set-cli-version would rewrite it. Move them all with
@@ -354,8 +364,8 @@ Kombai's API answers).
 
 **Validate Plugins** runs the release-script tests, the pinned-CLI check and all plugin validators on pushes and
 pull requests. **Build Plugins** is manually triggered and provides independent Codex,
-Claude Code, Cursor, VS Code, Antigravity and Gemini CLI build checkboxes (Grok Build and Devin install from
-a pinned commit of this repository and have none). Select at least one. Each selected job
+Claude Code, Cursor, VS Code, Antigravity, Gemini CLI and OpenCode build checkboxes (Grok Build and Devin install
+from a pinned commit of this repository and have none). Select at least one. Each selected job
 runs its tests and validation before packaging and uploading its ZIP. No local command is required.
 
 Each build checkbox has an optional version input. Leave it blank to package the committed
@@ -380,6 +390,8 @@ Code 1.128 or later), which uses the folder in place. The Antigravity and Gemini
 hold one folder named after the archive (`kombai-antigravity-plugin-<version>`,
 `kombai-gemini-cli-plugin-<version>`, with `-team` for a team build) with the plugin's contents
 in it, so that folder goes straight to `agy plugin install` or `gemini extensions install`.
+The OpenCode ZIP holds one installable plugin folder. OpenCode loads the folder when it is listed
+in `opencode.jsonc`.
 Workflow artifacts do not publish marketplace listings or GitHub releases.
 
 ### Team builds
@@ -389,7 +401,7 @@ plugin, running the newest beta, npm's `beta` tag of the CLI (vscode-assistant's
 `beta` action, run from `preprod`), which talks to preprod unless `kombai config env` says
 otherwise. No plugin build runs the alphas from `dev` (npm's `alpha` tag).
 Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
-(`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity` or `gemini-cli`): it writes `kombai-<host>-plugin-<version>-team.zip`
+(`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity`, `gemini-cli` or `opencode`): it writes `kombai-<host>-plugin-<version>-team.zip`
 from a staged copy in which the beta tag takes the place of the pinned version everywhere, so the
 source always pins a released CLI. The team build is the one place a tag is allowed: a team ZIP
 never goes to a plugin directory, and following the tag spares colleagues a reinstall for every

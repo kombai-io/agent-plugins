@@ -1,0 +1,20 @@
+{
+  "name": "@kombai/opencode-plugin",
+  "version": "0.1.0",
+  "description": "Design UI and generate assets with Kombai in OpenCode",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": ["index.js", "skills", "README.md", "LICENSE", "kombai.package.json"],
+  "dependencies": {
+    "@opencode/plugin": "^2.0.0"
+  },
+  "license": "MIT",
+  "homepage": "https://kombai.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kombai-io/agent-plugins.git",
+    "directory": "plugins/opencode"
+  }
+}

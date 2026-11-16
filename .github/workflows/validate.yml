@@ -38,3 +38,5 @@ jobs:
         run: node scripts/grok-plugin.mjs validate
       - name: Validate Devin plugin
         run: node scripts/devin-plugin.mjs validate
+      - name: Validate OpenCode plugin
+        run: node scripts/opencode-plugin.mjs validate

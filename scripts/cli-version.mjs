@@ -44,6 +44,7 @@ import { validateCursorPlugin } from './cursor-plugin.mjs';
 import { validateDevinPlugin } from './devin-plugin.mjs';
 import { validateGeminiCliPlugin } from './gemini-cli-plugin.mjs';
 import { validateGrokPlugin } from './grok-plugin.mjs';
+import { validateOpenCodePlugin } from './opencode-plugin.mjs';
 import { validateVsCodePlugin } from './vscode-plugin.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -58,6 +59,7 @@ export const PLUGINS = {
   'gemini-cli': validateGeminiCliPlugin,
   grok: validateGrokPlugin,
   devin: validateDevinPlugin,
+  opencode: validateOpenCodePlugin,
 };
 /** What names the CLI the plugins run, and set-cli-version moves: every text file under these (folders, or a file).
  *  The marketplaces ship in the packs too. */
