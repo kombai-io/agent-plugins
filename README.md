@@ -110,6 +110,7 @@ The Codex marketplace is [`.agents/plugins/marketplace.json`](.agents/plugins/ma
 The Claude Code marketplace is [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
 The Cursor marketplace is [`.cursor-plugin/marketplace.json`](.cursor-plugin/marketplace.json).
 The VS Code marketplace is [`.github/plugin/marketplace.json`](.github/plugin/marketplace.json).
+The Grok Build marketplace is [`.grok-plugin/marketplace.json`](.grok-plugin/marketplace.json).
 Codex and Claude Code use the plugin selector `kombai@kombai`; Cursor uses its Customize plugin UI;
 VS Code installs from **Chat: Install Plugin from Source** or the Extensions view's `@agentPlugins`.
 
@@ -145,6 +146,16 @@ set-cli-version included); Devin's pin moves by a PR to its marketplace. Grok Bu
 `.grok-plugin/plugin.json`; Devin reads `.devin-plugin/plugin.json`, whose
 [`"platforms": ["local"]`](https://docs.devin.ai/cli/extensibility/plugins/overview#platforms)
 keeps the plugin to the Devin CLI and Devin Desktop.
+
+Until (and besides) those listings, both install straight from this repository. Devin takes the
+folder: `devin plugins install kombai-io/agent-plugins#plugins/devin`. Grok Build has no
+documented way to install a repository's subfolder, so this repository is also a Grok marketplace:
+`grok plugin marketplace add kombai-io/agent-plugins`, then `grok plugin install kombai@kombai`.
+Grok Build reads Claude Code marketplaces too, and `.claude-plugin/marketplace.json` points at
+`plugins/claude-code`, whose skills refuse outside Claude Code; `.grok-plugin/marketplace.json`
+points at `plugins/grok` instead, in xai-org/plugin-marketplace's catalog format with a local
+source. Such an install follows this repository's default branch rather than a pinned commit
+(`grok plugin marketplace update` fetches it again).
 
 ## Install with the skills CLI
 

@@ -63,7 +63,7 @@ export const PLUGINS = {
 };
 /** What names the CLI the plugins run, and set-cli-version moves: every text file under these (folders, or a file).
  *  The marketplaces ship in the packs too. */
-export const PINNED_PATHS = ['plugins', 'skills', 'README.md', '.agents', '.claude-plugin', '.cursor-plugin', '.github/plugin'];
+export const PINNED_PATHS = ['plugins', 'skills', 'README.md', '.agents', '.claude-plugin', '.cursor-plugin', '.github/plugin', '.grok-plugin'];
 /** The pinned paths no plugin validator reads, which `check` reads instead. */
 export const CHECKED_PATHS = ['skills', 'README.md'];
 /** The pinned CLI's version and its skill topics, as set-cli-version read them from its published dist: what `check`

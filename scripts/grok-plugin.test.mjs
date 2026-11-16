@@ -9,6 +9,7 @@ import { bumpGrokVersion, checkGrokPluginDir, validateGrokPlugin } from './grok-
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PLUGIN = 'plugins/grok';
 const MANIFEST = `${PLUGIN}/.grok-plugin/plugin.json`;
+const MARKETPLACE = '.grok-plugin/marketplace.json';
 
 function fixture(run) {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-grok-plugin-test-'));
@@ -18,6 +19,7 @@ function fixture(run) {
     fs.copyFileSync(path.join(source, 'LICENSE'), path.join(root, 'LICENSE'));
     fs.copyFileSync(path.join(source, 'package.json'), path.join(root, 'package.json'));
     fs.cpSync(path.join(source, PLUGIN), path.join(root, PLUGIN), { recursive: true });
+    fs.cpSync(path.join(source, '.grok-plugin'), path.join(root, '.grok-plugin'), { recursive: true });
     run(root);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
@@ -117,5 +119,34 @@ test('Grok validation rejects extra plugin parts', () => {
     // Finder's metadata is ignored.
     write(root, `${PLUGIN}/.DS_Store`, 'x');
     assert.ok(validateGrokPlugin(root));
+  });
+});
+
+test('Grok marketplace lists only the bundled plugin, with Kombai-scoped suggestions', () => {
+  for (const [change, error] of [
+    [(data) => (data.name = 'kombai-plugins'), /named kombai and owned by Kombai/],
+    [(data) => delete data.owner, /named kombai and owned by Kombai/],
+    [(data) => data.plugins.push({ ...data.plugins[0], name: 'kombai-2' }), /exactly one plugin/],
+    [(data) => (data.plugins = {}), /exactly one plugin/],
+    [(data) => (data.plugins[0].name = 'kombai-design'), /named after the plugin/],
+    // The Claude Code plugin's skills refuse outside Claude Code.
+    [(data) => (data.plugins[0].source.path = './plugins/claude-code'), /point to the bundled plugin/],
+    [(data) => (data.plugins[0].source = './plugins/grok'), /point to the bundled plugin/],
+    [(data) => (data.plugins[0].source.sha = 'a'.repeat(40)), /point to the bundled plugin/],
+    [(data) => (data.plugins[0].description = 'Kombai.'), /descriptions must match/],
+    [(data) => (data.plugins[0].homepage = 'kombai.com'), /homepage must be an https URL/],
+    [(data) => data.plugins[0].keywords.push('design'), /keywords must match the manifest/],
+    [(data) => data.plugins[0].domains.push('figma.com'), /Kombai's own/],
+    [(data) => (data.plugins[0].domains = []), /Kombai's own/],
+    [(data) => (data.plugins[0].hooks = {}), /must not set hooks\./],
+  ]) {
+    fixture((root) => {
+      editJson(path.join(root, MARKETPLACE), change);
+      assert.throws(() => validateGrokPlugin(root), error);
+    });
+  }
+  fixture((root) => {
+    fs.rmSync(path.join(root, MARKETPLACE));
+    assert.throws(() => validateGrokPlugin(root), /ENOENT/);
   });
 });

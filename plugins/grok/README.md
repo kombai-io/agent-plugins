@@ -20,7 +20,18 @@ grok plugin install kombai@xai-official
 
 Or open `/marketplace` in Grok Build and search for Kombai.
 
-From a checkout of the repository, before it is listed or to try a change: `grok --plugin-dir ./plugins/grok`.
+Straight from GitHub, before it is listed: the repository is also a Grok marketplace
+([`.grok-plugin/marketplace.json`](../../.grok-plugin/marketplace.json)), which lists this folder.
+
+```sh
+grok plugin marketplace add kombai-io/agent-plugins
+grok plugin install kombai@kombai
+```
+
+That install follows the repository's default branch; `grok plugin marketplace update` fetches it again. If both are
+installed, uninstall one: the two are the same plugin, and both are named `kombai`.
+
+From a checkout of the repository, to try a change: `grok --plugin-dir ./plugins/grok`.
 
 ## Releasing an update
 

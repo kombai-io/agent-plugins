@@ -18,6 +18,13 @@ const PLUGIN_DIR = 'plugins/grok';
 // xAI's marketplace (xai-org/plugin-marketplace) points at this folder pinned to a commit, so there is no package to
 // build: the folder is the release. Grok Build reads `.grok-plugin/plugin.json` first, then Cursor's and Claude's.
 const MANIFEST = '.grok-plugin/plugin.json';
+// The repository's own marketplace, for installing before (or besides) xAI's listing:
+// `grok plugin marketplace add kombai-io/agent-plugins`, then `grok plugin install kombai@kombai`. Grok also reads
+// Claude Code marketplaces, and `.claude-plugin/marketplace.json` points at the Claude Code plugin, whose skills
+// refuse outside Claude Code; this file points Grok at its own folder. Its entry uses the catalog format and the local
+// source form of xai-org/plugin-marketplace.
+const MARKETPLACE = '.grok-plugin/marketplace.json';
+const MARKETPLACE_KEYS = new Set(['name', 'description', 'category', 'source', 'homepage', 'keywords', 'domains']);
 // The keys the marketplace's own third-party manifests use. `skills` is left out: Grok reads skills/ by default.
 const MANIFEST_KEYS = new Set([
   'name',
@@ -98,9 +105,46 @@ export function checkGrokPluginDir(pluginRoot) {
   return manifest.version;
 }
 
+/** Check the repository's Grok marketplace against the plugin folder it lists. */
+export function checkGrokMarketplace(root) {
+  const marketplace = readJson(path.join(root, MARKETPLACE));
+  const manifest = readJson(path.join(root, PLUGIN_DIR, MANIFEST));
+  assert(
+    isObject(marketplace) && marketplace.name === 'kombai' && marketplace.owner?.name === 'Kombai',
+    'Invalid Grok marketplace: it must be named kombai and owned by Kombai.',
+  );
+  assert(
+    Array.isArray(marketplace.plugins) && marketplace.plugins.length === 1 && isObject(marketplace.plugins[0]),
+    'Grok marketplace must list exactly one plugin.',
+  );
+  const [entry] = marketplace.plugins;
+  for (const key of Object.keys(entry)) assert(MARKETPLACE_KEYS.has(key), `Grok marketplace entry must not set ${key}.`);
+  assert(entry.name === manifest.name, 'Grok marketplace entry must be named after the plugin (kombai).');
+  assert(
+    isObject(entry.source) &&
+      Object.keys(entry.source).length === 2 &&
+      entry.source.type === 'local' &&
+      entry.source.path === `./${PLUGIN_DIR}`,
+    `Grok marketplace must point to the bundled plugin: { "type": "local", "path": "./${PLUGIN_DIR}" }.`,
+  );
+  assert(entry.description === manifest.description, 'Grok marketplace and manifest descriptions must match.');
+  assert(isHttps(entry.homepage), 'Grok marketplace homepage must be an https URL.');
+  assert(
+    JSON.stringify(entry.keywords) === JSON.stringify(manifest.keywords),
+    'Grok marketplace keywords must match the manifest, which keeps them Kombai-scoped.',
+  );
+  assert(
+    Array.isArray(entry.domains) &&
+      entry.domains.length > 0 &&
+      entry.domains.every((domain) => typeof domain === 'string' && /(^|\.)kombai\.com$/.test(domain)),
+    "Grok marketplace domains must be Kombai's own (kombai.com).",
+  );
+}
+
 export function validateGrokPlugin(root = workspaceRoot) {
   const pluginRoot = path.join(root, PLUGIN_DIR);
   const version = checkGrokPluginDir(pluginRoot);
+  checkGrokMarketplace(root);
   assert(isFile(path.join(root, 'LICENSE')), 'Missing repository LICENSE.');
   assert(
     fs.readFileSync(path.join(pluginRoot, 'LICENSE'), 'utf8') === fs.readFileSync(path.join(root, 'LICENSE'), 'utf8'),
