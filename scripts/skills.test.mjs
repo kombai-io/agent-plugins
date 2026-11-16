@@ -30,6 +30,8 @@ const COPIES = {
   'plugins/vscode': VSCODE_UNSANDBOXED,
   'plugins/antigravity': ANTIGRAVITY_SANDBOX,
   'plugins/gemini-cli': GEMINI_SANDBOX,
+  'plugins/grok': null,
+  'plugins/devin': null,
 };
 const MARKERS = [...new Set(Object.values(COPIES).filter(Boolean))];
 // The one copy with more of its own: the Codex app shows the canvas beside the chat, through canvas_app.

@@ -34,3 +34,7 @@ jobs:
         run: node scripts/antigravity-plugin.mjs validate
       - name: Validate Gemini CLI extension
         run: node scripts/gemini-cli-plugin.mjs validate
+      - name: Validate Grok Build plugin
+        run: node scripts/grok-plugin.mjs validate
+      - name: Validate Devin plugin
+        run: node scripts/devin-plugin.mjs validate
