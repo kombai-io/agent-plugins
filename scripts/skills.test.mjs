@@ -7,6 +7,7 @@ import { ANTIGRAVITY_SANDBOX } from './antigravity-plugin.mjs';
 import {
   ASSETS_SKILL,
   CHAT_NOTICES,
+  cliRunLine,
   CODEX_REFUSAL,
   FAQ_SKILL,
   skillGuidance,
@@ -50,10 +51,10 @@ const CODEX_POINTER = `first read \`${CODEX_ACCESS_FILE}\` beside this file`;
 // The copies that open every skill with a notice that they work only in their own agent (cli-view.mjs).
 const NOTICES = { 'plugins/codex': CHAT_NOTICES.codex, 'plugins/claude-code': CHAT_NOTICES['claude-code'] };
 
-// A skill in four parts: its frontmatter; its host guidance (between the frontmatter and the paragraph that says how to
-// run the CLI, less the Codex or Claude Code notice, checked on its own); its network bullet, which is the host's too;
-// and the body every copy shares (from that paragraph on, less the bullet and the Codex workflow's own canvas_app
-// paragraphs, which sit between it and the line that runs the CLI).
+// A skill in four parts: its frontmatter; its host guidance (between the frontmatter and the line that says how to run
+// the CLI, less the Codex or Claude Code notice, checked on its own); its network bullet, which is the host's too; and
+// the body every copy shares (from that line on, less the bullet and the Codex workflow's own canvas_app paragraphs,
+// which sit between it and the command that prints the skill's text).
 function parts(copy, skill) {
   const text = fs.readFileSync(path.join(root, copy, 'skills', skill, 'SKILL.md'), 'utf8');
   const frontmatter = text.match(/^---\n[\s\S]*?\n---\n/)?.[0];
@@ -192,6 +193,15 @@ test("every skill's description is an unquoted YAML value that parses: no \": \"
       assert.ok(description, `${copy}/${skill.name}: description`);
       assert.doesNotMatch(description, UNQUOTED_YAML_BREAKER_RE, `${copy}/${skill.name}: description`);
     }
+  }
+});
+
+test("every plugin's README quotes the line its skills say how to run the CLI with", () => {
+  for (const copy of Object.keys(COPIES).filter((name) => name !== '.')) {
+    const cliPackage = JSON.parse(fs.readFileSync(path.join(root, copy, 'kombai.package.json'), 'utf8')).cli.package;
+    const readme = fs.readFileSync(path.join(root, copy, 'README.md'), 'utf8');
+    // Word for word: a team build's README then gets the team's line along with its skills (stageTeamBuild).
+    assert.ok(readme.includes(`first says how to run them: "${cliRunLine(cliPackage)}"`), `${copy}/README.md`);
   }
 });
 

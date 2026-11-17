@@ -29,23 +29,21 @@ export const CLI_NAME = '@kombai/cli';
  * and the agent falls back to npx.
  */
 export const LAUNCHER_RUN = 'node "$HOME/.kombai/cli/install/latest/launch.mjs"';
-/** How the paragraph that says to run the launcher first begins: the line skillGuidance stops at. */
-export const LAUNCHER_HEADING = "**How to run Kombai's CLI.**";
+/** How the line that says how to run the CLI begins, in a release plugin and in a team build: where skillGuidance stops. */
+export const RUN_LINE_START = "Run Kombai's CLI (`kombai` below)";
 /**
- * The paragraph every skill of a release plugin has before its first Kombai command: run each command through the
- * launcher, and fall back to the plugin's pinned npx line (`cliPackage`) only where the CLI isn't installed yet. The
- * npx line still installs the CLI and is what a first run needs; after that the launcher starts in a tenth of a second
- * where npx takes seconds, and the user never sees the pinned version beside a newer one the CLI reports. The launcher
- * answers `CLI_NOT_INSTALLED` when its folder holds no usable copy. A team build drops it (stageTeamBuild): it follows
- * npm's `beta` tag through npx, which is what moves a colleague's copy to each new beta.
+ * The one line every skill has before its first Kombai command. A skill writes each command as `kombai <command>`, as
+ * the CLI's own skill text does, and this line says what `kombai` is: the launcher where the CLI is installed, else the
+ * plugin's pinned npx line (`cliPackage`), which installs it. So a skill names npx once, as the fallback: after a first
+ * run the launcher starts in a tenth of a second where npx takes seconds, and the user never sees the pinned version
+ * beside a newer one the CLI reports. Where the launcher's folder holds no usable copy, its own `CLI_NOT_INSTALLED`
+ * error names the npx line to run. A team build's line (stageTeamBuild) names npx alone: it follows npm's `beta` tag,
+ * which is what moves a colleague's copy to each new beta.
  */
-export function launcherParagraph(cliPackage) {
-  return (
-    `${LAUNCHER_HEADING} The Kombai commands below are written as \`npx -y ${cliPackage} <command>\`. Run each as ` +
-    `\`${LAUNCHER_RUN} <command>\` instead: that is Kombai's CLI as installed on this computer, kept on the version ` +
-    'Kombai recommends, and it starts without npm. Only if node can\'t find `launch.mjs`, or the command answers ' +
-    '`CLI_NOT_INSTALLED`, run it as written, with npx: that installs the CLI.'
-  );
+export function cliRunLine(cliPackage, { team = false } = {}) {
+  return team
+    ? `${RUN_LINE_START} as \`npx -y ${cliPackage}\`.`
+    : `${RUN_LINE_START} from \`${LAUNCHER_RUN}\` if that file exists; if not, fall back to \`npx -y ${cliPackage}\`.`;
 }
 /** A released CLI version: x.y.z, no tag, range or prerelease. What a plugin's `cli.package` pins. */
 export const RELEASE_VERSION_RE = /^\d+\.\d+\.\d+$/;
@@ -170,11 +168,11 @@ export function checkCliContract(pluginRoot, contract, host, { team = false, roo
   for (const [name, topic] of Object.entries(SKILL_TOPICS)) {
     const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');
     assert(
-      skill.includes(`npx -y ${cli.package} skill${topic}\``),
-      `${host} ${name} skill must run ${cli.package} skill${topic}.`,
+      skill.includes(`Run \`kombai skill${topic}\``),
+      `${host} ${name} skill must run \`kombai skill${topic}\`.`,
     );
   }
-  checkLauncherParagraph(pluginRoot, host, cli.package, { team });
+  checkRunLine(pluginRoot, host, cli.package, { team });
 
   const mcpFile = path.join(pluginRoot, '.mcp.json');
   if (cli.view) {
@@ -196,40 +194,46 @@ export function checkCliContract(pluginRoot, contract, host, { team = false, roo
 }
 
 /**
- * Check every skill of a plugin against launcherParagraph: a release plugin's has it, word for word with its own
- * `cliPackage`, before its first Kombai command; a team build's has none (stageTeamBuild takes it out).
+ * Check every skill of a plugin against cliRunLine: it has its build's line, word for word with its own `cliPackage`,
+ * as a paragraph of its own where the host guidance ends and before any `kombai <command>`, and it writes no command
+ * out with npx, since the line is what says how `kombai` runs. A team build names no launcher.
  */
-export function checkLauncherParagraph(pluginRoot, host, cliPackage, { team = false } = {}) {
+export function checkRunLine(pluginRoot, host, cliPackage, { team = false } = {}) {
   const skillRoot = path.join(pluginRoot, 'skills');
-  const paragraph = launcherParagraph(cliPackage);
+  const line = cliRunLine(cliPackage, { team });
+  // A command written out with npx: the package, then a word (`npx -y @kombai/cli@0.2.0 whoami`).
+  const npxCommand = new RegExp(`npx(?:\\.cmd)? -y ${cliPackage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+[a-z]`);
   for (const entry of fs.readdirSync(skillRoot, { withFileTypes: true }).filter((e) => e.isDirectory())) {
     const text = fs.readFileSync(path.join(skillRoot, entry.name, 'SKILL.md'), 'utf8');
-    if (team) {
-      assert(
-        !text.includes(LAUNCHER_HEADING) && !text.includes(LAUNCHER_RUN),
-        `${host} team build's ${entry.name} skill must run the beta through npx, not the installed CLI's launcher.`,
-      );
-      continue;
-    }
-    // Where the host guidance ends (skillGuidance): before any line that runs the CLI.
-    const at = text.indexOf(paragraph);
+    const at = text.indexOf(line);
     assert(
-      at > 0 && skillGuidance(text).length === at,
-      `${host} ${entry.name} skill must say to run the installed CLI's launcher before its first Kombai command ` +
-        '(launcherParagraph in scripts/cli-view.mjs).',
+      at > 0 &&
+        skillGuidance(text).length === at &&
+        /\r?\n\r?\n$/.test(text.slice(0, at)) &&
+        /^\r?\n\r?\n/.test(text.slice(at + line.length)) &&
+        !/`kombai\s/.test(text.slice(0, at)),
+      `${host} ${entry.name} skill must say how to run Kombai's CLI in a line of its own, before its first Kombai ` +
+        'command (cliRunLine in scripts/cli-view.mjs).',
+    );
+    assert(
+      !npxCommand.test(text),
+      `${host} ${entry.name} skill must write each command as \`kombai <command>\`, not with npx: only its run ` +
+        'line names npx.',
+    );
+    assert(
+      !team || !text.includes(LAUNCHER_RUN),
+      `${host} team build's ${entry.name} skill must run the beta through npx, not the installed CLI's launcher.`,
     );
   }
 }
 
 /**
- * A skill's host guidance: the text before the line that runs the CLI ("Run `npx") or, before it, the paragraph that
- * says how to run the CLI (LAUNCHER_HEADING), which the agent reads before its first command. Each host's sandbox
- * guidance must be there, not only in a later bullet.
+ * A skill's host guidance: the text before the line that says how to run the CLI (RUN_LINE_START), which the agent
+ * reads before its first command. Each host's sandbox guidance must be there, not only in a later bullet.
  */
 export function skillGuidance(text) {
-  const run = [text.indexOf(LAUNCHER_HEADING), text.indexOf('Run `npx')].filter((at) => at >= 0);
-  const first = run.length > 0 ? Math.min(...run) : -1;
-  return first > 0 ? text.slice(0, first) : '';
+  const run = text.indexOf(RUN_LINE_START);
+  return run > 0 ? text.slice(0, run) : '';
 }
 
 /**
@@ -439,9 +443,10 @@ export function zipPluginFolder(dir, archive) {
 
 /**
  * Copy `files` (paths under `root`) into a new directory as the team build, with TEAM_CLI_PACKAGE in place of the
- * pinned release CLI (`contract.cli.package`) in every text file, and without launcherParagraph: a colleague's copy
- * moves to each new beta when npx starts that beta, and preprod's backend names no beta for it to move to otherwise.
- * The caller removes the returned directory and checks it with its validator's `team` option.
+ * pinned release CLI (`contract.cli.package`) in every text file, and the team's cliRunLine, which names npx alone, in
+ * place of the release one: a colleague's copy moves to each new beta when npx starts that beta, and preprod's backend
+ * names no beta for it to move to otherwise. The caller removes the returned directory and checks it with its
+ * validator's `team` option.
  */
 export function stageTeamBuild(root, files, contract) {
   const release = contract.cli?.package;
@@ -456,12 +461,12 @@ export function stageTeamBuild(root, files, contract) {
       filter: (from) => path.basename(from) !== STRAY_FILE,
     });
   }
-  // The paragraph and the blank line after it, with either line ending: a Windows checkout may have CRLF.
-  const launcher = new RegExp(`${launcherParagraph(release).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\r?\\n\\r?\\n`, 'g');
+  const releaseLine = cliRunLine(release);
+  const teamLine = cliRunLine(TEAM_CLI_PACKAGE, { team: true });
   // Whole references only: `@kombai/cli@0.1.40` is not `@kombai/cli@0.1.4` followed by a 0.
   for (const file of filesUnder(stage)) {
     const text = textOf(file);
-    const next = text?.replace(launcher, '').replace(PINNABLE_REFERENCE_RE, (match) => {
+    const next = text?.replaceAll(releaseLine, teamLine).replace(PINNABLE_REFERENCE_RE, (match) => {
       const reference = withoutFullStop(match);
       return reference === release ? TEAM_CLI_PACKAGE + match.slice(reference.length) : match;
     });

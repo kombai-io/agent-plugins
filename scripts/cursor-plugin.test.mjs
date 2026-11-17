@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpCursorVersion, packCursorPlugin, validateCursorPlugin } from './cursor-plugin.mjs';
-import { TEAM_CLI_PACKAGE } from './cli-view.mjs';
+import { cliRunLine, TEAM_CLI_PACKAGE } from './cli-view.mjs';
 import { pinnedCliPackage } from './cli-version.mjs';
 
 /** The released CLI the source pins. */
@@ -46,7 +46,8 @@ function checkTeamArchive(archive, pluginDir) {
       ['generate-assets-with-kombai', ' assets'],
     ]) {
       const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
-      assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
+      assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { team: true })), skill);
+      assert.ok(text.includes(`Run \`kombai skill${topic}\``), skill);
       assert.ok(!text.includes('GitHub Packages'), skill);
       assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
     }

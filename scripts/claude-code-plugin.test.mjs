@@ -8,10 +8,9 @@ import { fileURLToPath } from 'node:url';
 import { bumpClaudeCodeVersion, packClaudeCodePlugin, validateClaudeCodePlugin } from './claude-code-plugin.mjs';
 import {
   CHAT_NOTICES,
+  cliRunLine,
   cliViewMcpConfig,
-  LAUNCHER_HEADING,
   LAUNCHER_RUN,
-  launcherParagraph,
   SETUP_SKILL,
   TEAM_CLI_PACKAGE,
 } from './cli-view.mjs';
@@ -54,11 +53,12 @@ function checkTeamArchive(archive, pluginDir) {
       ['generate-assets-with-kombai', ' assets'],
     ]) {
       const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
-      assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
+      assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { team: true })), skill);
+      assert.ok(text.includes(`Run \`kombai skill${topic}\``), skill);
       assert.ok(!text.includes('GitHub Packages'), skill);
       assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
       // A team build follows the beta tag through npx, never the installed copy's launcher.
-      assert.ok(!text.includes(LAUNCHER_HEADING) && !text.includes(LAUNCHER_RUN), skill);
+      assert.ok(!text.includes(LAUNCHER_RUN), skill);
     }
     return { extracted, plugin };
   } catch (error) {
@@ -141,7 +141,7 @@ test('the Claude Code plugin ships no local MCP server, as Anthropic\'s plugin d
     const skill = spawnSync('unzip', ['-p', archive, 'plugins/claude-code/skills/work-with-kombai/SKILL.md'], {
       encoding: 'utf8',
     });
-    assert.ok(skill.stdout.includes(`Run \`npx -y ${RELEASE_CLI_PACKAGE} skill\``));
+    assert.ok(skill.stdout.includes(`${cliRunLine(RELEASE_CLI_PACKAGE)}\n\nRun \`kombai skill\``));
     // The view's old shape, the CLI server in .mcp.json, is refused.
     withViewOn(root);
     assert.throws(() => validateClaudeCodePlugin(root), /canvas view off/);
@@ -162,11 +162,11 @@ test("the Claude Code plugin's get-started skill sets Kombai's server up before 
     assert.match(text, new RegExp(`^---\\nname: ${SETUP_SKILL}\\ndescription: `));
     // It looks for Kombai's card first, and sets the server up only where it is missing.
     assert.ok(flat.includes('ends in `taste_card`'));
-    assert.ok(flat.indexOf('`taste_card`') < flat.indexOf(`npx -y ${RELEASE_CLI_PACKAGE} mcp install claude-code`));
+    assert.ok(flat.indexOf('`taste_card`') < flat.indexOf('Run `kombai mcp install claude-code`'));
     // It follows the CLI's answers, which only the CLI can read: a Claude Code with no card, a server turned off or
     // not starting.
     for (const answer of ['`claudeDesktop: false`', '`disabled: true`', '`notStarting: true`']) assert.ok(flat.includes(answer), answer);
-    assert.ok(flat.includes(`npx -y ${RELEASE_CLI_PACKAGE} whoami`));
+    assert.ok(flat.includes('Run `kombai whoami`'));
     // The same three prompts as Codex's onboarding and the CLI's starters card, each in a code block of its own, which
     // Claude draws with a Copy button: Claude's chat opens no link to a new session, so the user copies one there.
     for (const prompt of [
@@ -202,7 +202,7 @@ test('Claude validation requires the get-started skill, and that it sets the ser
     const skill = path.join(root, 'plugins/claude-code/skills', SETUP_SKILL, 'SKILL.md');
     const text = fs.readFileSync(skill, 'utf8');
     fs.writeFileSync(skill, text.replaceAll('mcp install claude-code', 'mcp install codex'));
-    assert.throws(() => validateClaudeCodePlugin(root), new RegExp(`must run ${RELEASE_CLI_PACKAGE.replaceAll('.', '\\.')} mcp install claude-code`));
+    assert.throws(() => validateClaudeCodePlugin(root), /skill must run `kombai mcp install claude-code`/);
     fs.rmSync(path.dirname(skill), { recursive: true });
     assert.throws(() => validateClaudeCodePlugin(root), new RegExp(SETUP_SKILL));
   });
@@ -225,23 +225,35 @@ test('Claude validation requires every skill to open with its Claude Code-only n
   });
 });
 
-test('Claude validation requires every skill to say to run the installed CLI first, before its first command', () => {
+test('Claude validation requires every skill to say how to run the CLI in one line, before its first command', () => {
   fixture((root) => {
-    const paragraph = launcherParagraph(RELEASE_CLI_PACKAGE);
+    const line = cliRunLine(RELEASE_CLI_PACKAGE);
+    // The installed CLI's launcher first, npx as the fallback, and npx named nowhere else.
+    assert.ok(line.indexOf(LAUNCHER_RUN) > 0 && line.indexOf(LAUNCHER_RUN) < line.indexOf('npx -y'));
     for (const skill of fs.readdirSync(path.join(root, 'plugins/claude-code/skills'))) {
       const file = path.join(root, 'plugins/claude-code/skills', skill, 'SKILL.md');
       const text = fs.readFileSync(file, 'utf8');
-      assert.ok(text.includes(`${paragraph}\n\n`), skill);
-      const without = text.replace(`${paragraph}\n\n`, '');
-      const pattern = new RegExp(`Claude ${skill} skill must say to run the installed CLI's launcher`);
+      assert.ok(text.includes(`\n\n${line}\n\n`), skill);
+      assert.equal(text.split('npx -y').length, 2, `${skill}: npx is named once, in the line`);
+      const without = text.replace(`${line}\n\n`, '');
+      const pattern = new RegExp(`Claude ${skill} skill must say how to run Kombai's CLI in a line of its own`);
       fs.writeFileSync(file, without);
       assert.throws(() => validateClaudeCodePlugin(root), pattern);
-      // After a line that runs the CLI is too late: the agent would have run npx already.
-      fs.writeFileSync(file, `${without.trimEnd()}\n\n${paragraph}\n`);
+      // After a command is too late: the agent would not know how to run it.
+      fs.writeFileSync(file, `${without.trimEnd()}\n\n${line}\n\nThen stop.\n`);
+      assert.throws(() => validateClaudeCodePlugin(root), pattern);
+      // Run into the next paragraph, it is no line of its own.
+      fs.writeFileSync(file, text.replace(`${line}\n\n`, `${line}\n`));
       assert.throws(() => validateClaudeCodePlugin(root), pattern);
       // Naming another CLI version than the plugin pins.
-      fs.writeFileSync(file, text.replace(paragraph, launcherParagraph('@kombai/cli@9.9.9')));
+      fs.writeFileSync(file, text.replace(line, cliRunLine('@kombai/cli@9.9.9')));
       assert.throws(() => validateClaudeCodePlugin(root));
+      // A command written out with npx again: the line would no longer be what says how to run it.
+      fs.writeFileSync(file, `${text.trimEnd()}\n\nThen run \`npx -y ${RELEASE_CLI_PACKAGE} whoami\`.\n`);
+      assert.throws(
+        () => validateClaudeCodePlugin(root),
+        new RegExp(`Claude ${skill} skill must write each command as \`kombai <command>\`, not with npx`),
+      );
       fs.writeFileSync(file, text);
     }
     validateClaudeCodePlugin(root);
@@ -294,8 +306,12 @@ test('a Claude Code team pack runs the CLI team build, and ships no MCP config e
       assert.ok(
         fs
           .readFileSync(path.join(plugin, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8')
-          .includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install claude-code`),
+          .includes('Run `kombai mcp install claude-code`'),
       );
+      // The README's quote of the line follows the skills: the team's line, with no launcher.
+      const readme = fs.readFileSync(path.join(plugin, 'README.md'), 'utf8');
+      assert.ok(readme.includes(`first says how to run them: "${cliRunLine(TEAM_CLI_PACKAGE, { team: true })}"`));
+      assert.ok(!readme.includes(LAUNCHER_RUN));
       assert.equal(validateClaudeCodePlugin(extracted, { team: true }), version);
     } finally {
       fs.rmSync(extracted, { recursive: true, force: true });

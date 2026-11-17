@@ -14,7 +14,7 @@ import {
   packGeminiCliPlugin,
   validateGeminiCliPlugin,
 } from './gemini-cli-plugin.mjs';
-import { ASSETS_SKILL, cliViewMcpConfig, FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { ASSETS_SKILL, cliRunLine, cliViewMcpConfig, FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
 import { pinnedCliPackage } from './cli-version.mjs';
 
 /** The released CLI the source pins. */
@@ -234,7 +234,8 @@ test('a Gemini CLI team pack runs the CLI team build', () => {
         [ASSETS_SKILL, ' assets'],
       ]) {
         const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
-        assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
+        assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { team: true })), skill);
+        assert.ok(text.includes(`Run \`kombai skill${topic}\``), skill);
         assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
       }
       assert.equal(checkGeminiCliPluginDir(plugin, { team: true }), version);

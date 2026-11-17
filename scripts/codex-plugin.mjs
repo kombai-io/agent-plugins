@@ -87,8 +87,8 @@ export function validateCodexPlugin(root = workspaceRoot, { team = false } = {})
   assert(
     fs
       .readFileSync(path.join(pluginRoot, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8')
-      .includes(`npx -y ${contract.cli.package} mcp install codex`),
-    `Codex ${SETUP_SKILL} skill must run ${contract.cli.package} mcp install codex.`,
+      .includes('Run `kombai mcp install codex`'),
+    `Codex ${SETUP_SKILL} skill must run \`kombai mcp install codex\`.`,
   );
   // Where the chat already has Kombai's view, onboarding ends on the CLI's starters card.
   assert(

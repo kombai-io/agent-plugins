@@ -7,9 +7,9 @@ When running in Codex's sandbox, first read `codex-access.md` beside this file a
 **before the first command below**: it says how to get network access without trying the restricted
 command first. Elsewhere, skip it.
 
-**How to run Kombai's CLI.** The Kombai commands below are written as `npx -y @kombai/cli@0.2.0 <command>`. Run each as `node "$HOME/.kombai/cli/install/latest/launch.mjs" <command>` instead: that is Kombai's CLI as installed on this computer, kept on the version Kombai recommends, and it starts without npm. Only if node can't find `launch.mjs`, or the command answers `CLI_NOT_INSTALLED`, run it as written, with npx: that installs the CLI.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`.
 
-Run `npx -y @kombai/cli@0.2.0 skill assets` and follow what it prints; it is this skill's full text.
+Run `kombai skill assets` and follow what it prints; it is this skill's full text.
 
 **Sign-in compatibility:** If `sign_in_card` is available, use `reason: "assets"` only when its
 advertised `reason` values include `assets`; otherwise use `reason: "account"`. This overrides the

@@ -245,7 +245,7 @@ test('check takes a repository without one of the pinned paths', () => {
 test("an install command split across lines still counts toward the clients the CLI must take", () => {
   fixture((root) => {
     const skill = path.join(root, 'plugins/cursor/skills/work-with-kombai/SKILL.md');
-    fs.appendFileSync(skill, `\nRun \`npx -y ${pinnedCliPackage(root)}\nmcp install cursor\`.\n`);
+    fs.appendFileSync(skill, '\nRun `kombai mcp\ninstall cursor`.\n');
     assert.deepEqual(requiredInstallClients(root), ['claude-code', 'codex', 'cursor']);
     assert.throws(() => setCliVersion('0.1.5', { root, npm: fakeNpm() }), /can't run `mcp install cursor`/);
   });

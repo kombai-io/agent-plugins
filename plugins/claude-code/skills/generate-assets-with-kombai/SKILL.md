@@ -5,9 +5,9 @@ description: Generate an AI image or video with Kombai and get a hosted https li
 
 **Claude Code only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in Claude's chat (claude.ai, or the Chat tab of the Claude desktop or mobile app) rather than Claude Code, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai's plugin works only in Claude Code, not in Claude's chat. Install it in Claude Code and ask there."
 
-**How to run Kombai's CLI.** The Kombai commands below are written as `npx -y @kombai/cli@0.2.0 <command>`. Run each as `node "$HOME/.kombai/cli/install/latest/launch.mjs" <command>` instead: that is Kombai's CLI as installed on this computer, kept on the version Kombai recommends, and it starts without npm. Only if node can't find `launch.mjs`, or the command answers `CLI_NOT_INSTALLED`, run it as written, with npx: that installs the CLI.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`.
 
-Run `npx -y @kombai/cli@0.2.0 skill assets` and follow what it prints; it is this skill's full text.
+Run `kombai skill assets` and follow what it prints; it is this skill's full text.
 
 **Sign-in compatibility:** If `sign_in_card` is available, use `reason: "assets"` only when its
 advertised `reason` values include `assets`; otherwise use `reason: "account"`. This overrides the

@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { bumpCodexVersion, packCodexPlugin, validateCodexPlugin } from './codex-plugin.mjs';
 import {
   CHAT_NOTICES,
+  cliRunLine,
   cliViewMcpConfig,
-  launcherParagraph,
   stageTeamBuild,
   TEAM_CLI_PACKAGE,
 } from './cli-view.mjs';
@@ -75,7 +75,8 @@ function checkTeamArchive(archive, pluginDir) {
       ['generate-assets-with-kombai', ' assets'],
     ]) {
       const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
-      assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
+      assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { team: true })), skill);
+      assert.ok(text.includes(`Run \`kombai skill${topic}\``), skill);
       assert.ok(!text.includes('GitHub Packages'), skill);
       assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
     }
@@ -298,20 +299,20 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
     const skill = spawnSync('unzip', ['-p', archive, 'plugins/codex/skills/work-with-kombai/SKILL.md'], {
       encoding: 'utf8',
     });
-    assert.ok(skill.stdout.includes(`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex`));
+    assert.ok(skill.stdout.includes('`kombai mcp install codex`'));
     // The skill sets the view up without a question (as listing 0.2.2 did) and tells the user in one line.
     assert.ok(
       skill.stdout
         .replace(/\s+/g, ' ')
-        .includes(`set it up without asking, with \`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex\``),
+        .includes('set it up without asking, with `kombai mcp install codex`'),
     );
     // Setting the view up is the skill's first instruction after the shell notice, the sandbox note (which ends with the list of ways to
     // get access, the escalation first) and how to run the CLI, before even `kombai skill`.
     const paragraphs = skill.stdout.split('\n\n');
     const afterSandbox = paragraphs.slice(paragraphs.findIndex((p) => p.includes('require_escalated')) + 1).join('\n\n');
-    const launcher = `${launcherParagraph(RELEASE_CLI_PACKAGE)}\n\n`;
+    const launcher = `${cliRunLine(RELEASE_CLI_PACKAGE)}\n\n`;
     assert.ok(afterSandbox.startsWith(launcher), afterSandbox.slice(0, 120));
-    assert.ok(afterSandbox.slice(launcher.length).startsWith("**First, before anything else, even `npx"), afterSandbox.slice(0, 120));
+    assert.ok(afterSandbox.slice(launcher.length).startsWith("**First, before anything else, even `kombai skill`:**"), afterSandbox.slice(0, 120));
     // The install's answer says how to move the work to a new task without the user asking twice, and, from facts
     // the CLI reads itself, when to start none: a server that isn't starting, or a Codex that isn't the app.
     const flatSkill = skill.stdout.replace(/\s+/g, ' ');
@@ -325,7 +326,7 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
     assert.ok(skill.stdout.replace(/\s+/g, ' ').includes("Kombai's plugin id in this Codex is `kombai@<marketplace>`"));
     assert.ok(!skill.stdout.includes('kombai@kombai'));
     assert.ok(skill.stdout.replace(/\s+/g, ' ').includes('a link that opens it with the request filled in'));
-    assert.ok(skill.stdout.indexOf('mcp install codex') < skill.stdout.indexOf(`Run \`npx -y ${RELEASE_CLI_PACKAGE} skill\``));
+    assert.ok(skill.stdout.indexOf('mcp install codex') < skill.stdout.indexOf('Run `kombai skill`'));
   });
 });
 
@@ -378,7 +379,7 @@ test('a team pack runs the CLI beta from npm beta, and the source stays on the r
       assert.ok(
         fs
           .readFileSync(path.join(plugin, 'skills/work-with-kombai/SKILL.md'), 'utf8')
-          .includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install codex`),
+          .includes('with `kombai mcp install codex`'),
       );
       // The extracted team marketplace is a valid plugin of its own.
       assert.equal(validateCodexPlugin(extracted, { team: true }), version);
@@ -407,7 +408,7 @@ test("the Codex plugin's setup runs an onboarding skill that adds Kombai's view 
     assert.equal(manifest.onboardingSkill, './skills/get-started-with-kombai/SKILL.md');
     const setup = fs.readFileSync(path.join(pluginRoot, 'skills/get-started-with-kombai/SKILL.md'), 'utf8');
     assert.match(setup, /^---\nname: get-started-with-kombai\n/);
-    assert.ok(setup.includes(`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex`));
+    assert.ok(setup.includes('Run `kombai mcp install codex`'));
     // The user can run it again. The branch is whether this chat has Kombai's view: then the starters card, or links
     // where the chat's CLI has no card yet; else the setup, then links that each open a new chat with Kombai mentioned
     // and a prompt filled in. A turned-off entry gets no links to another chat without the view.
@@ -481,7 +482,8 @@ test("a team pack's onboarding skill installs with the team CLI", () => {
   fixture((root) => {
     const archive = packCodexPlugin(path.join(root, 'out'), root, { team: true });
     const setup = spawnSync('unzip', ['-p', archive, 'plugins/codex/skills/get-started-with-kombai/SKILL.md'], { encoding: 'utf8' });
-    assert.ok(setup.stdout.includes(`npx -y ${TEAM_CLI_PACKAGE} mcp install codex`));
+    assert.ok(setup.stdout.includes('Run `kombai mcp install codex`'));
+    assert.ok(setup.stdout.includes(cliRunLine(TEAM_CLI_PACKAGE, { team: true })));
     assert.ok(!setup.stdout.includes(RELEASE_CLI_PACKAGE));
   });
 });

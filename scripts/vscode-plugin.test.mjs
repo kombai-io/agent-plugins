@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpVsCodeVersion, packVsCodePlugin, validateVsCodePlugin, VSCODE_UNSANDBOXED } from './vscode-plugin.mjs';
-import { ASSETS_SKILL, FAQ_SKILL, LAUNCHER_HEADING, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { ASSETS_SKILL, cliRunLine, FAQ_SKILL, RUN_LINE_START, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
 import { pinnedCliPackage } from './cli-version.mjs';
 
 /** The released CLI the source pins. */
@@ -243,7 +243,7 @@ for (const skill of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
       const skillPath = path.join(root, PLUGIN, 'skills', skill, 'SKILL.md');
       const text = fs.readFileSync(skillPath, 'utf8');
       // Drop only the guidance paragraph: the network bullet's copy of the parameter does not count.
-      const cut = text.slice(0, text.indexOf('When VS Code runs')) + text.slice(text.indexOf(LAUNCHER_HEADING));
+      const cut = text.slice(0, text.indexOf('When VS Code runs')) + text.slice(text.indexOf(RUN_LINE_START));
       assert.ok(cut.includes(VSCODE_UNSANDBOXED));
       fs.writeFileSync(skillPath, cut);
       assert.throws(() => validateVsCodePlugin(root), {
@@ -270,7 +270,8 @@ test('a VS Code team pack runs the CLI team build', () => {
         [ASSETS_SKILL, ' assets'],
       ]) {
         const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
-        assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
+        assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { team: true })), skill);
+        assert.ok(text.includes(`Run \`kombai skill${topic}\``), skill);
         assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
       }
       assert.equal(validateVsCodePlugin(extracted, { team: true }), version);

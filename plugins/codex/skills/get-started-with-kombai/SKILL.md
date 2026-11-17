@@ -58,22 +58,22 @@ To show them as links, build each in exec as `codex://threads/new?prompt=` follo
 `%29`. End your reply with **Try one in a new chat:** and the links as a list, each `[@Kombai <prompt>](link)`, so a
 link reads as what it puts in the new chat's message box, unsent, with Kombai mentioned. Give a link no other title.
 
-**How to run Kombai's CLI.** The Kombai commands below are written as `npx -y @kombai/cli@0.2.0 <command>`. Run each as `node "$HOME/.kombai/cli/install/latest/launch.mjs" <command>` instead: that is Kombai's CLI as installed on this computer, kept on the version Kombai recommends, and it starts without npm. Only if node can't find `launch.mjs`, or the command answers `CLI_NOT_INSTALLED`, run it as written, with npx: that installs the CLI.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`.
 
 First look for Kombai's tools in this chat: in exec, `ALL_TOOLS.filter((t) => t.name.startsWith('mcp__kombai'))`.
 Then follow one of the two paths below.
 
 **If `canvas_app` is there**, Kombai's view is set up and this chat has it:
 
-1. Run `npx -y @kombai/cli@0.2.0 whoami`. If the user isn't signed in, sign them in as
-   `npx -y @kombai/cli@0.2.0 skill sign-in` says.
+1. Run `kombai whoami`. If the user isn't signed in, sign them in as
+   `kombai skill sign-in` says.
 2. If `starters_card` is there too, call it with `plugin` set to Kombai's plugin id, and end your turn with one
    line, such as "Pick one to try." Don't list the prompts in text. If it isn't (an older Kombai CLI), show the
    prompts as links instead.
 
 **If it isn't there**, set Kombai's view up:
 
-1. Run `npx -y @kombai/cli@0.2.0 mcp install codex`. It adds Kombai's canvas view to Codex: Kombai's MCP server, in
+1. Run `kombai mcp install codex`. It adds Kombai's canvas view to Codex: Kombai's MCP server, in
    the user's own Codex config. It answers `added` or `replaced` (set up now) or `already` (set up before).
 2. If it answered with `disabled: true`, Kombai's view is turned off in the user's Codex config (`enabled = false`),
    so no chat gets it: tell the user the canvas can't be shown until they turn it back on, show no links, and stop.
@@ -82,8 +82,8 @@ Then follow one of the two paths below.
    If it answered `codexApp: false`, this is Codex in a terminal or an IDE, which shows no canvas view and can't open
    a link to a new chat: run step 3, tell the user Kombai is ready and that they can ask for a design right here, list
    the prompts as plain text, not links, and stop.
-3. Run `npx -y @kombai/cli@0.2.0 whoami`. If the user isn't signed in, sign them in as
-   `npx -y @kombai/cli@0.2.0 skill sign-in` says.
+3. Run `kombai whoami`. If the user isn't signed in, sign them in as
+   `kombai skill sign-in` says.
 4. Tell the user in one line that Kombai is ready and that a new chat shows its canvas beside the chat. This chat
    can't, because Codex gives a chat only the MCP servers it had when it started. Then show the prompts as links.
 

@@ -4,7 +4,7 @@ This plugin is for Cognition's Devin CLI and Devin Desktop. Devin's marketplace
 ([CognitionAI/devin-marketplace](https://github.com/CognitionAI/devin-marketplace)) lists a third-party plugin as a
 `git-subdir` entry pointing at its folder (here `path: plugins/devin`), pinned to one commit of this repository.
 
-Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.2.0 skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
+Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.2.0 skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later. Each skill writes its commands as `kombai <command>` and first says how to run them: "Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`."
 
 Its `about-kombai` skill runs `npx -y @kombai/cli@0.2.0 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 

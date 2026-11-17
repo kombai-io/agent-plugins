@@ -10,8 +10,9 @@ and release tooling.
 
 Each plugin's `work-with-kombai` skill runs the Kombai CLI
 (`npx -y @kombai/cli@0.2.0 skill`), which prints the full instructions for designing on a hosted
-Kombai canvas. The CLI needs Node.js 20 or later. Every skill first runs the copy of the CLI already
-installed on the computer, through its launcher, and runs `npx` only where there is none yet (see
+Kombai canvas. The CLI needs Node.js 20 or later. A skill writes that command as `kombai skill`, and
+opens with one line that says how to run `kombai`: from the copy of the CLI already installed on the
+computer, through its launcher, with `npx` as the fallback where there is none yet (see
 [The CLI version](#the-cli-version)).
 
 A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.2.0 skill faq` and answers the user's
@@ -82,8 +83,8 @@ target. It requests the target's directory because the CLI saves through a tempo
 The same grant is required for standalone setup and existing-view upgrades; skills request any missing
 write access before later commands need it.
 
-The skills differ between hosts in that sandbox guidance (the paragraphs before the line that runs
-`npx`, and the "The network is blocked" bullet); the Codex workflow skill also has its own
+The skills differ between hosts in that sandbox guidance (the paragraphs before the line that says
+how to run the CLI, and the "The network is blocked" bullet); the Codex workflow skill also has its own
 description and a paragraph on showing the canvas beside the chat. `scripts/skills.test.mjs`
 checks that every copy shares the rest of the standalone skill's text, that each carries its own
 host's guidance before the first command and no other host's, and that the Claude Code and Cursor
@@ -382,18 +383,27 @@ at each design request it asks Kombai's backend which version to be on and moves
 so a CLI fix reaches users without a plugin release. Every later command runs that copy through the
 launcher line the skill prints.
 
-The skills go to that copy first too. Each one has the same paragraph before its first Kombai command
-(`launcherParagraph` in `scripts/cli-view.mjs`; the validators check it is there, before the first
-command, and names the plugin's own `cli.package`): run every command as
-`node "$HOME/.kombai/cli/install/latest/launch.mjs" <command>`, and as the `npx` line written in the
-skill only when node can't find `launch.mjs` or the launcher answers `CLI_NOT_INSTALLED` (no CLI
-installed yet; `npx` installs it). The launcher's `skill` checks Kombai's backend and moves the copy
-just as the `npx` line does. It starts in about a tenth of a second where `npx` took 5 to 10 seconds
-on a machine with a large npm cache, and its line names no version, so a user who sees one version
-from `--version` doesn't also see the plugin's older pin in every command. Where `$HOME` doesn't
-expand (cmd.exe), node can't find the file and the skill falls back to `npx`. Since the copy, not the
-pin, then decides what runs, a pin bump alone no longer moves a machine forward; the backend's
-recommended version does.
+The skills go to that copy first too. Each writes its commands as `kombai <command>`, as the CLI's
+own skill text does, and has the same line before the first of them (`cliRunLine` in
+`scripts/cli-view.mjs`):
+
+> Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`.
+
+So a skill names `npx` once, as the fallback that installs the CLI. The validators check that the
+line is there word for word with the plugin's own `cli.package`, in a paragraph of its own before the
+first `kombai` command, and that no command is written out with `npx`. Claude Code agents tried on
+it (2026-11-17, with and without the file, and with another `kombai` on PATH) ran each command as one
+line that tests for the file, `if [ -f "$HOME/.kombai/cli/install/latest/launch.mjs" ]; then node …
+<command>; else npx … <command>; fi`, and never the `kombai` on PATH. Claude Code approves such a
+line part by part, so with only `node` and `npx` allowed it asks about the `[ -f` test. The launcher's `skill` checks
+Kombai's backend and moves the copy just as the `npx` line does. It starts in about a tenth of a
+second where `npx` took 5 to 10 seconds on a machine with a large npm cache, and its line names no
+version, so a user who sees one version from `--version` doesn't also see the plugin's older pin in
+every command. Where the launcher's folder holds no usable copy, its own `CLI_NOT_INSTALLED` error
+names the `npx` line to run; where `$HOME` doesn't expand (cmd.exe), node can't find the file and the
+skill falls back to `npx`. Since the copy, not the pin, then decides what runs, a pin bump alone no
+longer moves a machine forward; the backend's recommended version does. Each plugin's README quotes
+the line, so it says what the plugin runs (`scripts/skills.test.mjs` checks the quote).
 
 Disclose it where a directory asks what the plugin downloads or runs:
 the CLI's `skill faq` (Setup and problems, Updates) says the same to users. Two rules for the pin
@@ -445,9 +455,9 @@ otherwise. No plugin build runs the alphas from `dev` (npm's `alpha` tag).
 Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
 (`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity`, `gemini-cli`, `opencode` or `pi-code`): it writes `kombai-<host>-plugin-<version>-team.zip`
 from a staged copy in which the beta tag takes the place of the pinned version everywhere, so the
-source always pins a released CLI. The staged copy also drops the skills' paragraph that says to run
-the installed CLI's launcher first: a colleague's copy moves to each new beta when `npx` starts that
-beta, and preprod's backend names no beta for the launcher's copy to move to. The team build is the one place a tag is allowed: a team ZIP
+source always pins a released CLI. In the staged copy the line that says how to run the CLI names
+`npx` with the beta tag alone, and no launcher: a colleague's copy moves to each new beta when `npx`
+starts that beta, and preprod's backend names no beta for the launcher's copy to move to. The team build is the one place a tag is allowed: a team ZIP
 never goes to a plugin directory, and following the tag spares colleagues a reinstall for every
 beta. A team ZIP installs like the public one and has the same plugin name, so a machine has one
 or the other. In VS Code the two
