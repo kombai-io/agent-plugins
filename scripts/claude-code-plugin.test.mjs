@@ -6,7 +6,15 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpClaudeCodeVersion, packClaudeCodePlugin, validateClaudeCodePlugin } from './claude-code-plugin.mjs';
-import { CHAT_NOTICES, cliViewMcpConfig, SETUP_SKILL, TEAM_CLI_PACKAGE } from './cli-view.mjs';
+import {
+  CHAT_NOTICES,
+  cliViewMcpConfig,
+  LAUNCHER_HEADING,
+  LAUNCHER_RUN,
+  launcherParagraph,
+  SETUP_SKILL,
+  TEAM_CLI_PACKAGE,
+} from './cli-view.mjs';
 import { pinnedCliPackage } from './cli-version.mjs';
 
 /** The released CLI the source pins. */
@@ -49,6 +57,8 @@ function checkTeamArchive(archive, pluginDir) {
       assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
       assert.ok(!text.includes('GitHub Packages'), skill);
       assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
+      // A team build follows the beta tag through npx, never the installed copy's launcher.
+      assert.ok(!text.includes(LAUNCHER_HEADING) && !text.includes(LAUNCHER_RUN), skill);
     }
     return { extracted, plugin };
   } catch (error) {
@@ -215,13 +225,43 @@ test('Claude validation requires every skill to open with its Claude Code-only n
   });
 });
 
-test('Claude validation accepts skills with CRLF line endings', () => {
+test('Claude validation requires every skill to say to run the installed CLI first, before its first command', () => {
+  fixture((root) => {
+    const paragraph = launcherParagraph(RELEASE_CLI_PACKAGE);
+    for (const skill of fs.readdirSync(path.join(root, 'plugins/claude-code/skills'))) {
+      const file = path.join(root, 'plugins/claude-code/skills', skill, 'SKILL.md');
+      const text = fs.readFileSync(file, 'utf8');
+      assert.ok(text.includes(`${paragraph}\n\n`), skill);
+      const without = text.replace(`${paragraph}\n\n`, '');
+      const pattern = new RegExp(`Claude ${skill} skill must say to run the installed CLI's launcher`);
+      fs.writeFileSync(file, without);
+      assert.throws(() => validateClaudeCodePlugin(root), pattern);
+      // After a line that runs the CLI is too late: the agent would have run npx already.
+      fs.writeFileSync(file, `${without.trimEnd()}\n\n${paragraph}\n`);
+      assert.throws(() => validateClaudeCodePlugin(root), pattern);
+      // Naming another CLI version than the plugin pins.
+      fs.writeFileSync(file, text.replace(paragraph, launcherParagraph('@kombai/cli@9.9.9')));
+      assert.throws(() => validateClaudeCodePlugin(root));
+      fs.writeFileSync(file, text);
+    }
+    validateClaudeCodePlugin(root);
+  });
+});
+
+test('Claude validation accepts skills with CRLF line endings, and their team pack still drops the launcher', () => {
   fixture((root) => {
     for (const skill of fs.readdirSync(path.join(root, 'plugins/claude-code/skills'))) {
       const file = path.join(root, 'plugins/claude-code/skills', skill, 'SKILL.md');
       fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/\n/g, '\r\n'));
     }
     validateClaudeCodePlugin(root);
+    const archive = packClaudeCodePlugin(path.join(root, 'out'), root, { team: true });
+    const { extracted } = checkTeamArchive(archive, 'plugins/claude-code');
+    try {
+      validateClaudeCodePlugin(extracted, { team: true });
+    } finally {
+      fs.rmSync(extracted, { recursive: true, force: true });
+    }
   });
 });
 

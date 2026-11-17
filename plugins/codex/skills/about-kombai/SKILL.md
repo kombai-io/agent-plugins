@@ -39,6 +39,8 @@ returned directory, including any configured override; do not assume it is `~/.n
   for me** in the permissions menu under the message box (in Codex in a terminal, by allowing network access
   in its approval settings), then sending their message again.
 
+**How to run Kombai's CLI.** The Kombai commands below are written as `npx -y @kombai/cli@0.2.0 <command>`. Run each as `node "$HOME/.kombai/cli/install/latest/launch.mjs" <command>` instead: that is Kombai's CLI as installed on this computer, kept on the version Kombai recommends, and it starts without npm. Only if node can't find `launch.mjs`, or the command answers `CLI_NOT_INSTALLED`, run it as written, with npx: that installs the CLI.
+
 Run `npx -y @kombai/cli@0.2.0 skill faq` and answer from what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:

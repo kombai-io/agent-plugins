@@ -58,6 +58,8 @@ To show them as links, build each in exec as `codex://threads/new?prompt=` follo
 `%29`. End your reply with **Try one in a new chat:** and the links as a list, each `[@Kombai <prompt>](link)`, so a
 link reads as what it puts in the new chat's message box, unsent, with Kombai mentioned. Give a link no other title.
 
+**How to run Kombai's CLI.** The Kombai commands below are written as `npx -y @kombai/cli@0.2.0 <command>`. Run each as `node "$HOME/.kombai/cli/install/latest/launch.mjs" <command>` instead: that is Kombai's CLI as installed on this computer, kept on the version Kombai recommends, and it starts without npm. Only if node can't find `launch.mjs`, or the command answers `CLI_NOT_INSTALLED`, run it as written, with npx: that installs the CLI.
+
 First look for Kombai's tools in this chat: in exec, `ALL_TOOLS.filter((t) => t.name.startsWith('mcp__kombai'))`.
 Then follow one of the two paths below.
 

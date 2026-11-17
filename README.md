@@ -10,7 +10,9 @@ and release tooling.
 
 Each plugin's `work-with-kombai` skill runs the Kombai CLI
 (`npx -y @kombai/cli@0.2.0 skill`), which prints the full instructions for designing on a hosted
-Kombai canvas. The CLI needs Node.js 20 or later.
+Kombai canvas. The CLI needs Node.js 20 or later. Every skill first runs the copy of the CLI already
+installed on the computer, through its launcher, and runs `npx` only where there is none yet (see
+[The CLI version](#the-cli-version)).
 
 A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.2.0 skill faq` and answers the user's
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
@@ -364,7 +366,22 @@ From its first self-managing release (vscode-assistant `packages/cli/src/managed
 CLI is only the first hop: the plugin's `npx` line keeps a copy under `~/.kombai/cli/install`, and
 at each design request it asks Kombai's backend which version to be on and moves that copy forward,
 so a CLI fix reaches users without a plugin release. Every later command runs that copy through the
-launcher line the skill prints. Disclose it where a directory asks what the plugin downloads or runs:
+launcher line the skill prints.
+
+The skills go to that copy first too. Each one has the same paragraph before its first Kombai command
+(`launcherParagraph` in `scripts/cli-view.mjs`; the validators check it is there, before the first
+command, and names the plugin's own `cli.package`): run every command as
+`node "$HOME/.kombai/cli/install/latest/launch.mjs" <command>`, and as the `npx` line written in the
+skill only when node can't find `launch.mjs` or the launcher answers `CLI_NOT_INSTALLED` (no CLI
+installed yet; `npx` installs it). The launcher's `skill` checks Kombai's backend and moves the copy
+just as the `npx` line does. It starts in about a tenth of a second where `npx` took 5 to 10 seconds
+on a machine with a large npm cache, and its line names no version, so a user who sees one version
+from `--version` doesn't also see the plugin's older pin in every command. Where `$HOME` doesn't
+expand (cmd.exe), node can't find the file and the skill falls back to `npx`. Since the copy, not the
+pin, then decides what runs, a pin bump alone no longer moves a machine forward; the backend's
+recommended version does.
+
+Disclose it where a directory asks what the plugin downloads or runs:
 the CLI's `skill faq` (Setup and problems, Updates) says the same to users. Two rules for the pin
 once it names a self-managing release: never move it back to one from before (it could not update
 itself or read the backend's withdrawn versions), and never ahead of the backend's recommended
@@ -414,7 +431,9 @@ otherwise. No plugin build runs the alphas from `dev` (npm's `alpha` tag).
 Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
 (`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity`, `gemini-cli` or `opencode`): it writes `kombai-<host>-plugin-<version>-team.zip`
 from a staged copy in which the beta tag takes the place of the pinned version everywhere, so the
-source always pins a released CLI. The team build is the one place a tag is allowed: a team ZIP
+source always pins a released CLI. The staged copy also drops the skills' paragraph that says to run
+the installed CLI's launcher first: a colleague's copy moves to each new beta when `npx` starts that
+beta, and preprod's backend names no beta for the launcher's copy to move to. The team build is the one place a tag is allowed: a team ZIP
 never goes to a plugin directory, and following the tag spares colleagues a reinstall for every
 beta. A team ZIP installs like the public one and has the same plugin name, so a machine has one
 or the other. In VS Code the two

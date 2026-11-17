@@ -16,6 +16,8 @@ off the terminal sandbox, if their organization allows it, and wait. In GitHub C
 installs this same plugin, run the command in its sandbox first; if the sandbox blocks it, ask for
 the bypass Copilot CLI offers.
 
+**How to run Kombai's CLI.** The Kombai commands below are written as `npx -y @kombai/cli@0.2.0 <command>`. Run each as `node "$HOME/.kombai/cli/install/latest/launch.mjs" <command>` instead: that is Kombai's CLI as installed on this computer, kept on the version Kombai recommends, and it starts without npm. Only if node can't find `launch.mjs`, or the command answers `CLI_NOT_INSTALLED`, run it as written, with npx: that installs the CLI.
+
 Run `npx -y @kombai/cli@0.2.0 skill` and follow what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:

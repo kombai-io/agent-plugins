@@ -26,6 +26,8 @@ the same three as Kombai's onboarding in Codex:
 
 Show no link: Claude's chat opens none to a new session.
 
+**How to run Kombai's CLI.** The Kombai commands below are written as `npx -y @kombai/cli@0.2.0 <command>`. Run each as `node "$HOME/.kombai/cli/install/latest/launch.mjs" <command>` instead: that is Kombai's CLI as installed on this computer, kept on the version Kombai recommends, and it starts without npm. Only if node can't find `launch.mjs`, or the command answers `CLI_NOT_INSTALLED`, run it as written, with npx: that installs the CLI.
+
 First look among your tools for one whose name ends in `taste_card` (Claude may list Kombai's tools by name only).
 Then follow one of the two paths below.
 

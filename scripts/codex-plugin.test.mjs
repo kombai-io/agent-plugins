@@ -9,6 +9,7 @@ import { bumpCodexVersion, packCodexPlugin, validateCodexPlugin } from './codex-
 import {
   CHAT_NOTICES,
   cliViewMcpConfig,
+  launcherParagraph,
   stageTeamBuild,
   TEAM_CLI_PACKAGE,
 } from './cli-view.mjs';
@@ -304,11 +305,13 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
         .replace(/\s+/g, ' ')
         .includes(`set it up without asking, with \`npx -y ${RELEASE_CLI_PACKAGE} mcp install codex\``),
     );
-    // Setting the view up is the skill's first instruction after the shell notice and the sandbox note (which ends with the list of ways to
-    // get access, the escalation first), before even `kombai skill`.
+    // Setting the view up is the skill's first instruction after the shell notice, the sandbox note (which ends with the list of ways to
+    // get access, the escalation first) and how to run the CLI, before even `kombai skill`.
     const paragraphs = skill.stdout.split('\n\n');
     const afterSandbox = paragraphs.slice(paragraphs.findIndex((p) => p.includes('require_escalated')) + 1).join('\n\n');
-    assert.ok(afterSandbox.startsWith("**First, before anything else, even `npx"), afterSandbox.slice(0, 120));
+    const launcher = `${launcherParagraph(RELEASE_CLI_PACKAGE)}\n\n`;
+    assert.ok(afterSandbox.startsWith(launcher), afterSandbox.slice(0, 120));
+    assert.ok(afterSandbox.slice(launcher.length).startsWith("**First, before anything else, even `npx"), afterSandbox.slice(0, 120));
     // The install's answer says how to move the work to a new task without the user asking twice, and, from facts
     // the CLI reads itself, when to start none: a server that isn't starting, or a Codex that isn't the app.
     const flatSkill = skill.stdout.replace(/\s+/g, ' ');

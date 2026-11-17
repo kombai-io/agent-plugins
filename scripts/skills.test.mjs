@@ -49,9 +49,10 @@ const CODEX_POINTER = `first read \`${CODEX_ACCESS_FILE}\` beside this file`;
 // The copies that open every skill with a notice that they work only in their own agent (cli-view.mjs).
 const NOTICES = { 'plugins/codex': CHAT_NOTICES.codex, 'plugins/claude-code': CHAT_NOTICES['claude-code'] };
 
-// A skill in four parts: its frontmatter; its host guidance (between the frontmatter and the line that runs the CLI,
-// less the Codex or Claude Code notice, checked on its own); its network bullet, which is the host's too; and the body
-// every copy shares (from that line on, less the bullet).
+// A skill in four parts: its frontmatter; its host guidance (between the frontmatter and the paragraph that says how to
+// run the CLI, less the Codex or Claude Code notice, checked on its own); its network bullet, which is the host's too;
+// and the body every copy shares (from that paragraph on, less the bullet and the Codex workflow's own canvas_app
+// paragraphs, which sit between it and the line that runs the CLI).
 function parts(copy, skill) {
   const text = fs.readFileSync(path.join(root, copy, 'skills', skill, 'SKILL.md'), 'utf8');
   const frontmatter = text.match(/^---\n[\s\S]*?\n---\n/)?.[0];
@@ -69,7 +70,12 @@ function parts(copy, skill) {
     frontmatter,
     guidance: (notice ? own.replace(`\n${notice}\n`, '') : own).trim(),
     bullet,
-    body: text.slice(guidance.length).replace(NETWORK_BULLET, ''),
+    body: text
+      .slice(guidance.length)
+      .replace(NETWORK_BULLET, '')
+      .split('\n\n')
+      .filter((paragraph) => !paragraph.includes('canvas_app'))
+      .join('\n\n'),
   };
 }
 

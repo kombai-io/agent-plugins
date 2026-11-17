@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpVsCodeVersion, packVsCodePlugin, validateVsCodePlugin, VSCODE_UNSANDBOXED } from './vscode-plugin.mjs';
-import { ASSETS_SKILL, FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import { ASSETS_SKILL, FAQ_SKILL, LAUNCHER_HEADING, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
 import { pinnedCliPackage } from './cli-version.mjs';
 
 /** The released CLI the source pins. */
@@ -243,7 +243,7 @@ for (const skill of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
       const skillPath = path.join(root, PLUGIN, 'skills', skill, 'SKILL.md');
       const text = fs.readFileSync(skillPath, 'utf8');
       // Drop only the guidance paragraph: the network bullet's copy of the parameter does not count.
-      const cut = text.slice(0, text.indexOf('When VS Code runs')) + text.slice(text.indexOf('Run `npx'));
+      const cut = text.slice(0, text.indexOf('When VS Code runs')) + text.slice(text.indexOf(LAUNCHER_HEADING));
       assert.ok(cut.includes(VSCODE_UNSANDBOXED));
       fs.writeFileSync(skillPath, cut);
       assert.throws(() => validateVsCodePlugin(root), {

@@ -21,6 +21,32 @@ export const SKILL_CLI_TOPICS = Object.fromEntries(
 );
 /** The CLI's npm package. */
 export const CLI_NAME = '@kombai/cli';
+/**
+ * How an agent runs the copy of the CLI a released, self-managing CLI keeps on the user's computer: the launcher of its
+ * managed folder for the `latest` channel (vscode-assistant packages/cli/src/managed/place.js, `launcherRun`). It runs
+ * whichever version that copy is on, the one Kombai's backend recommends, with no npm start-up and no version in the
+ * line. `$HOME` reads the same in sh, zsh, Git Bash and PowerShell; where it doesn't (cmd), node can't find the file
+ * and the agent falls back to npx.
+ */
+export const LAUNCHER_RUN = 'node "$HOME/.kombai/cli/install/latest/launch.mjs"';
+/** How the paragraph that says to run the launcher first begins: the line skillGuidance stops at. */
+export const LAUNCHER_HEADING = "**How to run Kombai's CLI.**";
+/**
+ * The paragraph every skill of a release plugin has before its first Kombai command: run each command through the
+ * launcher, and fall back to the plugin's pinned npx line (`cliPackage`) only where the CLI isn't installed yet. The
+ * npx line still installs the CLI and is what a first run needs; after that the launcher starts in a tenth of a second
+ * where npx takes seconds, and the user never sees the pinned version beside a newer one the CLI reports. The launcher
+ * answers `CLI_NOT_INSTALLED` when its folder holds no usable copy. A team build drops it (stageTeamBuild): it follows
+ * npm's `beta` tag through npx, which is what moves a colleague's copy to each new beta.
+ */
+export function launcherParagraph(cliPackage) {
+  return (
+    `${LAUNCHER_HEADING} The Kombai commands below are written as \`npx -y ${cliPackage} <command>\`. Run each as ` +
+    `\`${LAUNCHER_RUN} <command>\` instead: that is Kombai's CLI as installed on this computer, kept on the version ` +
+    'Kombai recommends, and it starts without npm. Only if node can\'t find `launch.mjs`, or the command answers ' +
+    '`CLI_NOT_INSTALLED`, run it as written, with npx: that installs the CLI.'
+  );
+}
 /** A released CLI version: x.y.z, no tag, range or prerelease. What a plugin's `cli.package` pins. */
 export const RELEASE_VERSION_RE = /^\d+\.\d+\.\d+$/;
 /** Whether `cliPackage` pins a released CLI: `@kombai/cli@x.y.z`. */
@@ -148,6 +174,7 @@ export function checkCliContract(pluginRoot, contract, host, { team = false, roo
       `${host} ${name} skill must run ${cli.package} skill${topic}.`,
     );
   }
+  checkLauncherParagraph(pluginRoot, host, cli.package, { team });
 
   const mcpFile = path.join(pluginRoot, '.mcp.json');
   if (cli.view) {
@@ -169,12 +196,40 @@ export function checkCliContract(pluginRoot, contract, host, { team = false, roo
 }
 
 /**
- * A skill's host guidance: the text before the line that runs the CLI ("Run `npx"), which the agent reads before its
- * first command. Each host's sandbox guidance must be there, not only in a later bullet.
+ * Check every skill of a plugin against launcherParagraph: a release plugin's has it, word for word with its own
+ * `cliPackage`, before its first Kombai command; a team build's has none (stageTeamBuild takes it out).
+ */
+export function checkLauncherParagraph(pluginRoot, host, cliPackage, { team = false } = {}) {
+  const skillRoot = path.join(pluginRoot, 'skills');
+  const paragraph = launcherParagraph(cliPackage);
+  for (const entry of fs.readdirSync(skillRoot, { withFileTypes: true }).filter((e) => e.isDirectory())) {
+    const text = fs.readFileSync(path.join(skillRoot, entry.name, 'SKILL.md'), 'utf8');
+    if (team) {
+      assert(
+        !text.includes(LAUNCHER_HEADING) && !text.includes(LAUNCHER_RUN),
+        `${host} team build's ${entry.name} skill must run the beta through npx, not the installed CLI's launcher.`,
+      );
+      continue;
+    }
+    // Where the host guidance ends (skillGuidance): before any line that runs the CLI.
+    const at = text.indexOf(paragraph);
+    assert(
+      at > 0 && skillGuidance(text).length === at,
+      `${host} ${entry.name} skill must say to run the installed CLI's launcher before its first Kombai command ` +
+        '(launcherParagraph in scripts/cli-view.mjs).',
+    );
+  }
+}
+
+/**
+ * A skill's host guidance: the text before the line that runs the CLI ("Run `npx") or, before it, the paragraph that
+ * says how to run the CLI (LAUNCHER_HEADING), which the agent reads before its first command. Each host's sandbox
+ * guidance must be there, not only in a later bullet.
  */
 export function skillGuidance(text) {
-  const run = text.indexOf('Run `npx');
-  return run > 0 ? text.slice(0, run) : '';
+  const run = [text.indexOf(LAUNCHER_HEADING), text.indexOf('Run `npx')].filter((at) => at >= 0);
+  const first = run.length > 0 ? Math.min(...run) : -1;
+  return first > 0 ? text.slice(0, first) : '';
 }
 
 /**
@@ -384,8 +439,9 @@ export function zipPluginFolder(dir, archive) {
 
 /**
  * Copy `files` (paths under `root`) into a new directory as the team build, with TEAM_CLI_PACKAGE in place of the
- * pinned release CLI (`contract.cli.package`) in every text file. The caller removes the returned directory and
- * checks it with its validator's `team` option.
+ * pinned release CLI (`contract.cli.package`) in every text file, and without launcherParagraph: a colleague's copy
+ * moves to each new beta when npx starts that beta, and preprod's backend names no beta for it to move to otherwise.
+ * The caller removes the returned directory and checks it with its validator's `team` option.
  */
 export function stageTeamBuild(root, files, contract) {
   const release = contract.cli?.package;
@@ -400,10 +456,12 @@ export function stageTeamBuild(root, files, contract) {
       filter: (from) => path.basename(from) !== STRAY_FILE,
     });
   }
+  // The paragraph and the blank line after it, with either line ending: a Windows checkout may have CRLF.
+  const launcher = new RegExp(`${launcherParagraph(release).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\r?\\n\\r?\\n`, 'g');
   // Whole references only: `@kombai/cli@0.1.40` is not `@kombai/cli@0.1.4` followed by a 0.
   for (const file of filesUnder(stage)) {
     const text = textOf(file);
-    const next = text?.replace(PINNABLE_REFERENCE_RE, (match) => {
+    const next = text?.replace(launcher, '').replace(PINNABLE_REFERENCE_RE, (match) => {
       const reference = withoutFullStop(match);
       return reference === release ? TEAM_CLI_PACKAGE + match.slice(reference.length) : match;
     });
