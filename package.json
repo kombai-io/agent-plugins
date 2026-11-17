@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Host-specific Kombai agent plugin payloads",
+  "pi": {
+    "skills": ["./plugins/pi-code/skills"]
+  },
   "scripts": {
     "check:codex": "node scripts/codex-plugin.mjs validate",
     "pack:codex": "node scripts/codex-plugin.mjs pack",
@@ -14,7 +17,7 @@
     "test:claude-code": "node --test scripts/claude-code-plugin.test.mjs",
     "test": "node --test scripts/*.test.mjs",
     "set-cli-version": "node scripts/cli-version.mjs set",
-    "check": "node scripts/cli-version.mjs check && node scripts/codex-plugin.mjs validate && node scripts/claude-code-plugin.mjs validate && node scripts/cursor-plugin.mjs validate && node scripts/vscode-plugin.mjs validate && node scripts/antigravity-plugin.mjs validate && node scripts/gemini-cli-plugin.mjs validate && node scripts/grok-plugin.mjs validate && node scripts/devin-plugin.mjs validate && node scripts/opencode-plugin.mjs validate",
+    "check": "node scripts/cli-version.mjs check && node scripts/codex-plugin.mjs validate && node scripts/claude-code-plugin.mjs validate && node scripts/cursor-plugin.mjs validate && node scripts/vscode-plugin.mjs validate && node scripts/antigravity-plugin.mjs validate && node scripts/gemini-cli-plugin.mjs validate && node scripts/grok-plugin.mjs validate && node scripts/devin-plugin.mjs validate && node scripts/opencode-plugin.mjs validate && node scripts/pi-code-plugin.mjs validate",
     "check:cursor": "node scripts/cursor-plugin.mjs validate",
     "pack:cursor": "node scripts/cursor-plugin.mjs pack",
     "version:cursor": "node scripts/cursor-plugin.mjs bump",
@@ -40,7 +43,11 @@
     "check:opencode": "node scripts/opencode-plugin.mjs validate",
     "pack:opencode": "node scripts/opencode-plugin.mjs pack",
     "version:opencode": "node scripts/opencode-plugin.mjs bump",
-    "test:opencode": "node --test scripts/opencode-plugin.test.mjs"
+    "test:opencode": "node --test scripts/opencode-plugin.test.mjs",
+    "check:pi-code": "node scripts/pi-code-plugin.mjs validate",
+    "pack:pi-code": "node scripts/pi-code-plugin.mjs pack",
+    "version:pi-code": "node scripts/pi-code-plugin.mjs bump",
+    "test:pi-code": "node --test scripts/pi-code-plugin.test.mjs"
   },
   "packageManager": "pnpm@10.15.1",
   "engines": {

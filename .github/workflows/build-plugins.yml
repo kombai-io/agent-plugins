@@ -73,6 +73,16 @@ on:
         description: 'Optional OpenCode plugin version for this build (leave blank to use the committed version)'
         default: ''
         required: false
+      build-pi-code-plugin:
+        type: boolean
+        description: 'Build Pi plugin'
+        default: false
+        required: false
+      pi-code-plugin-version:
+        type: string
+        description: 'Optional Pi plugin version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
       team-build:
         type: boolean
         description: 'Team build: the plugins run the newest CLI beta (@kombai/cli@beta on npm, on preprod), for colleagues'
@@ -333,5 +343,36 @@ jobs:
         with:
           name: kombai-opencode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
           path: ${{ runner.temp }}/kombai-opencode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-pi-code-plugin:
+    if: ${{ inputs.build-pi-code-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+      - name: Apply Pi plugin version
+        if: ${{ inputs.pi-code-plugin-version != '' }}
+        env:
+          PI_CODE_PLUGIN_VERSION: ${{ inputs.pi-code-plugin-version }}
+        run: node scripts/pi-code-plugin.mjs bump "$PI_CODE_PLUGIN_VERSION"
+      - name: Test Pi plugin release checks
+        run: node --test scripts/pi-code-plugin.test.mjs
+      - name: Validate Pi plugin
+        id: plugin-version
+        run: node scripts/pi-code-plugin.mjs validate --github-output
+      - name: Package Pi plugin
+        run: node scripts/pi-code-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+      - name: Upload Pi plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-pi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-pi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
