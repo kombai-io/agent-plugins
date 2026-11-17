@@ -16,7 +16,9 @@ on business and enterprise accounts) in Antigravity's permission settings; for a
 Windows, where commands run as `npx.cmd`. Answering the approval prompt with "always allow" covers
 only the Kombai version this skill runs now.
 
-Run `npx -y @kombai/cli@0.2.0 skill assets` and follow what it prints; it is this skill's full text.
+Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.2.0`.
+
+Run `kombai skill assets` and follow what it prints; it is this skill's full text.
 
 **Sign-in compatibility:** If `sign_in_card` is available, use `reason: "assets"` only when its
 advertised `reason` values include `assets`; otherwise use `reason: "account"`. This overrides the

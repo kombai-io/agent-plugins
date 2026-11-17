@@ -39,7 +39,9 @@ returned directory, including any configured override; do not assume it is `~/.n
   for me** in the permissions menu under the message box (in Codex in a terminal, by allowing network access
   in its approval settings), then sending their message again.
 
-Run `npx -y @kombai/cli@0.2.0 skill faq` and answer from what it prints; it is this skill's full text.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`.
+
+Run `kombai skill faq` and answer from what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 

@@ -92,8 +92,8 @@ export function validateClaudeCodePlugin(root = workspaceRoot, { team = false } 
   assert(
     fs
       .readFileSync(path.join(pluginRoot, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8')
-      .includes(`npx -y ${contract.cli.package} mcp install claude-code`),
-    `Claude ${SETUP_SKILL} skill must run ${contract.cli.package} mcp install claude-code.`,
+      .includes('Run `kombai mcp install claude-code`'),
+    `Claude ${SETUP_SKILL} skill must run \`kombai mcp install claude-code\`.`,
   );
   return manifest.version;
 }

@@ -163,7 +163,11 @@ export function checkAntigravityPluginDir(pluginRoot, { team = false } = {}) {
   assert(manifest.version === contract.version, 'Antigravity manifest and package contract versions must match.');
   assert(contract.schemaVersion === 'kombai-antigravity-plugin/v2', 'Unexpected Antigravity package contract schema.');
   checkPluginFiles(pluginRoot, [...PLUGIN_FILES, logo], 'Antigravity plugin');
-  checkCliContract(pluginRoot, contract, 'Antigravity', { team });
+  // The skills run the CLI through npx alone. Where Antigravity can't ask (a headless `agy -p` run) it runs only the
+  // commands the user's Allow rules match, by how they start, and skips the rest; the rules the skills give are for
+  // `npx … @kombai/cli@…` and `kombai`. A command that starts with `node` (the installed CLI's launcher) or `if` (a
+  // check for it) would be skipped, and the skill would send the user back to the same rules.
+  checkCliContract(pluginRoot, contract, 'Antigravity', { team, npxOnly: true });
   checkSkills(pluginRoot, 'Antigravity');
   for (const name of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
     const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');

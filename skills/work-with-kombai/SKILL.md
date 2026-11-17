@@ -7,7 +7,9 @@ When running in Codex's sandbox, first read `codex-access.md` beside this file a
 **before the first command below**: it says how to get network access without trying the restricted
 command first. Elsewhere, skip it.
 
-Run `npx -y @kombai/cli@0.2.0 skill` and follow what it prints; it is this skill's full text.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`.
+
+Run `kombai skill` and follow what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 

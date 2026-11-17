@@ -179,14 +179,14 @@ export function installClients(help) {
   return usage ? usage[1].replace(/[[\]<>()]/g, '').split('|') : [];
 }
 
-/** The clients the plugins' skills run `mcp install` for (`npx -y <cli> mcp install codex`, even split across lines),
- *  which the pinned CLI must take. */
+/** The clients the plugins' skills run `mcp install` for (`kombai mcp install codex`, even split across lines), which
+ *  the pinned CLI must take. */
 export function requiredInstallClients(root = workspaceRoot) {
   const clients = new Set();
   for (const host of Object.keys(PLUGINS)) {
     for (const file of filesUnder(path.join(root, 'plugins', host, 'skills'))) {
       const text = textOf(file) ?? '';
-      for (const [, client] of text.matchAll(/npx\s+-y\s+@kombai\/cli@\S+\s+mcp\s+install\s+([a-z][a-z-]*)/g)) clients.add(client);
+      for (const [, client] of text.matchAll(/\bkombai\s+mcp\s+install\s+([a-z][a-z-]*)/g)) clients.add(client);
     }
   }
   return [...clients].sort();
