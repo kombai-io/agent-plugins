@@ -83,6 +83,11 @@ export const ANTIGRAVITY_SANDBOX = 'When Antigravity runs terminal commands in i
 // words, so a rule naming the pinned CLI version would stop matching when set-cli-version moves it; each word of a
 // `regex:` rule is matched as a whole regular expression, so this takes any CLI version, and `npx.cmd` on Windows.
 export const ANTIGRAVITY_ALLOW_RULE = 'command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)';
+// The Allow rule for every Kombai command after the first. A self-managing CLI (0.2.0 and later) keeps its own copy
+// under ~/.kombai/cli/install/<channel>/ and its skill text runs every later command through that folder's launcher,
+// `node "<home>/.kombai/cli/install/<channel>/launch.mjs" <command>` (vscode-assistant packages/cli/src/managed/place.js,
+// `launcherRun`): forward slashes on Windows too, the path in double quotes, which `.*` and `.?` absorb.
+export const ANTIGRAVITY_LAUNCHER_RULE = 'command(regex:node .*/\\.kombai/cli/install/[a-z]+/launch\\.mjs.? .*)';
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -178,6 +183,10 @@ export function checkAntigravityPluginDir(pluginRoot, { team = false } = {}) {
     assert(
       skillGuidance(skill).replace(/\s+/g, ' ').includes(ANTIGRAVITY_ALLOW_RULE),
       `Antigravity ${name} skill must give the Allow rule ${ANTIGRAVITY_ALLOW_RULE}, which matches every CLI version.`,
+    );
+    assert(
+      skillGuidance(skill).replace(/\s+/g, ' ').includes(ANTIGRAVITY_LAUNCHER_RULE),
+      `Antigravity ${name} skill must give the Allow rule ${ANTIGRAVITY_LAUNCHER_RULE}, which matches the CLI's own copy.`,
     );
   }
   return manifest.version;
