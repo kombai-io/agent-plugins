@@ -9,12 +9,14 @@ sandbox has no network, and Kombai writes `~/.kombai`. `npx` may contact the pac
 Kombai starts. Do not try the sandboxed command first. If the request is refused, or this session
 cannot ask (a headless `agy -p` run), do not retry inside the sandbox: explain the restriction and
 ask the user to allow Kombai's commands with the Allow rules
-`command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)` and `command(kombai)` (`unsandboxed(...)`
-on business and enterprise accounts) in Antigravity's permission settings; for agy, with
-`/permissions` or under `permissions.allow` in `~/.gemini/antigravity-cli/settings.json`. The
-`regex:` rule matches every Kombai CLI version, so it keeps working when Kombai updates, and covers
-Windows, where commands run as `npx.cmd`. Answering the approval prompt with "always allow" covers
-only the Kombai version this skill runs now.
+`command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)` and
+`command(regex:node .*/\.kombai/cli/install/[a-z]+/launch\.mjs.? .*)` (`unsandboxed(...)` on
+business and enterprise accounts) in Antigravity's permission settings; for agy, with
+`/permissions` or under `permissions.allow` in `~/.gemini/antigravity-cli/settings.json`. The first
+rule matches every Kombai CLI version started with `npx`, so it keeps working when Kombai updates,
+and covers Windows, where commands run as `npx.cmd`. The second matches the later commands, which
+run Kombai's own copy under `~/.kombai/cli/install` with `node`. Answering the approval prompt with
+"always allow" covers only the Kombai version this skill runs now.
 
 Run `npx -y @kombai/cli@0.2.0 skill` and follow what it prints; it is this skill's full text.
 
