@@ -42,3 +42,9 @@ jobs:
         run: node scripts/opencode-plugin.mjs validate
       - name: Validate Pi plugin
         run: node scripts/pi-code-plugin.mjs validate
+      - name: Validate Qwen Code extension
+        run: node scripts/qwen-code-plugin.mjs validate
+      - name: Validate Hermes Agent plugin
+        run: node scripts/hermes-agent-plugin.mjs validate
+      - name: Validate Muse Code plugin
+        run: node scripts/muse-plugin.mjs validate

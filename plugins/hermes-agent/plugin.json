@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "kombai",
+  "version": "0.1.0",
+  "description": "Design interfaces and generate assets with Kombai in Hermes Agent",
+  "author": {
+    "name": "Kombai",
+    "url": "https://kombai.com/"
+  },
+  "homepage": "https://kombai.com/",
+  "repository": "https://github.com/kombai-io/agent-plugins",
+  "license": "MIT"
+}

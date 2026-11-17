@@ -83,6 +83,36 @@ on:
         description: 'Optional Pi plugin version for this build (leave blank to use the committed version)'
         default: ''
         required: false
+      build-qwen-code-plugin:
+        type: boolean
+        description: 'Build Qwen Code extension'
+        default: false
+        required: false
+      qwen-code-plugin-version:
+        type: string
+        description: 'Optional Qwen Code extension version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
+      build-hermes-agent-plugin:
+        type: boolean
+        description: 'Build Hermes Agent plugin'
+        default: false
+        required: false
+      hermes-agent-plugin-version:
+        type: string
+        description: 'Optional Hermes Agent plugin version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
+      build-muse-plugin:
+        type: boolean
+        description: 'Build Muse Code plugin'
+        default: false
+        required: false
+      muse-plugin-version:
+        type: string
+        description: 'Optional Muse Code plugin version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
       team-build:
         type: boolean
         description: 'Team build: the plugins run the newest CLI beta (@kombai/cli@beta on npm, on preprod), for colleagues'
@@ -374,5 +404,98 @@ jobs:
         with:
           name: kombai-pi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
           path: ${{ runner.temp }}/kombai-pi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-qwen-code-plugin:
+    if: ${{ inputs.build-qwen-code-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+      - name: Apply Qwen Code extension version
+        if: ${{ inputs.qwen-code-plugin-version != '' }}
+        env:
+          QWEN_CODE_PLUGIN_VERSION: ${{ inputs.qwen-code-plugin-version }}
+        run: node scripts/qwen-code-plugin.mjs bump "$QWEN_CODE_PLUGIN_VERSION"
+      - name: Test Qwen Code extension release checks
+        run: node --test scripts/new-hosts.test.mjs
+      - name: Validate Qwen Code extension
+        id: plugin-version
+        run: node scripts/qwen-code-plugin.mjs validate --github-output
+      - name: Package Qwen Code extension
+        run: node scripts/qwen-code-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+      - name: Upload Qwen Code extension
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-qwen-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-qwen-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-hermes-agent-plugin:
+    if: ${{ inputs.build-hermes-agent-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+      - name: Apply Hermes Agent plugin version
+        if: ${{ inputs.hermes-agent-plugin-version != '' }}
+        env:
+          HERMES_AGENT_PLUGIN_VERSION: ${{ inputs.hermes-agent-plugin-version }}
+        run: node scripts/hermes-agent-plugin.mjs bump "$HERMES_AGENT_PLUGIN_VERSION"
+      - name: Test Hermes Agent plugin release checks
+        run: node --test scripts/new-hosts.test.mjs
+      - name: Validate Hermes Agent plugin
+        id: plugin-version
+        run: node scripts/hermes-agent-plugin.mjs validate --github-output
+      - name: Package Hermes Agent plugin
+        run: node scripts/hermes-agent-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+      - name: Upload Hermes Agent plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-hermes-agent-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-hermes-agent-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-muse-plugin:
+    if: ${{ inputs.build-muse-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+      - name: Apply Muse Code plugin version
+        if: ${{ inputs.muse-plugin-version != '' }}
+        env:
+          MUSE_PLUGIN_VERSION: ${{ inputs.muse-plugin-version }}
+        run: node scripts/muse-plugin.mjs bump "$MUSE_PLUGIN_VERSION"
+      - name: Test Muse Code plugin release checks
+        run: node --test scripts/new-hosts.test.mjs
+      - name: Validate Muse Code plugin
+        id: plugin-version
+        run: node scripts/muse-plugin.mjs validate --github-output
+      - name: Package Muse Code plugin
+        run: node scripts/muse-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+      - name: Upload Muse Code plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-muse-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-muse-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0

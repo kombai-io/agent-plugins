@@ -34,6 +34,9 @@ const COPIES = {
   'plugins/devin': null,
   'plugins/opencode': null,
   'plugins/pi-code': null,
+  'plugins/qwen-code': null,
+  'plugins/hermes-agent': null,
+  'plugins/muse': null,
 };
 const MARKERS = [...new Set(Object.values(COPIES).filter(Boolean))];
 // The one copy with more of its own: the Codex app shows the canvas beside the chat, through canvas_app.
