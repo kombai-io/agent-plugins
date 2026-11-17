@@ -75,7 +75,7 @@ function checkTeamArchive(archive, pluginDir) {
       ['generate-assets-with-kombai', ' assets'],
     ]) {
       const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
-      assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { team: true })), skill);
+      assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true })), skill);
       assert.ok(text.includes(`Run \`kombai skill${topic}\``), skill);
       assert.ok(!text.includes('GitHub Packages'), skill);
       assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
@@ -483,7 +483,7 @@ test("a team pack's onboarding skill installs with the team CLI", () => {
     const archive = packCodexPlugin(path.join(root, 'out'), root, { team: true });
     const setup = spawnSync('unzip', ['-p', archive, 'plugins/codex/skills/get-started-with-kombai/SKILL.md'], { encoding: 'utf8' });
     assert.ok(setup.stdout.includes('Run `kombai mcp install codex`'));
-    assert.ok(setup.stdout.includes(cliRunLine(TEAM_CLI_PACKAGE, { team: true })));
+    assert.ok(setup.stdout.includes(cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true })));
     assert.ok(!setup.stdout.includes(RELEASE_CLI_PACKAGE));
   });
 });

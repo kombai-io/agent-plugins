@@ -14,6 +14,7 @@ import {
   UNQUOTED_YAML_BREAKER_RE,
   WORKFLOW_SKILL,
 } from './cli-view.mjs';
+import { pinnedCliPackage } from './cli-version.mjs';
 import { GEMINI_SANDBOX } from './gemini-cli-plugin.mjs';
 import { VSCODE_UNSANDBOXED } from './vscode-plugin.mjs';
 
@@ -51,10 +52,16 @@ const CODEX_POINTER = `first read \`${CODEX_ACCESS_FILE}\` beside this file`;
 // The copies that open every skill with a notice that they work only in their own agent (cli-view.mjs).
 const NOTICES = { 'plugins/codex': CHAT_NOTICES.codex, 'plugins/claude-code': CHAT_NOTICES['claude-code'] };
 
-// A skill in four parts: its frontmatter; its host guidance (between the frontmatter and the line that says how to run
-// the CLI, less the Codex or Claude Code notice, checked on its own); its network bullet, which is the host's too; and
-// the body every copy shares (from that line on, less the bullet and the Codex workflow's own canvas_app paragraphs,
-// which sit between it and the command that prints the skill's text).
+// The copies whose skills run the CLI through npx alone (cliRunLine's npxOnly): the Allow rules Antigravity's skills
+// give match the npx command, and where Antigravity can't ask it skips a command that starts any other way.
+const NPX_ONLY = new Set(['plugins/antigravity']);
+/** The line `copy`'s skills say how to run the CLI with; every plugin pins the same CLI (cli-version.mjs). */
+const runLineOf = (copy) => cliRunLine(pinnedCliPackage(root), { npxOnly: NPX_ONLY.has(copy) });
+
+// A skill in five parts: its frontmatter; its host guidance (between the frontmatter and the line that says how to run
+// the CLI, less the Codex or Claude Code notice, checked on its own); that line, which is the host's too (runLineOf);
+// its network bullet, likewise; and the body every copy shares (what follows the line, less the bullet and the Codex
+// workflow's own canvas_app paragraphs, which sit between the line and the command that prints the skill's text).
 function parts(copy, skill) {
   const text = fs.readFileSync(path.join(root, copy, 'skills', skill, 'SKILL.md'), 'utf8');
   const frontmatter = text.match(/^---\n[\s\S]*?\n---\n/)?.[0];
@@ -65,15 +72,17 @@ function parts(copy, skill) {
   const own = guidance.slice(frontmatter.length);
   const accessFile = path.join(root, copy, 'skills', skill, CODEX_ACCESS_FILE);
   const access = fs.existsSync(accessFile) ? fs.readFileSync(accessFile, 'utf8') : null;
+  const runLine = text.slice(guidance.length, text.indexOf('\n', guidance.length));
   return {
     text: access ? `${text}\n${access}` : text,
     // The Codex guidance itself: inline for a Codex plugin's copy, in codex-access.md for the standalone one.
     codexGuidance: access ? access.split('\n\n').slice(2).join('\n\n').trim() : null,
     frontmatter,
     guidance: (notice ? own.replace(`\n${notice}\n`, '') : own).trim(),
+    runLine,
     bullet,
     body: text
-      .slice(guidance.length)
+      .slice(guidance.length + runLine.length)
       .replace(NETWORK_BULLET, '')
       .split('\n\n')
       .filter((paragraph) => !paragraph.includes('canvas_app'))
@@ -92,6 +101,7 @@ for (const skill of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
     for (const copy of Object.keys(COPIES)) {
       const own = parts(copy, skill);
       assert.equal(own.body, standalone.body, `${copy}/${skill}: body`);
+      assert.equal(own.runLine, runLineOf(copy), `${copy}/${skill}: the line that says how to run the CLI`);
       if (`${copy}/${skill}` === CODEX_WORKFLOW) {
         assert.equal(own.frontmatter.replace(DESCRIPTION, ''), standalone.frontmatter.replace(DESCRIPTION, ''), copy);
       } else {
@@ -198,10 +208,9 @@ test("every skill's description is an unquoted YAML value that parses: no \": \"
 
 test("every plugin's README quotes the line its skills say how to run the CLI with", () => {
   for (const copy of Object.keys(COPIES).filter((name) => name !== '.')) {
-    const cliPackage = JSON.parse(fs.readFileSync(path.join(root, copy, 'kombai.package.json'), 'utf8')).cli.package;
     const readme = fs.readFileSync(path.join(root, copy, 'README.md'), 'utf8');
     // Word for word: a team build's README then gets the team's line along with its skills (stageTeamBuild).
-    assert.ok(readme.includes(`first says how to run them: "${cliRunLine(cliPackage)}"`), `${copy}/README.md`);
+    assert.ok(readme.includes(`first says how to run them: "${runLineOf(copy)}"`), `${copy}/README.md`);
   }
 });
 

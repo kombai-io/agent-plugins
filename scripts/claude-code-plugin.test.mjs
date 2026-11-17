@@ -53,7 +53,7 @@ function checkTeamArchive(archive, pluginDir) {
       ['generate-assets-with-kombai', ' assets'],
     ]) {
       const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
-      assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { team: true })), skill);
+      assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true })), skill);
       assert.ok(text.includes(`Run \`kombai skill${topic}\``), skill);
       assert.ok(!text.includes('GitHub Packages'), skill);
       assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
@@ -310,7 +310,7 @@ test('a Claude Code team pack runs the CLI team build, and ships no MCP config e
       );
       // The README's quote of the line follows the skills: the team's line, with no launcher.
       const readme = fs.readFileSync(path.join(plugin, 'README.md'), 'utf8');
-      assert.ok(readme.includes(`first says how to run them: "${cliRunLine(TEAM_CLI_PACKAGE, { team: true })}"`));
+      assert.ok(readme.includes(`first says how to run them: "${cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true })}"`));
       assert.ok(!readme.includes(LAUNCHER_RUN));
       assert.equal(validateClaudeCodePlugin(extracted, { team: true }), version);
     } finally {

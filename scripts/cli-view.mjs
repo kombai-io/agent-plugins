@@ -29,7 +29,7 @@ export const CLI_NAME = '@kombai/cli';
  * and the agent falls back to npx.
  */
 export const LAUNCHER_RUN = 'node "$HOME/.kombai/cli/install/latest/launch.mjs"';
-/** How the line that says how to run the CLI begins, in a release plugin and in a team build: where skillGuidance stops. */
+/** How the line that says how to run the CLI begins, in every build: where skillGuidance stops. */
 export const RUN_LINE_START = "Run Kombai's CLI (`kombai` below)";
 /**
  * The one line every skill has before its first Kombai command. A skill writes each command as `kombai <command>`, as
@@ -37,11 +37,15 @@ export const RUN_LINE_START = "Run Kombai's CLI (`kombai` below)";
  * plugin's pinned npx line (`cliPackage`), which installs it. So a skill names npx once, as the fallback: after a first
  * run the launcher starts in a tenth of a second where npx takes seconds, and the user never sees the pinned version
  * beside a newer one the CLI reports. Where the launcher's folder holds no usable copy, its own `CLI_NOT_INSTALLED`
- * error names the npx line to run. A team build's line (stageTeamBuild) names npx alone: it follows npm's `beta` tag,
- * which is what moves a colleague's copy to each new beta.
+ * error names the npx line to run.
+ *
+ * Two builds get the line that names npx alone (`npxOnly`). A team build (stageTeamBuild) follows npm's `beta` tag,
+ * which is what moves a colleague's copy to each new beta. And a host whose skills tell the user which commands to
+ * allow ahead of time, by how they start (Antigravity), keeps the command those rules allow: one that starts with
+ * `node` or `if` would be refused where the host can't ask.
  */
-export function cliRunLine(cliPackage, { team = false } = {}) {
-  return team
+export function cliRunLine(cliPackage, { npxOnly = false } = {}) {
+  return npxOnly
     ? `${RUN_LINE_START} as \`npx -y ${cliPackage}\`.`
     : `${RUN_LINE_START} from \`${LAUNCHER_RUN}\` if that file exists; if not, fall back to \`npx -y ${cliPackage}\`.`;
 }
@@ -136,10 +140,10 @@ export function assertNoStrayCli(stray, base, cliPackage, rule) {
  * and its `.mcp.json` registers the view exactly when `cli.view` is on. No other MCP or app configuration ships.
  * `shipped` lists the other files or folders (relative to `root`) a pack zips with the plugin, its marketplace among
  * them, held to the same CLI: filesBesidePlugin of the pack's own list, so nothing it zips goes unchecked.
- * `team` checks a team build instead (stageTeamBuild), which runs TEAM_CLI_PACKAGE. Returns whether the plugin
- * registers the view.
+ * `team` checks a team build instead (stageTeamBuild), which runs TEAM_CLI_PACKAGE. `npxOnly` is for a host whose
+ * skills run the CLI through npx alone (cliRunLine). Returns whether the plugin registers the view.
  */
-export function checkCliContract(pluginRoot, contract, host, { team = false, root, shipped = [] } = {}) {
+export function checkCliContract(pluginRoot, contract, host, { team = false, root, shipped = [], npxOnly = false } = {}) {
   const cli = contract.cli;
   if (team) {
     assert(cli?.package === TEAM_CLI_PACKAGE, `${host} team build must run ${TEAM_CLI_PACKAGE}, not ${cli?.package}.`);
@@ -172,7 +176,7 @@ export function checkCliContract(pluginRoot, contract, host, { team = false, roo
       `${host} ${name} skill must run \`kombai skill${topic}\`.`,
     );
   }
-  checkRunLine(pluginRoot, host, cli.package, { team });
+  checkRunLine(pluginRoot, host, cli.package, { npxOnly: npxOnly || team });
 
   const mcpFile = path.join(pluginRoot, '.mcp.json');
   if (cli.view) {
@@ -196,15 +200,21 @@ export function checkCliContract(pluginRoot, contract, host, { team = false, roo
 /**
  * Check every skill of a plugin against cliRunLine: it has its build's line, word for word with its own `cliPackage`,
  * as a paragraph of its own where the host guidance ends and before any `kombai <command>`, and it writes no command
- * out with npx, since the line is what says how `kombai` runs. A team build names no launcher.
+ * out with npx, since the line is what says how `kombai` runs. With `npxOnly` (a team build, or a host that runs the
+ * CLI through npx alone) the line is cliRunLine's npx-only one, and the skill names no launcher.
  */
-export function checkRunLine(pluginRoot, host, cliPackage, { team = false } = {}) {
+export function checkRunLine(pluginRoot, host, cliPackage, { npxOnly = false } = {}) {
   const skillRoot = path.join(pluginRoot, 'skills');
-  const line = cliRunLine(cliPackage, { team });
+  const line = cliRunLine(cliPackage, { npxOnly });
   // A command written out with npx: the package, then a word (`npx -y @kombai/cli@0.2.0 whoami`).
   const npxCommand = new RegExp(`npx(?:\\.cmd)? -y ${cliPackage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+[a-z]`);
   for (const entry of fs.readdirSync(skillRoot, { withFileTypes: true }).filter((e) => e.isDirectory())) {
     const text = fs.readFileSync(path.join(skillRoot, entry.name, 'SKILL.md'), 'utf8');
+    assert(
+      !npxOnly || !text.includes(LAUNCHER_RUN),
+      `${host} ${entry.name} skill must run Kombai's CLI through npx alone, not the installed CLI's launcher ` +
+        '(cliRunLine with npxOnly in scripts/cli-view.mjs).',
+    );
     const at = text.indexOf(line);
     assert(
       at > 0 &&
@@ -219,10 +229,6 @@ export function checkRunLine(pluginRoot, host, cliPackage, { team = false } = {}
       !npxCommand.test(text),
       `${host} ${entry.name} skill must write each command as \`kombai <command>\`, not with npx: only its run ` +
         'line names npx.',
-    );
-    assert(
-      !team || !text.includes(LAUNCHER_RUN),
-      `${host} team build's ${entry.name} skill must run the beta through npx, not the installed CLI's launcher.`,
     );
   }
 }
@@ -462,7 +468,8 @@ export function stageTeamBuild(root, files, contract) {
     });
   }
   const releaseLine = cliRunLine(release);
-  const teamLine = cliRunLine(TEAM_CLI_PACKAGE, { team: true });
+  // A plugin whose release line is the npx-only one already (Antigravity) gets the same line from the pin's rewrite.
+  const teamLine = cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true });
   // Whole references only: `@kombai/cli@0.1.40` is not `@kombai/cli@0.1.4` followed by a 0.
   for (const file of filesUnder(stage)) {
     const text = textOf(file);

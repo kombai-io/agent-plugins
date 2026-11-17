@@ -405,6 +405,17 @@ skill falls back to `npx`. Since the copy, not the pin, then decides what runs, 
 longer moves a machine forward; the backend's recommended version does. Each plugin's README quotes
 the line, so it says what the plugin runs (`scripts/skills.test.mjs` checks the quote).
 
+The Antigravity plugin is the exception. Its skills have the line that names `npx` alone:
+
+> Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.2.0`.
+
+Where Antigravity can't ask the user (a headless `agy -p` run) it skips any command the user's Allow
+rules don't match, and a rule matches by how a command starts. The rules its skills give are for the
+`npx` command and `kombai`, so a command that starts with `node` or `if` would be skipped there, and
+the skill would send the user back to the same rules. Its validator refuses the launcher line
+(`npxOnly` in `scripts/antigravity-plugin.mjs`), and its test checks that every command the skills
+run starts the way the rule allows.
+
 Disclose it where a directory asks what the plugin downloads or runs:
 the CLI's `skill faq` (Setup and problems, Updates) says the same to users. Two rules for the pin
 once it names a self-managing release: never move it back to one from before (it could not update

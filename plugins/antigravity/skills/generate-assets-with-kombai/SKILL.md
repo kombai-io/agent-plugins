@@ -16,7 +16,7 @@ on business and enterprise accounts) in Antigravity's permission settings; for a
 Windows, where commands run as `npx.cmd`. Answering the approval prompt with "always allow" covers
 only the Kombai version this skill runs now.
 
-Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`.
+Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.2.0`.
 
 Run `kombai skill assets` and follow what it prints; it is this skill's full text.
 
