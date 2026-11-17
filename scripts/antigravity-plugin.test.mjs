@@ -14,7 +14,15 @@ import {
   packAntigravityPlugin,
   validateAntigravityPlugin,
 } from './antigravity-plugin.mjs';
-import { ASSETS_SKILL, cliViewMcpConfig, FAQ_SKILL, TEAM_CLI_PACKAGE, WORKFLOW_SKILL } from './cli-view.mjs';
+import {
+  ASSETS_SKILL,
+  cliRunLine,
+  cliViewMcpConfig,
+  FAQ_SKILL,
+  LAUNCHER_RUN,
+  TEAM_CLI_PACKAGE,
+  WORKFLOW_SKILL,
+} from './cli-view.mjs';
 import { pinnedCliPackage } from './cli-version.mjs';
 
 /** The released CLI the source pins. */
@@ -252,7 +260,8 @@ test('an Antigravity team pack runs the CLI team build', () => {
         [ASSETS_SKILL, ' assets'],
       ]) {
         const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
-        assert.ok(text.includes(`npx -y ${TEAM_CLI_PACKAGE} skill${topic}\``), skill);
+        assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true })), skill);
+        assert.ok(text.includes(`Run \`kombai skill${topic}\``), skill);
         assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
       }
       assert.equal(checkAntigravityPluginDir(plugin, { team: true }), version);
@@ -317,5 +326,43 @@ test("the Antigravity skills give an Allow rule for the commands that run the CL
     const text = fs.readFileSync(skillPath, 'utf8');
     fs.writeFileSync(skillPath, text.replace(/`command\(regex:node [^`]*`/, '`command(kombai)`'));
     assert.throws(() => validateAntigravityPlugin(root), /work-with-kombai skill must give the Allow rule .*own copy/);
+  });
+});
+
+test('every command an Antigravity skill runs starts the way its Allow rule allows, in a release and a team build', () => {
+  // Where Antigravity can't ask (a headless `agy -p` run) it skips a command no Allow rule matches, and a rule matches
+  // by how the command starts. The rule the skills give is for the npx command, so the skills run the CLI through npx
+  // alone: the installed CLI's launcher (`node …`), or a check for it first (`if …`), would be skipped there, and the
+  // skill would send the user back to the same rule.
+  const words = ANTIGRAVITY_ALLOW_RULE.slice('command(regex:'.length, -1).split(' ');
+  const allows = (command) => {
+    const parts = command.split(' ');
+    return parts.length >= words.length && words.every((word, i) => new RegExp(`^(?:${word})$`).test(parts[i]));
+  };
+  assert.ok(!allows(`${LAUNCHER_RUN} skill faq`));
+  assert.ok(!allows(`if [ -f "$HOME/.kombai/cli/install/latest/launch.mjs" ]; then ${LAUNCHER_RUN} skill faq; fi`));
+  const check = (plugin, cliPackage) => {
+    for (const skill of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
+      const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
+      assert.ok(text.includes(`\n\n${cliRunLine(cliPackage, { npxOnly: true })}\n\n`), skill);
+      assert.ok(!text.includes(LAUNCHER_RUN), skill);
+      const commands = [...text.matchAll(/`kombai ([a-z][^`]*)`/g)].map(([, command]) => command);
+      assert.ok(commands.length > 0, skill);
+      for (const command of commands) assert.ok(allows(`npx -y ${cliPackage} ${command}`), `${skill}: ${command}`);
+    }
+  };
+  fixture((root) => {
+    check(path.join(root, PLUGIN), RELEASE_CLI_PACKAGE);
+    // The line the other hosts' skills have, with the launcher first, is refused here.
+    const skillPath = path.join(root, PLUGIN, 'skills', FAQ_SKILL, 'SKILL.md');
+    const text = fs.readFileSync(skillPath, 'utf8');
+    fs.writeFileSync(
+      skillPath,
+      text.replace(cliRunLine(RELEASE_CLI_PACKAGE, { npxOnly: true }), cliRunLine(RELEASE_CLI_PACKAGE)),
+    );
+    assert.throws(() => validateAntigravityPlugin(root), /about-kombai skill must run Kombai's CLI through npx alone/);
+    fs.writeFileSync(skillPath, text);
+    const archive = packAntigravityPlugin(path.join(root, 'out'), root, { team: true });
+    unpack(archive, (plugin) => check(plugin, TEAM_CLI_PACKAGE));
   });
 });

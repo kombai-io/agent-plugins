@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Host-specific Kombai agent plugin payloads",
+  "pi": {
+    "skills": ["./plugins/pi-code/skills"]
+  },
   "scripts": {
     "check:codex": "node scripts/codex-plugin.mjs validate",
     "pack:codex": "node scripts/codex-plugin.mjs pack",
@@ -14,7 +17,7 @@
     "test:claude-code": "node --test scripts/claude-code-plugin.test.mjs",
     "test": "node --test scripts/*.test.mjs",
     "set-cli-version": "node scripts/cli-version.mjs set",
-    "check": "node scripts/cli-version.mjs check && node scripts/codex-plugin.mjs validate && node scripts/claude-code-plugin.mjs validate && node scripts/cursor-plugin.mjs validate && node scripts/vscode-plugin.mjs validate && node scripts/antigravity-plugin.mjs validate && node scripts/gemini-cli-plugin.mjs validate && node scripts/grok-plugin.mjs validate && node scripts/devin-plugin.mjs validate && node scripts/opencode-plugin.mjs validate",
+    "check": "node scripts/cli-version.mjs check && node scripts/codex-plugin.mjs validate && node scripts/claude-code-plugin.mjs validate && node scripts/cursor-plugin.mjs validate && node scripts/vscode-plugin.mjs validate && node scripts/antigravity-plugin.mjs validate && node scripts/gemini-cli-plugin.mjs validate && node scripts/grok-plugin.mjs validate && node scripts/devin-plugin.mjs validate && node scripts/opencode-plugin.mjs validate && node scripts/pi-code-plugin.mjs validate && node scripts/qwen-code-plugin.mjs validate && node scripts/hermes-agent-plugin.mjs validate && node scripts/muse-plugin.mjs validate && node scripts/kimi-code-plugin.mjs validate",
     "check:cursor": "node scripts/cursor-plugin.mjs validate",
     "pack:cursor": "node scripts/cursor-plugin.mjs pack",
     "version:cursor": "node scripts/cursor-plugin.mjs bump",
@@ -40,7 +43,24 @@
     "check:opencode": "node scripts/opencode-plugin.mjs validate",
     "pack:opencode": "node scripts/opencode-plugin.mjs pack",
     "version:opencode": "node scripts/opencode-plugin.mjs bump",
-    "test:opencode": "node --test scripts/opencode-plugin.test.mjs"
+    "test:opencode": "node --test scripts/opencode-plugin.test.mjs",
+    "check:pi-code": "node scripts/pi-code-plugin.mjs validate",
+    "check:kimi-code": "node scripts/kimi-code-plugin.mjs validate",
+    "pack:kimi-code": "node scripts/kimi-code-plugin.mjs pack",
+    "version:kimi-code": "node scripts/kimi-code-plugin.mjs bump",
+    "test:kimi-code": "node --test scripts/kimi-code-plugin.test.mjs",
+    "pack:pi-code": "node scripts/pi-code-plugin.mjs pack",
+    "version:pi-code": "node scripts/pi-code-plugin.mjs bump",
+    "test:pi-code": "node --test scripts/pi-code-plugin.test.mjs",
+    "check:qwen-code": "node scripts/qwen-code-plugin.mjs validate",
+    "pack:qwen-code": "node scripts/qwen-code-plugin.mjs pack",
+    "version:qwen-code": "node scripts/qwen-code-plugin.mjs bump",
+    "check:hermes-agent": "node scripts/hermes-agent-plugin.mjs validate",
+    "pack:hermes-agent": "node scripts/hermes-agent-plugin.mjs pack",
+    "version:hermes-agent": "node scripts/hermes-agent-plugin.mjs bump",
+    "check:muse": "node scripts/muse-plugin.mjs validate",
+    "pack:muse": "node scripts/muse-plugin.mjs pack",
+    "version:muse": "node scripts/muse-plugin.mjs bump"
   },
   "packageManager": "pnpm@10.15.1",
   "engines": {

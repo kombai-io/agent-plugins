@@ -1,6 +1,6 @@
 ---
 name: work-with-kombai
-description: Design UI with Kombai. Designs go on a Kombai canvas; design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding.
+description: Design UI with Kombai's taste agent. Designs go on a Kombai canvas, or in another design tool or the repo's code when the user asks for that; design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding, and not for a design in another tool unless the user names Kombai.
 ---
 
 When Antigravity runs terminal commands in its sandbox, request to run the first command below
@@ -18,7 +18,9 @@ and covers Windows, where commands run as `npx.cmd`. The second matches the late
 run Kombai's own copy under `~/.kombai/cli/install` with `node`. Answering the approval prompt with
 "always allow" covers only the Kombai version this skill runs now.
 
-Run `npx -y @kombai/cli@0.2.0 skill` and follow what it prints; it is this skill's full text.
+Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.2.0`.
+
+Run `kombai skill` and follow what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 

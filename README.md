@@ -3,14 +3,19 @@
 This standalone repository contains the [Codex](plugins/codex/README.md),
 [Claude Code](plugins/claude-code/README.md), [Cursor](plugins/cursor/README.md),
 [VS Code](plugins/vscode/README.md), [Antigravity](plugins/antigravity/README.md),
-[OpenCode](plugins/opencode/README.md), [Grok Build](plugins/grok/README.md) and
-[Devin](plugins/devin/README.md) plugins, the
+[OpenCode](plugins/opencode/README.md), [Grok Build](plugins/grok/README.md),
+[Devin](plugins/devin/README.md), [Pi](plugins/pi-code/README.md),
+[Qwen Code](plugins/qwen-code/README.md), [Hermes Agent](plugins/hermes-agent/README.md),
+[Muse Code](plugins/muse/README.md), and [Kimi Code](plugins/kimi-code/README.md) plugins, the
 [Gemini CLI](plugins/gemini-cli/README.md) extension, their marketplaces where the host has one,
 and release tooling.
 
 Each plugin's `work-with-kombai` skill runs the Kombai CLI
 (`npx -y @kombai/cli@0.2.0 skill`), which prints the full instructions for designing on a hosted
-Kombai canvas. The CLI needs Node.js 20 or later.
+Kombai canvas. The CLI needs Node.js 20 or later. A skill writes that command as `kombai skill`, and
+opens with one line that says how to run `kombai`: from the copy of the CLI already installed on the
+computer, through its launcher, with `npx` as the fallback where there is none yet (see
+[The CLI version](#the-cli-version)).
 
 A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.2.0 skill faq` and answers the user's
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
@@ -43,6 +48,9 @@ and ends with prompts to try (see [The canvas view](#the-canvas-view)).
 
 OpenCode also includes `get-started-with-kombai`. Its onboarding checks sign-in and suggests first
 requests; its browser-canvas plugin has no host MCP connection to install.
+Pi includes the same onboarding skill and uses its package manifest to load four skills.
+Qwen Code, Hermes Agent, Muse Code, and Kimi Code also include onboarding alongside the workflow, FAQ,
+and asset skills. Their packages are skills-only and open Kombai's canvas in the browser.
 
 The Codex plugin needs Codex on the user's computer, and the Claude Code plugin needs Claude Code. ChatGPT on the web
 and Claude's chat can offer the same plugins but have no shell on the user's computer, so every skill of those two
@@ -79,8 +87,8 @@ target. It requests the target's directory because the CLI saves through a tempo
 The same grant is required for standalone setup and existing-view upgrades; skills request any missing
 write access before later commands need it.
 
-The skills differ between hosts in that sandbox guidance (the paragraphs before the line that runs
-`npx`, and the "The network is blocked" bullet); the Codex workflow skill also has its own
+The skills differ between hosts in that sandbox guidance (the paragraphs before the line that says
+how to run the CLI, and the "The network is blocked" bullet); the Codex workflow skill also has its own
 description and a paragraph on showing the canvas beside the chat. `scripts/skills.test.mjs`
 checks that every copy shares the rest of the standalone skill's text, that each carries its own
 host's guidance before the first command and no other host's, and that the Claude Code and Cursor
@@ -96,8 +104,9 @@ validators check their host's guidance too:
 | VS Code | set `requestUnsandboxedExecution: true` (never `requestAllowNetwork`) on the terminal tool call when VS Code's terminal sandbox is on |
 | Antigravity | request to run outside Antigravity's sandbox from the first try; a headless `agy -p` run needs `command(...)` allow rules unless its permission mode approves the commands |
 | Gemini CLI | the workflow skill checks `$SANDBOX` before the first command and, if it is set, asks the user to restart without the sandbox; the FAQ skill does the same after a command fails. With tool sandboxing, both pass `additional_permissions` on the first command |
-| Claude Code, Cursor, Grok Build, Devin | nothing beyond "ask for network access the way your client does" |
+| Claude Code, Cursor, Grok Build, Devin, Qwen Code, Hermes Agent, Muse Code, Kimi Code | nothing beyond "ask for network access the way your client does" |
 | OpenCode | nothing beyond "ask for network access the way your client does" |
+| Pi | nothing beyond "ask for network access the way your client does" |
 
 The only MCP server a plugin may register is the CLI's canvas view (`kombai`), and only with
 `cli.view` on, which no plugin has today. The Codex plugin's skill adds it to the user's own Codex
@@ -265,6 +274,11 @@ pnpm run pack:cursor ./dist
 pnpm run pack:vscode ./dist
 pnpm run pack:antigravity ./dist
 pnpm run pack:gemini-cli ./dist
+pnpm run pack:pi-code ./dist
+pnpm run pack:qwen-code ./dist
+pnpm run pack:hermes-agent ./dist
+pnpm run pack:muse ./dist
+pnpm run pack:kimi-code ./dist
 ```
 
 With Claude Code installed, also validate its native metadata:
@@ -296,7 +310,26 @@ gemini extensions install /absolute/path/to/agent-plugins/plugins/gemini-cli
 devin plugins install --local /absolute/path/to/agent-plugins/plugins/devin
 grok --plugin-dir /absolute/path/to/agent-plugins/plugins/grok
 # OpenCode: add /absolute/path/to/agent-plugins/plugins/opencode to opencode.jsonc's plugins array
+pi install git:github.com/kombai-io/agent-plugins
+qwen extensions install /absolute/path/to/agent-plugins/plugins/qwen-code
+# Hermes Agent: copy plugins/hermes-agent to ~/.hermes/plugins/kombai, then enable it
+muse plugins install /absolute/path/to/agent-plugins/plugins/muse
+# Kimi Code: enter /plugins install /absolute/path/to/agent-plugins/plugins/kimi-code inside Kimi Code
 ```
+
+To test Pi from GitHub, run `pi list` to confirm the package is installed, then start a new Pi
+session or enter `/reload`. Ask “Help me get started with Kombai,” followed by “Use
+Kombai to design a landing page for this project.” You can also try “What is Kombai?”
+and “Use Kombai to generate a hero image.” The skills run the Kombai CLI and open the
+hosted canvas in your browser; the Pi package adds no MCP server. The root `package.json`
+points Pi at `plugins/pi-code/skills`, so this Git install loads all four Pi skills. To remove
+the package, run `pi remove git:github.com/kombai-io/agent-plugins`.
+See the [Pi plugin README](plugins/pi-code/README.md) for local checkout testing too.
+See the [Qwen Code](plugins/qwen-code/README.md), [Hermes Agent](plugins/hermes-agent/README.md),
+and [Muse Code](plugins/muse/README.md) READMEs for local testing. See the
+[Kimi Code](plugins/kimi-code/README.md) README for its in-app install flow. Hermes can install its
+repository subdirectory directly once it reaches `main`; Qwen Code and Muse Code install their
+local folders or packaged copies.
 
 VS Code uses a local plugin folder where it is (it adds the path to `chat.pluginLocations`), so
 keep the folder in place while it is installed.
@@ -322,6 +355,11 @@ pnpm run version:gemini-cli 0.1.1
 pnpm run version:opencode 0.1.1
 pnpm run version:grok 0.1.1
 pnpm run version:devin 0.1.1
+pnpm run version:pi-code 0.1.1
+pnpm run version:qwen-code 0.1.1
+pnpm run version:hermes-agent 0.1.1
+pnpm run version:muse 0.1.1
+pnpm run version:kimi-code 0.1.1
 ```
 
 The scripts require an increasing `major.minor.patch` version. Each plugin's
@@ -333,7 +371,7 @@ and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling check
 
 OpenAI's and Anthropic's plugin directories refuse a plugin that runs a floating npm tag (the
 CLI's `latest`), so the source pins one released CLI: every plugin's `cli.package`
-is `@kombai/cli@0.2.0`, the same in all nine, and every file that names the CLI (the skills under
+is `@kombai/cli@0.2.0`, the same in every plugin, and every file that names the CLI (the skills under
 `plugins/` and `skills/`, the READMEs, `agents/openai.yaml`, the marketplaces) names that one.
 Describe a tag without the package name in front of it (the CLI's `latest` tag): the check reads
 any package name followed by a tag as one the plugins run, and set-cli-version would rewrite it. Move them all with
@@ -364,7 +402,42 @@ From its first self-managing release (vscode-assistant `packages/cli/src/managed
 CLI is only the first hop: the plugin's `npx` line keeps a copy under `~/.kombai/cli/install`, and
 at each design request it asks Kombai's backend which version to be on and moves that copy forward,
 so a CLI fix reaches users without a plugin release. Every later command runs that copy through the
-launcher line the skill prints. Disclose it where a directory asks what the plugin downloads or runs:
+launcher line the skill prints.
+
+The skills go to that copy first too. Each writes its commands as `kombai <command>`, as the CLI's
+own skill text does, and has the same line before the first of them (`cliRunLine` in
+`scripts/cli-view.mjs`):
+
+> Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`.
+
+So a skill names `npx` once, as the fallback that installs the CLI. The validators check that the
+line is there word for word with the plugin's own `cli.package`, in a paragraph of its own before the
+first `kombai` command, and that no command is written out with `npx`. Claude Code agents tried on
+it (2026-11-17, with and without the file, and with another `kombai` on PATH) ran each command as one
+line that tests for the file, `if [ -f "$HOME/.kombai/cli/install/latest/launch.mjs" ]; then node …
+<command>; else npx … <command>; fi`, and never the `kombai` on PATH. Claude Code approves such a
+line part by part, so with only `node` and `npx` allowed it asks about the `[ -f` test. The launcher's `skill` checks
+Kombai's backend and moves the copy just as the `npx` line does. It starts in about a tenth of a
+second where `npx` took 5 to 10 seconds on a machine with a large npm cache, and its line names no
+version, so a user who sees one version from `--version` doesn't also see the plugin's older pin in
+every command. Where the launcher's folder holds no usable copy, its own `CLI_NOT_INSTALLED` error
+names the `npx` line to run; where `$HOME` doesn't expand (cmd.exe), node can't find the file and the
+skill falls back to `npx`. Since the copy, not the pin, then decides what runs, a pin bump alone no
+longer moves a machine forward; the backend's recommended version does. Each plugin's README quotes
+the line, so it says what the plugin runs (`scripts/skills.test.mjs` checks the quote).
+
+The Antigravity plugin is the exception. Its skills have the line that names `npx` alone:
+
+> Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.2.0`.
+
+Where Antigravity can't ask the user (a headless `agy -p` run) it skips any command the user's Allow
+rules don't match, and a rule matches by how a command starts. The rules its skills give are for the
+`npx` command and `kombai`, so a command that starts with `node` or `if` would be skipped there, and
+the skill would send the user back to the same rules. Its validator refuses the launcher line
+(`npxOnly` in `scripts/antigravity-plugin.mjs`), and its test checks that every command the skills
+run starts the way the rule allows.
+
+Disclose it where a directory asks what the plugin downloads or runs:
 the CLI's `skill faq` (Setup and problems, Updates) says the same to users. Two rules for the pin
 once it names a self-managing release: never move it back to one from before (it could not update
 itself or read the backend's withdrawn versions), and never ahead of the backend's recommended
@@ -375,8 +448,9 @@ Kombai's API answers).
 
 **Validate Plugins** runs the release-script tests, the pinned-CLI check and all plugin validators on pushes and
 pull requests. **Build Plugins** is manually triggered and provides independent Codex,
-Claude Code, Cursor, VS Code, Antigravity, Gemini CLI and OpenCode build checkboxes (Grok Build and Devin install
-from a pinned commit of this repository and have none). Select at least one. Each selected job
+Claude Code, Cursor, VS Code, Antigravity, Gemini CLI, OpenCode, Pi, Qwen Code, Hermes Agent,
+Muse Code, and Kimi Code build checkboxes (Grok Build and Devin install from a pinned commit of this
+repository and have none). Select at least one. Each selected job
 runs its tests and validation before packaging and uploading its ZIP. No local command is required.
 
 Each build checkbox has an optional version input. Leave it blank to package the committed
@@ -401,8 +475,9 @@ Code 1.128 or later), which uses the folder in place. The Antigravity and Gemini
 hold one folder named after the archive (`kombai-antigravity-plugin-<version>`,
 `kombai-gemini-cli-plugin-<version>`, with `-team` for a team build) with the plugin's contents
 in it, so that folder goes straight to `agy plugin install` or `gemini extensions install`.
-The OpenCode ZIP holds one installable plugin folder. OpenCode loads the folder when it is listed
-in `opencode.jsonc`.
+The OpenCode, Pi, and Kimi Code ZIPs each hold one installable plugin folder. OpenCode loads its folder when it is listed
+in `opencode.jsonc`; Pi loads its extracted folder with `pi install /absolute/path/to/folder`;
+Kimi Code installs the extracted folder through `/plugins install`.
 Workflow artifacts do not publish marketplace listings or GitHub releases.
 
 ### Team builds
@@ -412,9 +487,11 @@ plugin, running the newest beta, npm's `beta` tag of the CLI (vscode-assistant's
 `beta` action, run from `preprod`), which talks to preprod unless `kombai config env` says
 otherwise. No plugin build runs the alphas from `dev` (npm's `alpha` tag).
 Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
-(`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity`, `gemini-cli` or `opencode`): it writes `kombai-<host>-plugin-<version>-team.zip`
+(`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity`, `gemini-cli`, `opencode`, `pi-code`, or `kimi-code`): it writes `kombai-<host>-plugin-<version>-team.zip`
 from a staged copy in which the beta tag takes the place of the pinned version everywhere, so the
-source always pins a released CLI. The team build is the one place a tag is allowed: a team ZIP
+source always pins a released CLI. In the staged copy the line that says how to run the CLI names
+`npx` with the beta tag alone, and no launcher: a colleague's copy moves to each new beta when `npx`
+starts that beta, and preprod's backend names no beta for the launcher's copy to move to. The team build is the one place a tag is allowed: a team ZIP
 never goes to a plugin directory, and following the tag spares colleagues a reinstall for every
 beta. A team ZIP installs like the public one and has the same plugin name, so a machine has one
 or the other. In VS Code the two

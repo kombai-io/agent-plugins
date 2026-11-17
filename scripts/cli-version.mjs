@@ -45,6 +45,11 @@ import { validateDevinPlugin } from './devin-plugin.mjs';
 import { validateGeminiCliPlugin } from './gemini-cli-plugin.mjs';
 import { validateGrokPlugin } from './grok-plugin.mjs';
 import { validateOpenCodePlugin } from './opencode-plugin.mjs';
+import { validatePiCodePlugin } from './pi-code-plugin.mjs';
+import { validateQwenCodePlugin } from './qwen-code-plugin.mjs';
+import { validateHermesAgentPlugin } from './hermes-agent-plugin.mjs';
+import { validateMusePlugin } from './muse-plugin.mjs';
+import { validateKimiCodePlugin } from './kimi-code-plugin.mjs';
 import { validateVsCodePlugin } from './vscode-plugin.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -60,6 +65,11 @@ export const PLUGINS = {
   grok: validateGrokPlugin,
   devin: validateDevinPlugin,
   opencode: validateOpenCodePlugin,
+  'pi-code': validatePiCodePlugin,
+  'qwen-code': validateQwenCodePlugin,
+  'hermes-agent': validateHermesAgentPlugin,
+  muse: validateMusePlugin,
+  'kimi-code': validateKimiCodePlugin,
 };
 /** What names the CLI the plugins run, and set-cli-version moves: every text file under these (folders, or a file).
  *  The marketplaces ship in the packs too. */
@@ -171,14 +181,14 @@ export function installClients(help) {
   return usage ? usage[1].replace(/[[\]<>()]/g, '').split('|') : [];
 }
 
-/** The clients the plugins' skills run `mcp install` for (`npx -y <cli> mcp install codex`, even split across lines),
- *  which the pinned CLI must take. */
+/** The clients the plugins' skills run `mcp install` for (`kombai mcp install codex`, even split across lines), which
+ *  the pinned CLI must take. */
 export function requiredInstallClients(root = workspaceRoot) {
   const clients = new Set();
   for (const host of Object.keys(PLUGINS)) {
     for (const file of filesUnder(path.join(root, 'plugins', host, 'skills'))) {
       const text = textOf(file) ?? '';
-      for (const [, client] of text.matchAll(/npx\s+-y\s+@kombai\/cli@\S+\s+mcp\s+install\s+([a-z][a-z-]*)/g)) clients.add(client);
+      for (const [, client] of text.matchAll(/\bkombai\s+mcp\s+install\s+([a-z][a-z-]*)/g)) clients.add(client);
     }
   }
   return [...clients].sort();

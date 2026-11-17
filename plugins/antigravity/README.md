@@ -2,7 +2,7 @@
 
 This plugin is for Google Antigravity: the Antigravity app, the `agy` CLI and the Antigravity IDE all load plugins from `~/.gemini/config/plugins/`.
 
-Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.2.0 skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later.
+Its `work-with-kombai` skill runs the Kombai CLI (`npx -y @kombai/cli@0.2.0 skill`) and follows what it prints: the agent designs on a hosted Kombai canvas. The CLI needs Node.js 20 or later. Each skill writes its commands as `kombai <command>` and first says how to run them: "Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.2.0`."
 
 Its `about-kombai` skill runs `npx -y @kombai/cli@0.2.0 skill faq` and answers the user's questions about Kombai (accounts, credits, where designs and data live, updates, support) from what it prints.
 
@@ -45,7 +45,7 @@ A standalone Kombai skill of the same name does not replace this plugin's: Antig
 
 Antigravity's sandbox has no network by default, and the CLI downloads from npm and writes `~/.kombai`, so the skills ask Antigravity to run each Kombai command outside the sandbox. Depending on the user's permission preset, Antigravity approves that by itself or asks the user. To approve Kombai's commands ahead of time, add the Allow rules `command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)` and `command(regex:node .*/\.kombai/cli/install/[a-z]+/launch\.mjs.? .*)` (`unsandboxed(...)` on business and enterprise accounts) in Antigravity's permission settings; for agy, with `/permissions` or under `permissions.allow` in `~/.gemini/antigravity-cli/settings.json`. Antigravity matches a rule's words against the command's whole words, so a rule naming one CLI version (as "always allow" on a prompt saves) stops matching when the plugin moves to a new CLI; the first `regex:` rule, whose words are each matched as a whole regular expression, takes any version, and `npx(.cmd)?` covers Windows, where commands run as `npx.cmd`. Only a request's first Kombai command runs through `npx`: the CLI keeps its own copy under `~/.kombai/cli/install` and runs every later command with `node "<home>/.kombai/cli/install/<channel>/launch.mjs" <command>`, which the second rule matches on macOS, Linux and Windows (the CLI writes that path with forward slashes everywhere). If Antigravity still asks for a command a rule should cover, as can happen on Windows, approve the prompt.
 
-A headless `agy -p` run cannot ask. Unless its permission mode approves Kombai's commands by itself, it skips them and prints a notice on stderr naming the rule to add; add the rules above first.
+A headless `agy -p` run cannot ask. Unless its permission mode approves Kombai's commands by itself, it skips them and prints a notice on stderr naming the rule to add; add the rules above first. This plugin's skills run the CLI through `npx` alone, not through the copy of the CLI installed on the computer as the other Kombai plugins' skills do, so each command a skill itself runs starts the way those rules allow.
 
 The plugin registers no MCP server: Antigravity has no canvas view. The skill opens the canvas in the user's default browser.
 
