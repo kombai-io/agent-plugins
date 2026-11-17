@@ -45,6 +45,10 @@ import { validateDevinPlugin } from './devin-plugin.mjs';
 import { validateGeminiCliPlugin } from './gemini-cli-plugin.mjs';
 import { validateGrokPlugin } from './grok-plugin.mjs';
 import { validateOpenCodePlugin } from './opencode-plugin.mjs';
+import { validatePiCodePlugin } from './pi-code-plugin.mjs';
+import { validateQwenCodePlugin } from './qwen-code-plugin.mjs';
+import { validateHermesAgentPlugin } from './hermes-agent-plugin.mjs';
+import { validateMusePlugin } from './muse-plugin.mjs';
 import { validateVsCodePlugin } from './vscode-plugin.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -60,6 +64,10 @@ export const PLUGINS = {
   grok: validateGrokPlugin,
   devin: validateDevinPlugin,
   opencode: validateOpenCodePlugin,
+  'pi-code': validatePiCodePlugin,
+  'qwen-code': validateQwenCodePlugin,
+  'hermes-agent': validateHermesAgentPlugin,
+  muse: validateMusePlugin,
 };
 /** What names the CLI the plugins run, and set-cli-version moves: every text file under these (folders, or a file).
  *  The marketplaces ship in the packs too. */

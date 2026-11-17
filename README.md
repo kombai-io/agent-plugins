@@ -4,7 +4,9 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 [Claude Code](plugins/claude-code/README.md), [Cursor](plugins/cursor/README.md),
 [VS Code](plugins/vscode/README.md), [Antigravity](plugins/antigravity/README.md),
 [OpenCode](plugins/opencode/README.md), [Grok Build](plugins/grok/README.md),
-[Devin](plugins/devin/README.md) and [Pi](plugins/pi-code/README.md) plugins, the
+[Devin](plugins/devin/README.md), [Pi](plugins/pi-code/README.md),
+[Qwen Code](plugins/qwen-code/README.md), [Hermes Agent](plugins/hermes-agent/README.md),
+and [Muse Code](plugins/muse/README.md) plugins, the
 [Gemini CLI](plugins/gemini-cli/README.md) extension, their marketplaces where the host has one,
 and release tooling.
 
@@ -44,6 +46,8 @@ and ends with prompts to try (see [The canvas view](#the-canvas-view)).
 OpenCode also includes `get-started-with-kombai`. Its onboarding checks sign-in and suggests first
 requests; its browser-canvas plugin has no host MCP connection to install.
 Pi includes the same onboarding skill and uses its package manifest to load four skills.
+Qwen Code, Hermes Agent, and Muse Code also include onboarding alongside the workflow, FAQ,
+and asset skills. Their packages are skills-only and open Kombai's canvas in the browser.
 
 The Codex plugin needs Codex on the user's computer, and the Claude Code plugin needs Claude Code. ChatGPT on the web
 and Claude's chat can offer the same plugins but have no shell on the user's computer, so every skill of those two
@@ -97,7 +101,7 @@ validators check their host's guidance too:
 | VS Code | set `requestUnsandboxedExecution: true` (never `requestAllowNetwork`) on the terminal tool call when VS Code's terminal sandbox is on |
 | Antigravity | request to run outside Antigravity's sandbox from the first try; a headless `agy -p` run needs `command(...)` allow rules unless its permission mode approves the commands |
 | Gemini CLI | the workflow skill checks `$SANDBOX` before the first command and, if it is set, asks the user to restart without the sandbox; the FAQ skill does the same after a command fails. With tool sandboxing, both pass `additional_permissions` on the first command |
-| Claude Code, Cursor, Grok Build, Devin | nothing beyond "ask for network access the way your client does" |
+| Claude Code, Cursor, Grok Build, Devin, Qwen Code, Hermes Agent, Muse Code | nothing beyond "ask for network access the way your client does" |
 | OpenCode | nothing beyond "ask for network access the way your client does" |
 | Pi | nothing beyond "ask for network access the way your client does" |
 
@@ -268,6 +272,9 @@ pnpm run pack:vscode ./dist
 pnpm run pack:antigravity ./dist
 pnpm run pack:gemini-cli ./dist
 pnpm run pack:pi-code ./dist
+pnpm run pack:qwen-code ./dist
+pnpm run pack:hermes-agent ./dist
+pnpm run pack:muse ./dist
 ```
 
 With Claude Code installed, also validate its native metadata:
@@ -300,6 +307,9 @@ devin plugins install --local /absolute/path/to/agent-plugins/plugins/devin
 grok --plugin-dir /absolute/path/to/agent-plugins/plugins/grok
 # OpenCode: add /absolute/path/to/agent-plugins/plugins/opencode to opencode.jsonc's plugins array
 pi install git:github.com/kombai-io/agent-plugins
+qwen extensions install /absolute/path/to/agent-plugins/plugins/qwen-code
+# Hermes Agent: copy plugins/hermes-agent to ~/.hermes/plugins/kombai, then enable it
+muse plugins install /absolute/path/to/agent-plugins/plugins/muse
 ```
 
 To test Pi from GitHub, run `pi list` to confirm the package is installed, then start a new Pi
@@ -310,6 +320,10 @@ hosted canvas in your browser; the Pi package adds no MCP server. The root `pack
 points Pi at `plugins/pi-code/skills`, so this Git install loads all four Pi skills. To remove
 the package, run `pi remove git:github.com/kombai-io/agent-plugins`.
 See the [Pi plugin README](plugins/pi-code/README.md) for local checkout testing too.
+See the [Qwen Code](plugins/qwen-code/README.md), [Hermes Agent](plugins/hermes-agent/README.md),
+and [Muse Code](plugins/muse/README.md) READMEs for local testing. Hermes can install its
+repository subdirectory directly once it reaches `main`; Qwen Code and Muse Code install their
+local folders or packaged copies.
 
 VS Code uses a local plugin folder where it is (it adds the path to `chat.pluginLocations`), so
 keep the folder in place while it is installed.
@@ -336,6 +350,9 @@ pnpm run version:opencode 0.1.1
 pnpm run version:grok 0.1.1
 pnpm run version:devin 0.1.1
 pnpm run version:pi-code 0.1.1
+pnpm run version:qwen-code 0.1.1
+pnpm run version:hermes-agent 0.1.1
+pnpm run version:muse 0.1.1
 ```
 
 The scripts require an increasing `major.minor.patch` version. Each plugin's
@@ -347,7 +364,7 @@ and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling check
 
 OpenAI's and Anthropic's plugin directories refuse a plugin that runs a floating npm tag (the
 CLI's `latest`), so the source pins one released CLI: every plugin's `cli.package`
-is `@kombai/cli@0.2.0`, the same in all ten, and every file that names the CLI (the skills under
+is `@kombai/cli@0.2.0`, the same in every plugin, and every file that names the CLI (the skills under
 `plugins/` and `skills/`, the READMEs, `agents/openai.yaml`, the marketplaces) names that one.
 Describe a tag without the package name in front of it (the CLI's `latest` tag): the check reads
 any package name followed by a tag as one the plugins run, and set-cli-version would rewrite it. Move them all with
@@ -389,8 +406,9 @@ Kombai's API answers).
 
 **Validate Plugins** runs the release-script tests, the pinned-CLI check and all plugin validators on pushes and
 pull requests. **Build Plugins** is manually triggered and provides independent Codex,
-Claude Code, Cursor, VS Code, Antigravity, Gemini CLI, OpenCode and Pi build checkboxes (Grok Build and Devin install
-from a pinned commit of this repository and have none). Select at least one. Each selected job
+Claude Code, Cursor, VS Code, Antigravity, Gemini CLI, OpenCode, Pi, Qwen Code, Hermes Agent,
+and Muse Code build checkboxes (Grok Build and Devin install from a pinned commit of this
+repository and have none). Select at least one. Each selected job
 runs its tests and validation before packaging and uploading its ZIP. No local command is required.
 
 Each build checkbox has an optional version input. Leave it blank to package the committed
