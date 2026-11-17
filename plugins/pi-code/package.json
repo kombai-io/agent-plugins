@@ -1,0 +1,17 @@
+{
+  "name": "@kombai/pi-code-plugin",
+  "version": "0.1.0",
+  "description": "Design UI and generate assets with Kombai in Pi",
+  "keywords": ["pi-package", "kombai", "design", "ui", "assets"],
+  "pi": {
+    "skills": ["./skills"]
+  },
+  "files": ["skills", "README.md", "LICENSE", "kombai.package.json"],
+  "license": "MIT",
+  "homepage": "https://kombai.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kombai-io/agent-plugins.git",
+    "directory": "plugins/pi-code"
+  }
+}
