@@ -316,7 +316,8 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
     assert.ok(flatSkill.includes('`notStarting: true`') && flatSkill.includes('`codexApp: false`'));
     // The no-new-task answers come first, so "do no design work in this task" is only the hand-off's.
     assert.ok(flatSkill.indexOf('`codexApp: false`') < flatSkill.indexOf('Otherwise it moves the work to a new task'));
-    assert.ok(flatSkill.includes('Then do no design work in this task: it can\'t show the canvas.'));
+    // A design for another tool too: the view's server also has taste's card.
+    assert.ok(flatSkill.includes("Then do no design work in this task: it can't show the canvas or taste's card."));
     // The new task's prompt starts with Kombai's mention, which needs the plugin's id in Codex.
     // It reads the plugin's id from its own install path, since one ZIP installs under different marketplaces.
     assert.ok(skill.stdout.replace(/\s+/g, ' ').includes("Kombai's plugin id in this Codex is `kombai@<marketplace>`"));

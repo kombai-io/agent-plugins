@@ -1,6 +1,6 @@
 ---
 name: work-with-kombai
-description: Design UI with Kombai. Designs go on a Kombai canvas, which the Codex app shows beside the chat; design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding.
+description: Design UI with Kombai, whose taste agent brings the design ideas. Designs go on a Kombai canvas (the Codex app shows it beside the chat) unless the user names another place to build them (another design tool's canvas, or straight into the repo's code when they ask for that); design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding. A design for another tool's canvas is for this skill only when the user names Kombai or picks this skill.
 ---
 
 **Needs a shell on the user's computer.** Kombai runs its CLI in a shell on the user's computer. Codex has one wherever it runs: the ChatGPT desktop app (its Work chats and Codex), the Codex CLI and the IDE extension, so carry on there, whatever the app is called. Only if this chat has no shell on the user's computer, as in ChatGPT on the web, whose code tool is a cloud sandbox, run nothing, not even in that code tool, and do no design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other help): "Kombai needs to run commands on your computer, and this chat can't. Ask in Codex or in a Work chat in the ChatGPT desktop app."
@@ -49,7 +49,7 @@ sibling the CLI writes), tell the user in one line, then follow its `next`. When
 server isn't starting in Codex) or `codexApp: false` (this Codex isn't the app, so it shows no view), its `next` starts
 no new task: follow it, and carry on in this task as it says. Otherwise it moves the work to a new task: one offer,
 with a link that opens it with the request filled in, and on yes a new task that carries the request; the new task's
-prompt starts with Kombai's mention. Then do no design work in this task: it can't show the canvas. Kombai's
+prompt starts with Kombai's mention. Then do no design work in this task: it can't show the canvas or taste's card. Kombai's
 plugin id in this Codex is `kombai@<marketplace>`, where `<marketplace>` is the folder after `plugins/cache/` in
 this skill's own path: `~/.codex/plugins/cache/openai-curated-remote/kombai/…` gives `kombai@openai-curated-remote`.
 
