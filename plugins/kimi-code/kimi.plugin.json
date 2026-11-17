@@ -1,0 +1,16 @@
+{
+  "name": "kombai",
+  "version": "0.1.0",
+  "description": "Design UI and generate assets with Kombai in Kimi Code",
+  "keywords": ["design", "ui", "assets"],
+  "author": "Kombai",
+  "homepage": "https://kombai.com/",
+  "license": "MIT",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Kombai",
+    "shortDescription": "Design UI and generate assets with Kombai",
+    "developerName": "Kombai",
+    "websiteURL": "https://kombai.com/"
+  }
+}

@@ -48,3 +48,5 @@ jobs:
         run: node scripts/hermes-agent-plugin.mjs validate
       - name: Validate Muse Code plugin
         run: node scripts/muse-plugin.mjs validate
+      - name: Validate Kimi Code plugin
+        run: node scripts/kimi-code-plugin.mjs validate
