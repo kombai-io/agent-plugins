@@ -302,6 +302,14 @@ grok --plugin-dir /absolute/path/to/agent-plugins/plugins/grok
 pi install /absolute/path/to/agent-plugins/plugins/pi-code
 ```
 
+To test Pi, run `pi list` to confirm the local package is installed, then start a new Pi
+session or enter `/reload`. Ask “Help me get started with Kombai,” followed by “Use
+Kombai to design a landing page for this project.” You can also try “What is Kombai?”
+and “Use Kombai to generate a hero image.” The skills run the Kombai CLI and open the
+hosted canvas in your browser; the Pi package adds no MCP server. To remove the local
+test install, run `pi remove /absolute/path/to/agent-plugins/plugins/pi-code`.
+See the [Pi plugin README](plugins/pi-code/README.md) for the full setup and test flow.
+
 VS Code uses a local plugin folder where it is (it adds the path to `chat.pluginLocations`), so
 keep the folder in place while it is installed.
 
