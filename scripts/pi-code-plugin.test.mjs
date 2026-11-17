@@ -9,6 +9,19 @@ import { bumpPiCodeVersion, checkPiCodePluginDir, packPiCodePlugin, validatePiCo
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+test('repository Git install exposes the Pi package skills', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(source, 'package.json'), 'utf8'));
+  assert.deepEqual(manifest.pi, { skills: ['./plugins/pi-code/skills'] });
+  const skillsRoot = path.join(source, manifest.pi.skills[0]);
+  assert.deepEqual(
+    fs.readdirSync(skillsRoot).sort(),
+    ['about-kombai', 'generate-assets-with-kombai', 'get-started-with-kombai', 'work-with-kombai'],
+  );
+  for (const skill of fs.readdirSync(skillsRoot)) {
+    assert.ok(fs.existsSync(path.join(skillsRoot, skill, 'SKILL.md')));
+  }
+});
+
 test('Pi package validates, bumps independently, and packs its four skills', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-pi-test-'));
   try {

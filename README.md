@@ -299,16 +299,17 @@ gemini extensions install /absolute/path/to/agent-plugins/plugins/gemini-cli
 devin plugins install --local /absolute/path/to/agent-plugins/plugins/devin
 grok --plugin-dir /absolute/path/to/agent-plugins/plugins/grok
 # OpenCode: add /absolute/path/to/agent-plugins/plugins/opencode to opencode.jsonc's plugins array
-pi install /absolute/path/to/agent-plugins/plugins/pi-code
+pi install git:github.com/kombai-io/agent-plugins
 ```
 
-To test Pi, run `pi list` to confirm the local package is installed, then start a new Pi
+To test Pi from GitHub, run `pi list` to confirm the package is installed, then start a new Pi
 session or enter `/reload`. Ask “Help me get started with Kombai,” followed by “Use
 Kombai to design a landing page for this project.” You can also try “What is Kombai?”
 and “Use Kombai to generate a hero image.” The skills run the Kombai CLI and open the
-hosted canvas in your browser; the Pi package adds no MCP server. To remove the local
-test install, run `pi remove /absolute/path/to/agent-plugins/plugins/pi-code`.
-See the [Pi plugin README](plugins/pi-code/README.md) for the full setup and test flow.
+hosted canvas in your browser; the Pi package adds no MCP server. The root `package.json`
+points Pi at `plugins/pi-code/skills`, so this Git install loads all four Pi skills. To remove
+the package, run `pi remove git:github.com/kombai-io/agent-plugins`.
+See the [Pi plugin README](plugins/pi-code/README.md) for local checkout testing too.
 
 VS Code uses a local plugin folder where it is (it adds the path to `chat.pluginLocations`), so
 keep the folder in place while it is installed.
