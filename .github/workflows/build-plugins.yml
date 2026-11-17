@@ -73,6 +73,16 @@ on:
         description: 'Optional OpenCode plugin version for this build (leave blank to use the committed version)'
         default: ''
         required: false
+      build-kimi-code-plugin:
+        type: boolean
+        description: 'Build Kimi Code plugin'
+        default: false
+        required: false
+      kimi-code-plugin-version:
+        type: string
+        description: 'Optional Kimi Code plugin version for this build (leave blank to use the committed version)'
+        default: ''
+        required: false
       build-pi-code-plugin:
         type: boolean
         description: 'Build Pi plugin'
@@ -373,6 +383,37 @@ jobs:
         with:
           name: kombai-opencode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
           path: ${{ runner.temp }}/kombai-opencode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  build-kimi-code-plugin:
+    if: ${{ inputs.build-kimi-code-plugin }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+      - name: Apply Kimi Code plugin version
+        if: ${{ inputs.kimi-code-plugin-version != '' }}
+        env:
+          KIMI_CODE_PLUGIN_VERSION: ${{ inputs.kimi-code-plugin-version }}
+        run: node scripts/kimi-code-plugin.mjs bump "$KIMI_CODE_PLUGIN_VERSION"
+      - name: Test Kimi Code plugin release checks
+        run: node --test scripts/kimi-code-plugin.test.mjs
+      - name: Validate Kimi Code plugin
+        id: plugin-version
+        run: node scripts/kimi-code-plugin.mjs validate --github-output
+      - name: Package Kimi Code plugin
+        run: node scripts/kimi-code-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+      - name: Upload Kimi Code plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: kombai-kimi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-kimi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 

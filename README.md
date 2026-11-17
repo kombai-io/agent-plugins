@@ -6,7 +6,7 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 [OpenCode](plugins/opencode/README.md), [Grok Build](plugins/grok/README.md),
 [Devin](plugins/devin/README.md), [Pi](plugins/pi-code/README.md),
 [Qwen Code](plugins/qwen-code/README.md), [Hermes Agent](plugins/hermes-agent/README.md),
-and [Muse Code](plugins/muse/README.md) plugins, the
+[Muse Code](plugins/muse/README.md), and [Kimi Code](plugins/kimi-code/README.md) plugins, the
 [Gemini CLI](plugins/gemini-cli/README.md) extension, their marketplaces where the host has one,
 and release tooling.
 
@@ -49,7 +49,7 @@ and ends with prompts to try (see [The canvas view](#the-canvas-view)).
 OpenCode also includes `get-started-with-kombai`. Its onboarding checks sign-in and suggests first
 requests; its browser-canvas plugin has no host MCP connection to install.
 Pi includes the same onboarding skill and uses its package manifest to load four skills.
-Qwen Code, Hermes Agent, and Muse Code also include onboarding alongside the workflow, FAQ,
+Qwen Code, Hermes Agent, Muse Code, and Kimi Code also include onboarding alongside the workflow, FAQ,
 and asset skills. Their packages are skills-only and open Kombai's canvas in the browser.
 
 The Codex plugin needs Codex on the user's computer, and the Claude Code plugin needs Claude Code. ChatGPT on the web
@@ -104,7 +104,7 @@ validators check their host's guidance too:
 | VS Code | set `requestUnsandboxedExecution: true` (never `requestAllowNetwork`) on the terminal tool call when VS Code's terminal sandbox is on |
 | Antigravity | request to run outside Antigravity's sandbox from the first try; a headless `agy -p` run needs `command(...)` allow rules unless its permission mode approves the commands |
 | Gemini CLI | the workflow skill checks `$SANDBOX` before the first command and, if it is set, asks the user to restart without the sandbox; the FAQ skill does the same after a command fails. With tool sandboxing, both pass `additional_permissions` on the first command |
-| Claude Code, Cursor, Grok Build, Devin, Qwen Code, Hermes Agent, Muse Code | nothing beyond "ask for network access the way your client does" |
+| Claude Code, Cursor, Grok Build, Devin, Qwen Code, Hermes Agent, Muse Code, Kimi Code | nothing beyond "ask for network access the way your client does" |
 | OpenCode | nothing beyond "ask for network access the way your client does" |
 | Pi | nothing beyond "ask for network access the way your client does" |
 
@@ -278,6 +278,7 @@ pnpm run pack:pi-code ./dist
 pnpm run pack:qwen-code ./dist
 pnpm run pack:hermes-agent ./dist
 pnpm run pack:muse ./dist
+pnpm run pack:kimi-code ./dist
 ```
 
 With Claude Code installed, also validate its native metadata:
@@ -313,6 +314,7 @@ pi install git:github.com/kombai-io/agent-plugins
 qwen extensions install /absolute/path/to/agent-plugins/plugins/qwen-code
 # Hermes Agent: copy plugins/hermes-agent to ~/.hermes/plugins/kombai, then enable it
 muse plugins install /absolute/path/to/agent-plugins/plugins/muse
+# Kimi Code: enter /plugins install /absolute/path/to/agent-plugins/plugins/kimi-code inside Kimi Code
 ```
 
 To test Pi from GitHub, run `pi list` to confirm the package is installed, then start a new Pi
@@ -324,7 +326,8 @@ points Pi at `plugins/pi-code/skills`, so this Git install loads all four Pi ski
 the package, run `pi remove git:github.com/kombai-io/agent-plugins`.
 See the [Pi plugin README](plugins/pi-code/README.md) for local checkout testing too.
 See the [Qwen Code](plugins/qwen-code/README.md), [Hermes Agent](plugins/hermes-agent/README.md),
-and [Muse Code](plugins/muse/README.md) READMEs for local testing. Hermes can install its
+and [Muse Code](plugins/muse/README.md) READMEs for local testing. See the
+[Kimi Code](plugins/kimi-code/README.md) README for its in-app install flow. Hermes can install its
 repository subdirectory directly once it reaches `main`; Qwen Code and Muse Code install their
 local folders or packaged copies.
 
@@ -356,6 +359,7 @@ pnpm run version:pi-code 0.1.1
 pnpm run version:qwen-code 0.1.1
 pnpm run version:hermes-agent 0.1.1
 pnpm run version:muse 0.1.1
+pnpm run version:kimi-code 0.1.1
 ```
 
 The scripts require an increasing `major.minor.patch` version. Each plugin's
@@ -445,7 +449,7 @@ Kombai's API answers).
 **Validate Plugins** runs the release-script tests, the pinned-CLI check and all plugin validators on pushes and
 pull requests. **Build Plugins** is manually triggered and provides independent Codex,
 Claude Code, Cursor, VS Code, Antigravity, Gemini CLI, OpenCode, Pi, Qwen Code, Hermes Agent,
-and Muse Code build checkboxes (Grok Build and Devin install from a pinned commit of this
+Muse Code, and Kimi Code build checkboxes (Grok Build and Devin install from a pinned commit of this
 repository and have none). Select at least one. Each selected job
 runs its tests and validation before packaging and uploading its ZIP. No local command is required.
 
@@ -471,8 +475,9 @@ Code 1.128 or later), which uses the folder in place. The Antigravity and Gemini
 hold one folder named after the archive (`kombai-antigravity-plugin-<version>`,
 `kombai-gemini-cli-plugin-<version>`, with `-team` for a team build) with the plugin's contents
 in it, so that folder goes straight to `agy plugin install` or `gemini extensions install`.
-The OpenCode and Pi ZIPs each hold one installable plugin folder. OpenCode loads its folder when it is listed
-in `opencode.jsonc`; Pi loads its extracted folder with `pi install /absolute/path/to/folder`.
+The OpenCode, Pi, and Kimi Code ZIPs each hold one installable plugin folder. OpenCode loads its folder when it is listed
+in `opencode.jsonc`; Pi loads its extracted folder with `pi install /absolute/path/to/folder`;
+Kimi Code installs the extracted folder through `/plugins install`.
 Workflow artifacts do not publish marketplace listings or GitHub releases.
 
 ### Team builds
@@ -482,7 +487,7 @@ plugin, running the newest beta, npm's `beta` tag of the CLI (vscode-assistant's
 `beta` action, run from `preprod`), which talks to preprod unless `kombai config env` says
 otherwise. No plugin build runs the alphas from `dev` (npm's `alpha` tag).
 Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
-(`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity`, `gemini-cli`, `opencode` or `pi-code`): it writes `kombai-<host>-plugin-<version>-team.zip`
+(`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity`, `gemini-cli`, `opencode`, `pi-code`, or `kimi-code`): it writes `kombai-<host>-plugin-<version>-team.zip`
 from a staged copy in which the beta tag takes the place of the pinned version everywhere, so the
 source always pins a released CLI. In the staged copy the line that says how to run the CLI names
 `npx` with the beta tag alone, and no launcher: a colleague's copy moves to each new beta when `npx`

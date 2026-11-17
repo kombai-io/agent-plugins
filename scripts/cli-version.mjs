@@ -49,6 +49,7 @@ import { validatePiCodePlugin } from './pi-code-plugin.mjs';
 import { validateQwenCodePlugin } from './qwen-code-plugin.mjs';
 import { validateHermesAgentPlugin } from './hermes-agent-plugin.mjs';
 import { validateMusePlugin } from './muse-plugin.mjs';
+import { validateKimiCodePlugin } from './kimi-code-plugin.mjs';
 import { validateVsCodePlugin } from './vscode-plugin.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -68,6 +69,7 @@ export const PLUGINS = {
   'qwen-code': validateQwenCodePlugin,
   'hermes-agent': validateHermesAgentPlugin,
   muse: validateMusePlugin,
+  'kimi-code': validateKimiCodePlugin,
 };
 /** What names the CLI the plugins run, and set-cli-version moves: every text file under these (folders, or a file).
  *  The marketplaces ship in the packs too. */

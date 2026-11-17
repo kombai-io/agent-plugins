@@ -1,9 +1,11 @@
 ---
 name: work-with-kombai
-description: Design UI with Kombai. Designs go on a Kombai canvas; design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding.
+description: Design UI with Kombai, whose taste agent brings the design ideas. Designs go on a Kombai canvas unless the user names another place to build them (another design tool's canvas, or straight into the repo's code when they ask for that); design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding. A design for another tool's canvas is for this skill only when the user names Kombai or picks this skill.
 ---
 
-Run `npx -y @kombai/cli@0.2.0 skill` and follow what it prints; it is this skill's full text.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`.
+
+Run `kombai skill` and follow what it prints; it is this skill's full text.
 
 If that command fails before it prints anything:
 
