@@ -11,6 +11,7 @@ import { packCodexPlugin } from './codex-plugin.mjs';
 import { packCursorPlugin } from './cursor-plugin.mjs';
 import { packGeminiCliPlugin } from './gemini-cli-plugin.mjs';
 import { packOpenCodePlugin } from './opencode-plugin.mjs';
+import { packPiCodePlugin } from './pi-code-plugin.mjs';
 import { packVsCodePlugin } from './vscode-plugin.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -22,6 +23,7 @@ const PACKS = {
   antigravity: packAntigravityPlugin,
   'gemini-cli': packGeminiCliPlugin,
   opencode: packOpenCodePlugin,
+  'pi-code': packPiCodePlugin,
 };
 
 // A copy of the repository, without what git ignores.
