@@ -232,4 +232,10 @@ test('the standalone skills keep Codex-only guidance out of SKILL.md, in one sha
   });
   assert.equal(files[0], files[1], `standalone skills carry the same ${CODEX_ACCESS_FILE}`);
   assert.equal(files[0], files[2], `standalone skills carry the same ${CODEX_ACCESS_FILE}`);
+  // `codex exec` has no chat to send the message again in, and exits without a request: its way out carries one.
+  // The Codex plugin's copies hold the same guidance (checked above), so this covers them too.
+  assert.ok(
+    files[0].includes('`codex exec -s danger-full-access "<your request>"`'),
+    `${CODEX_ACCESS_FILE}: the codex exec way out carries the request`,
+  );
 });

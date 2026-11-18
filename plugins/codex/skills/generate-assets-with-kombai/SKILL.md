@@ -16,7 +16,7 @@ inside the sandbox. Reply with only this, word for word:
 
 > Kombai needs to run outside Codex's sandbox to design, and this Codex session blocks it. Fix it one of these ways, then send your message again:
 > - In the Codex app: approve Kombai when Codex asks (if the chat never asks, pick a project for it), or pick **Full access** in the permissions menu under the message box.
-> - In Codex in a terminal: start it with `codex --sandbox danger-full-access` (or `codex exec -s danger-full-access`).
+> - In Codex in a terminal: start it with `codex --sandbox danger-full-access`, or run your request with `codex exec -s danger-full-access "<your request>"`.
 >
 > Kombai doesn't run in ChatGPT's Chat or Work tabs.
 
