@@ -14,8 +14,8 @@ state first. If this chat is in ChatGPT's Chat or Work, run nothing and reply on
 in Codex, not in ChatGPT's Chat or Work, and to switch to Codex and ask there. Otherwise, if this chat can't run a command outside the sandbox, or the user declines, run nothing and do not retry
 inside the sandbox. Reply with only this, word for word:
 
-> Kombai needs internet access to design, and this Codex session blocks it. Fix it one of these ways, then send your message again:
-> - In the Codex app: pick **Full access** in the permissions menu under the message box, or approve Kombai when Codex asks.
+> Kombai needs to run outside Codex's sandbox to design, and this Codex session blocks it. Fix it one of these ways, then send your message again:
+> - In the Codex app: approve Kombai when Codex asks (if the chat never asks, pick a project for it), or pick **Full access** in the permissions menu under the message box.
 > - In Codex in a terminal: start it with `codex --sandbox danger-full-access` (or `codex exec -s danger-full-access`).
 >
 > Kombai doesn't run in ChatGPT's Chat or Work tabs.
