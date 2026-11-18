@@ -6,26 +6,14 @@ Its `about-kombai` skill runs `npx -y @kombai/cli@0.2.0 skill faq` and answers t
 
 Its `generate-assets-with-kombai` skill runs `npx -y @kombai/cli@0.2.0 skill assets` and follows what it prints to generate an AI image or video and get a public link to use. It runs only when the user asks Kombai for one, or for the videos a taste run left as prompts once the user asked for AI video, never on its own (not for stock photos or whole-UI design).
 
-The plugin works wherever Codex runs on the user's computer: the ChatGPT desktop app (its Work chats and Codex), the Codex CLI and the IDE extension. OpenAI's directory also offers it in ChatGPT on the web, which has no shell on the user's computer, so every skill opens with a notice keyed on that shell, not on the app's name: where there is none the agent runs nothing and tells the user to ask in Codex or in a Work chat in the ChatGPT desktop app. The validator checks each skill opens with it (`CHAT_NOTICES` in `scripts/cli-view.mjs`).
+The plugin works only in Codex: Codex in the ChatGPT desktop app, the Codex CLI and the IDE extension. OpenAI's directory also offers it in ChatGPT's Chat and Work (chatgpt.com, and the Chat and Work tabs of the ChatGPT desktop app), where it can't run: Chat has no shell on the user's computer, and Work's sandbox refuses Kombai's commands (its "Approve for me" hands each request to an AI reviewer, which has refused every Kombai command seen, and a workspace's policy may block them outright). So every skill opens with a notice, as the Claude Code plugin's do for Claude's chat: there the agent runs nothing and tells the user Kombai's plugin works only in Codex. The validator checks each skill opens with it (`CHAT_NOTICES` in `scripts/cli-view.mjs`).
 
-The skill requests approved execution outside Codex's sandbox before this first `npx` call
-and for later Kombai CLI commands, using the execution tool's
-`sandbox_permissions: "require_escalated"` setting. npm may need network access before Kombai
-starts, and the CLI writes `~/.kombai`. In a ChatGPT or Codex app chat with no project picked,
-escalations are rejected automatically, so the skill asks for network access and write access to
-`~/.kombai`, npm's cache and the directory containing Codex's `config.toml` (following a config symlink
-to its target; the CLI saves through a temporary sibling there) through Codex's `request_permissions` tool
-instead. That grant can end with the turn, so before a reply's first Kombai command the skill checks
-`node -p "'network_off='+(process.env.CODEX_SANDBOX_NETWORK_DISABLED||0)"` and asks again only when it prints `network_off=1`;
-when a later reply in a chat has to ask again, it shows Kombai's `access_card` (reason `granted`). If the tool is missing or declined,
-it shows that card with reason `blocked`, or, without Kombai's view, tells the user to choose
-"Approve for me" in the permissions menu. Update the installed plugin to receive this bootstrap
-guidance; updating only the CLI does not change the installed skill.
-
-The skills resolve npm's cache with `npm config get cache` (`npm.cmd` on Windows), from the workspace root
-when in an npm workspace. The grant therefore covers Windows defaults and configured cache overrides.
-Before any later command needs another write path, the skills request it too. In particular, an existing
-view's CLI upgrade requires the config-directory grant even when the view is already available.
+The skills run every Kombai CLI command outside Codex's sandbox from the first one, using the execution tool's
+`sandbox_permissions: "require_escalated"` setting: npm may need network access before Kombai starts, and the CLI
+writes `~/.kombai`, npm's cache and, for `mcp install codex`, Codex's config folder. Where the chat can't escalate,
+or the user declines, the skill runs nothing and tells the user Kombai needs to run outside the sandbox, which they
+can allow when Codex asks. Update the installed plugin to receive this guidance; updating only the CLI does not
+change the installed skill.
 
 The plugin ships skills only (`cli.view` is off in `kombai.package.json`, and `requires_local_executor` is set in the manifest): OpenAI's plugin directory drops a plugin's local MCP config. Kombai's canvas view is the Kombai CLI's MCP server, `kombai` (`npx -y @kombai/cli@0.2.0 mcp`), in the user's own Codex config. Setting the plugin up right after installing it runs its onboarding skill, `get-started-with-kombai` (the manifest's `onboardingSkill`; Codex's Try now after an install asks for it too, through the manifest's first `defaultPrompt`), which adds that server with `npx -y @kombai/cli@0.2.0 mcp install codex`, checks the Kombai sign-in, and ends with links that each open a new chat with a Kombai prompt filled in, so the user's first design chat has the view from its first message. Codex gives a chat only the MCP servers it had when it started, so that first onboarding chat can't show the canvas. The user can run the onboarding again: in a chat that has Kombai's view it shows the CLI's starters card, prompts to try with a Try button each. If the user skipped setup, the first time the `work-with-kombai` skill finds no `canvas_app` tool, it runs, without asking, `npx -y @kombai/cli@0.2.0 mcp install codex` to add that server to `config.toml` (`$CODEX_HOME`, else `~/.codex`), and continues in a new task, since a running task never picks up a new MCP server. `npx -y @kombai/cli@0.2.0 mcp uninstall codex` takes the entry out again; uninstalling the plugin leaves it in place. In the Codex desktop app the view is the only way the skill shows a canvas: never a browser or a link. Codex in a terminal gets no view; the skill opens the canvas in the browser instead. The skills read the plugin's Codex id from their own install path (`plugins/cache/<marketplace>/kombai/…`), for the `@Kombai` mention a new chat's prompt starts with: the same ZIP installs as `kombai@openai-curated-remote` from OpenAI's directory and under its marketplace's name when added as a local marketplace.
 

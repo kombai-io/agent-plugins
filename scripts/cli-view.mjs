@@ -253,42 +253,47 @@ export function skillGuidance(text) {
  */
 export const SETUP_SKILL = 'get-started-with-kombai';
 
-/** What the agent tells a user who runs the plugin for `agent` in `chat` (Claude's chat for Claude Code). */
-const chatRefusal = (agent, chat) =>
-  `Kombai's plugin works only in ${agent}, not in ${chat}. Install it in ${agent} and ask there.`;
-const chatNotice = (agent, chat, where) =>
-  `**${agent} only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in ${chat} (${where}) ` +
-  `rather than ${agent}, run nothing, not even in the chat's own code tool (it is not the user's computer), and do no ` +
-  `design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other ` +
-  `help): "${chatRefusal(agent, chat)}"`;
 /**
- * What the Codex plugin tells a user whose chat can't run commands on their computer. The ChatGPT desktop app runs Codex
- * on the user's computer (its Work chats and Codex), so the refusal is keyed on that, not on the app's name.
+ * What the agent tells a user who runs the plugin for `agent` in `chat` (Claude's chat for Claude Code), and what it
+ * asks them to do instead.
  */
-export const CODEX_REFUSAL =
-  "Kombai needs to run commands on your computer, and this chat can't. Ask in Codex or in a Work chat in the " +
-  'ChatGPT desktop app.';
-const codexNotice =
-  "**Needs a shell on the user's computer.** Kombai runs its CLI in a shell on the user's computer. Codex has one " +
-  "wherever it runs: the ChatGPT desktop app (its Work chats and Codex), the Codex CLI and the IDE extension, so " +
-  "carry on there, whatever the app is called. Only if this chat has no shell on the user's computer, as in " +
-  "ChatGPT on the web, whose code tool is a cloud sandbox, run nothing, not even in that code tool, and do no " +
-  'design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other ' +
-  `help): "${CODEX_REFUSAL}"`;
+const chatRefusal = (agent, chat, instead = `Install it in ${agent} and ask there.`) =>
+  `Kombai's plugin works only in ${agent}, not in ${chat}. ${instead}`;
+const chatNotice = (agent, chat, where, refusal, codeTool = " (it is not the user's computer)") =>
+  `**${agent} only.** Kombai runs its CLI in a shell on the user's computer. If this chat is in ${chat} (${where}) ` +
+  `rather than ${agent}, run nothing, not even in the chat's own code tool${codeTool}, and do no ` +
+  `design work: reply with only this, word for word, and add nothing else (no prompt to paste elsewhere, no other ` +
+  `help): "${refusal}"`;
+/**
+ * What the Codex plugin tells a user in ChatGPT's Chat or Work. The ChatGPT desktop app holds Codex too, so the plugin
+ * is already there: the user switches rather than installs. Chat has no shell on the user's computer, and Work runs
+ * Kombai's commands in a sandbox whose way out (its AI reviewer, or a workspace's policy) refuses them, so Kombai works
+ * only in Codex, as the Claude Code plugin works only in Claude Code.
+ */
+export const CODEX_REFUSAL = chatRefusal('Codex', "ChatGPT's Chat or Work", 'Switch to Codex and ask there.');
+
 /**
  * The paragraph every skill of the Codex and Claude Code plugins opens with, each naming only its own agent. OpenAI's
  * directory and Anthropic's plugin catalog also offer these plugins in their chat apps, which have no shell on the
  * user's computer, so the skill could never run there: the agent says where Kombai works instead. The Claude Code
  * notice names Claude's chat rather than listing where the plugin may run, so an older VS Code install that still
- * loads the Claude Code plugin (README.md) keeps working; the Codex notice is keyed on a shell on the user's computer.
+ * loads the Claude Code plugin (README.md) keeps working; the Codex notice likewise names ChatGPT's Chat and Work.
  * Keyed by plugin folder.
  */
 export const CHAT_NOTICES = {
-  codex: codexNotice,
+  codex: chatNotice(
+    'Codex',
+    "ChatGPT's Chat or Work",
+    'chatgpt.com, or the Chat or Work tab of the ChatGPT desktop app',
+    CODEX_REFUSAL,
+    // Work's code tool may run on the user's computer, but its sandbox refuses Kombai's commands all the same.
+    '',
+  ),
   'claude-code': chatNotice(
     'Claude Code',
     "Claude's chat",
     'claude.ai, or the Chat tab of the Claude desktop or mobile app',
+    chatRefusal('Claude Code', "Claude's chat"),
   ),
 };
 
