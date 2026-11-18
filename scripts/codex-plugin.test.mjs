@@ -309,7 +309,11 @@ test('the packed Codex plugin carries no MCP config: its skill sets the view up'
     // Setting the view up is the skill's first instruction after the shell notice, the sandbox note (which ends with the list of ways to
     // get access, the escalation first) and how to run the CLI, before even `kombai skill`.
     const paragraphs = skill.stdout.split('\n\n');
-    const afterSandbox = paragraphs.slice(paragraphs.findIndex((p) => p.includes('require_escalated')) + 1).join('\n\n');
+    // The sandbox note ends with the message to show when the chat can't escalate, quoted.
+    const sandboxAt = paragraphs.findIndex((p) => p.includes('require_escalated'));
+    let quoteEnd = sandboxAt + 1;
+    while (paragraphs[quoteEnd]?.startsWith('>')) quoteEnd += 1;
+    const afterSandbox = paragraphs.slice(quoteEnd).join('\n\n');
     const launcher = `${cliRunLine(RELEASE_CLI_PACKAGE)}\n\n`;
     assert.ok(afterSandbox.startsWith(launcher), afterSandbox.slice(0, 120));
     assert.ok(afterSandbox.slice(launcher.length).startsWith("**First, before anything else, even `kombai skill`:**"), afterSandbox.slice(0, 120));

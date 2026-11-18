@@ -158,10 +158,13 @@ test('the Codex and Claude Code copies open every skill with their own chat noti
       }
     }
   }
-  // Codex's is keyed on a shell on the user's computer, not on the app's name: the ChatGPT desktop app runs Codex there.
+  // Codex's names ChatGPT's Chat and Work, where Kombai can't run, as Claude Code's names Claude's chat.
   assert.ok(CHAT_NOTICES.codex.includes(`"${CODEX_REFUSAL}"`), 'the Codex notice quotes its refusal');
-  assert.match(CHAT_NOTICES.codex, /ChatGPT desktop app \(its Work chats and Codex\)[^.]*carry on there/);
-  assert.match(CODEX_REFUSAL, /Codex or in a Work chat in the ChatGPT desktop app/);
+  assert.match(CHAT_NOTICES.codex, /^\*\*Codex only\.\*\* .*the Chat or Work tab of the ChatGPT desktop app\) rather than Codex/);
+  assert.equal(
+    CODEX_REFUSAL,
+    "Kombai's plugin works only in Codex, not in ChatGPT's Chat or Work. Switch to Codex and ask there.",
+  );
   assert.match(
     CHAT_NOTICES['claude-code'],
     /"Kombai's plugin works only in Claude Code, not in Claude's chat\. Install it in Claude Code and ask there\."/,
