@@ -64,10 +64,12 @@ for (const [host, pack] of Object.entries(PACKS)) {
       for (const folder of [`plugins/${host}`, `plugins/${host}/skills`, `plugins/${host}/skills/work-with-kombai`]) {
         fs.writeFileSync(path.join(root, folder, '.DS_Store'), 'x');
       }
-      for (const team of [false, true]) {
-        const out = path.join(temp, team ? 'team' : 'out');
+      for (const team of [false, true, 'alpha']) {
+        const out = path.join(temp, team === 'alpha' ? 'alpha' : team ? 'team' : 'out');
         const archive = pack(path.relative(process.cwd(), out), root, { team });
         assert.equal(archive, path.join(out, path.basename(archive)), `${host} team=${team}`);
+        const suffix = team === 'alpha' ? '-alpha' : team ? '-team' : '';
+        assert.match(path.basename(archive), new RegExp(`^kombai-${host}-plugin-\\d+\\.\\d+\\.\\d+${suffix}\\.zip$`));
         if (!team) assert.deepEqual(entries(archive), clean, host);
         assert.ok(entries(archive).every((entry) => !entry.endsWith('.DS_Store')), `${host} team=${team}`);
       }

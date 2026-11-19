@@ -7,11 +7,15 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpCodexVersion, packCodexPlugin, validateCodexPlugin } from './codex-plugin.mjs';
 import {
+  ALPHA_CLI_PACKAGE,
   CHAT_NOTICES,
   cliRunLine,
   cliViewMcpConfig,
+  packArgs,
   stageTeamBuild,
   TEAM_CLI_PACKAGE,
+  teamCliPackage,
+  teamSuffix,
 } from './cli-view.mjs';
 import { pinnedCliPackage } from './cli-version.mjs';
 
@@ -60,22 +64,22 @@ function withViewOn(root) {
   fs.writeFileSync(manifestPath, JSON.stringify(manifest));
 }
 
-/** Unzip a team archive and check each stub runs the CLI's newest beta from npm. */
-function checkTeamArchive(archive, pluginDir) {
+/** Unzip a team archive and check each stub runs the CLI's newest beta from npm (or `cliPackage`, the alpha). */
+function checkTeamArchive(archive, pluginDir, cliPackage = TEAM_CLI_PACKAGE) {
   const extracted = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-team-unpacked-'));
   try {
     const result = spawnSync('unzip', ['-q', archive, '-d', extracted], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
     const plugin = path.join(extracted, pluginDir);
     const contract = JSON.parse(fs.readFileSync(path.join(plugin, 'kombai.package.json'), 'utf8'));
-    assert.equal(contract.cli.package, TEAM_CLI_PACKAGE);
+    assert.equal(contract.cli.package, cliPackage);
     for (const [skill, topic] of [
       ['work-with-kombai', ''],
       ['about-kombai', ' faq'],
       ['generate-assets-with-kombai', ' assets'],
     ]) {
       const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
-      assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true })), skill);
+      assert.ok(text.includes(cliRunLine(cliPackage, { npxOnly: true })), skill);
       assert.ok(text.includes(`Run \`kombai skill${topic}\``), skill);
       assert.ok(!text.includes('GitHub Packages'), skill);
       assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
@@ -394,6 +398,49 @@ test('a team pack runs the CLI beta from npm beta, and the source stays on the r
     const contract = JSON.parse(fs.readFileSync(path.join(root, 'plugins/codex/kombai.package.json'), 'utf8'));
     assert.equal(contract.cli.package, RELEASE_CLI_PACKAGE);
   });
+});
+
+test('an alpha pack runs the CLI alpha from npm alpha, and passes as an alpha build only', () => {
+  fixture((root) => {
+    const version = validateCodexPlugin(root);
+    // The source is no alpha build.
+    assert.throws(() => validateCodexPlugin(root, { team: 'alpha' }), /team build must run @kombai\/cli@alpha/);
+    const archive = packCodexPlugin(path.join(root, 'out'), root, { team: 'alpha' });
+    assert.equal(path.basename(archive), `kombai-codex-plugin-${version}-alpha.zip`);
+    const { extracted, plugin } = checkTeamArchive(archive, 'plugins/codex', ALPHA_CLI_PACKAGE);
+    try {
+      // Nothing in it names the beta: every reference moved to the alpha tag.
+      const skill = fs.readFileSync(path.join(plugin, 'skills/work-with-kombai/SKILL.md'), 'utf8');
+      assert.ok(!skill.includes(TEAM_CLI_PACKAGE));
+      assert.equal(validateCodexPlugin(extracted, { team: 'alpha' }), version);
+      // It is neither of the other two builds.
+      assert.throws(() => validateCodexPlugin(extracted, { team: true }), /team build must run @kombai\/cli@beta/);
+      assert.throws(() => validateCodexPlugin(extracted), /must pin a released Kombai CLI/);
+    } finally {
+      fs.rmSync(extracted, { recursive: true, force: true });
+    }
+    const contract = JSON.parse(fs.readFileSync(path.join(root, 'plugins/codex/kombai.package.json'), 'utf8'));
+    assert.equal(contract.cli.package, RELEASE_CLI_PACKAGE);
+  });
+});
+
+test("pack's flags name one team build: --team the beta, --alpha the alpha", () => {
+  assert.deepEqual(packArgs([]), { dir: undefined, team: false });
+  assert.deepEqual(packArgs(['out']), { dir: 'out', team: false });
+  assert.deepEqual(packArgs(['out', '--team']), { dir: 'out', team: true });
+  assert.deepEqual(packArgs(['--alpha', 'out']), { dir: 'out', team: 'alpha' });
+  assert.throws(() => packArgs(['--team', '--alpha']), /Usage: pack/);
+  assert.throws(() => packArgs(['a', 'b']), /Usage: pack/);
+  for (const [team, cliPackage, suffix] of [
+    [true, TEAM_CLI_PACKAGE, '-team'],
+    ['beta', TEAM_CLI_PACKAGE, '-team'],
+    ['alpha', ALPHA_CLI_PACKAGE, '-alpha'],
+  ]) {
+    assert.equal(teamCliPackage(team), cliPackage);
+    assert.equal(teamSuffix(team), suffix);
+  }
+  assert.equal(teamSuffix(false), '');
+  assert.equal(ALPHA_CLI_PACKAGE, '@kombai/cli@alpha');
 });
 
 test('a team build starts only from the release plugin', () => {

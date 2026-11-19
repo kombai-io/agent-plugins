@@ -123,11 +123,16 @@ on:
         description: 'Optional Muse Code plugin version for this build (leave blank to use the committed version)'
         default: ''
         required: false
+      # A choice, not a second checkbox: a workflow takes 25 inputs at most, and this is the 25th.
       team-build:
-        type: boolean
-        description: 'Team build: the plugins run the newest CLI beta (@kombai/cli@beta on npm, on preprod), for colleagues'
-        default: false
+        type: choice
+        description: 'Team build, for colleagues: the plugins run the newest CLI beta (@kombai/cli@beta on npm, on preprod) or alpha (@kombai/cli@alpha, on dev)'
+        default: 'no'
         required: false
+        options:
+          - 'no'
+          - beta
+          - alpha
 
 permissions:
   contents: read
@@ -160,13 +165,13 @@ jobs:
         run: node scripts/codex-plugin.mjs validate --github-output
 
       - name: Package Codex plugin
-        run: node scripts/codex-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/codex-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
 
       - name: Upload Codex plugin
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-codex-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-codex-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-codex-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-codex-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -197,13 +202,13 @@ jobs:
         run: node scripts/claude-code-plugin.mjs validate --github-output
 
       - name: Package Claude Code plugin marketplace
-        run: node scripts/claude-code-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/claude-code-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
 
       - name: Upload Claude Code plugin marketplace
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-claude-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-claude-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-claude-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-claude-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -234,13 +239,13 @@ jobs:
         run: node scripts/cursor-plugin.mjs validate --github-output
 
       - name: Package Cursor plugin marketplace
-        run: node scripts/cursor-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/cursor-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
 
       - name: Upload Cursor plugin marketplace
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-cursor-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-cursor-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-cursor-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-cursor-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -271,13 +276,13 @@ jobs:
         run: node scripts/vscode-plugin.mjs validate --github-output
 
       - name: Package VS Code plugin
-        run: node scripts/vscode-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/vscode-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
 
       - name: Upload VS Code plugin
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-vscode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-vscode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-vscode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-vscode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -308,13 +313,13 @@ jobs:
         run: node scripts/antigravity-plugin.mjs validate --github-output
 
       - name: Package Antigravity plugin
-        run: node scripts/antigravity-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/antigravity-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
 
       - name: Upload Antigravity plugin
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-antigravity-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-antigravity-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-antigravity-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-antigravity-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -345,13 +350,13 @@ jobs:
         run: node scripts/gemini-cli-plugin.mjs validate --github-output
 
       - name: Package Gemini CLI extension
-        run: node scripts/gemini-cli-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/gemini-cli-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
 
       - name: Upload Gemini CLI extension
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-gemini-cli-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-gemini-cli-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-gemini-cli-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-gemini-cli-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -377,12 +382,12 @@ jobs:
         id: plugin-version
         run: node scripts/opencode-plugin.mjs validate --github-output
       - name: Package OpenCode plugin
-        run: node scripts/opencode-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/opencode-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
       - name: Upload OpenCode plugin
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-opencode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-opencode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-opencode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-opencode-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -408,12 +413,12 @@ jobs:
         id: plugin-version
         run: node scripts/kimi-code-plugin.mjs validate --github-output
       - name: Package Kimi Code plugin
-        run: node scripts/kimi-code-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/kimi-code-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
       - name: Upload Kimi Code plugin
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-kimi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-kimi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-kimi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-kimi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -439,12 +444,12 @@ jobs:
         id: plugin-version
         run: node scripts/pi-code-plugin.mjs validate --github-output
       - name: Package Pi plugin
-        run: node scripts/pi-code-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/pi-code-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
       - name: Upload Pi plugin
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-pi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-pi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-pi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-pi-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -470,12 +475,12 @@ jobs:
         id: plugin-version
         run: node scripts/qwen-code-plugin.mjs validate --github-output
       - name: Package Qwen Code extension
-        run: node scripts/qwen-code-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/qwen-code-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
       - name: Upload Qwen Code extension
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-qwen-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-qwen-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-qwen-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-qwen-code-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -501,12 +506,12 @@ jobs:
         id: plugin-version
         run: node scripts/hermes-agent-plugin.mjs validate --github-output
       - name: Package Hermes Agent plugin
-        run: node scripts/hermes-agent-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/hermes-agent-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
       - name: Upload Hermes Agent plugin
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-hermes-agent-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-hermes-agent-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-hermes-agent-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-hermes-agent-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -532,11 +537,11 @@ jobs:
         id: plugin-version
         run: node scripts/muse-plugin.mjs validate --github-output
       - name: Package Muse Code plugin
-        run: node scripts/muse-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build && '--team' || '' }}
+        run: node scripts/muse-plugin.mjs pack "$RUNNER_TEMP" ${{ inputs.team-build == 'alpha' && '--alpha' || inputs.team-build == 'beta' && '--team' || '' }}
       - name: Upload Muse Code plugin
         uses: actions/upload-artifact@v4
         with:
-          name: kombai-muse-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}
-          path: ${{ runner.temp }}/kombai-muse-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build && '-team' || '' }}.zip
+          name: kombai-muse-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}
+          path: ${{ runner.temp }}/kombai-muse-plugin-${{ steps.plugin-version.outputs.version }}${{ inputs.team-build == 'alpha' && '-alpha' || inputs.team-build == 'beta' && '-team' || '' }}.zip
           if-no-files-found: error
           compression-level: 0

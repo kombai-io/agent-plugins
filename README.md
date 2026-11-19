@@ -438,7 +438,7 @@ checkout only; it does not commit or push changes. For releases installed from G
 that version change before publishing the revision.
 
 GitHub wraps each workflow artifact in a ZIP of its own, so the file downloaded from the run page,
-`kombai-<host>-plugin-<version>[-team].zip`, holds the plugin ZIP of the same name. Unzip the
+`kombai-<host>-plugin-<version>[-team|-alpha].zip`, holds the plugin ZIP of the same name. Unzip the
 download into a folder of its own first (`gh run download <run-id> -n <artifact name>` does that
 step for you); the sentences below are about that inner ZIP.
 
@@ -452,7 +452,7 @@ ZIP contains `.github/plugin/marketplace.json` and `plugins/vscode/`; unzip it s
 stay, then install the extracted `plugins/vscode` with **Chat: Install Plugin from Source** (VS
 Code 1.128 or later), which uses the folder in place. The Antigravity and Gemini CLI ZIPs each
 hold one folder named after the archive (`kombai-antigravity-plugin-<version>`,
-`kombai-gemini-cli-plugin-<version>`, with `-team` for a team build) with the plugin's contents
+`kombai-gemini-cli-plugin-<version>`, with `-team` or `-alpha` for a team build) with the plugin's contents
 in it, so that folder goes straight to `agy plugin install` or `gemini extensions install`.
 The OpenCode, Pi, and Kimi Code ZIPs each hold one installable plugin folder. OpenCode loads its folder when it is listed
 in `opencode.jsonc`; Pi loads its extracted folder with `pi install /absolute/path/to/folder`;
@@ -464,8 +464,13 @@ Workflow artifacts do not publish marketplace listings or GitHub releases.
 Colleagues trying a CLI beta before it is released use a team build of each plugin: the same
 plugin, running the newest beta, npm's `beta` tag of the CLI (vscode-assistant's Publish CLI
 `beta` action, run from `preprod`), which talks to preprod unless `kombai config env` says
-otherwise. No plugin build runs the alphas from `dev` (npm's `alpha` tag).
-Check **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
+otherwise. An alpha build is the same for the step before: it runs the newest alpha, npm's `alpha`
+tag (Publish CLI's `alpha` action, run from `dev`), which talks to dev. Choose **alpha** under
+**Team build** in Build Plugins, or run `pack [directory] --alpha`: it writes
+`kombai-<host>-plugin-<version>-alpha.zip`, and the rest of this section holds for it with `alpha`
+in place of `beta`. A machine that has ever run `kombai config env` keeps that backend, so a
+colleague on an alpha build runs `kombai config env dev` once, through the alpha's own npx line.
+Choose **beta** under **Team build** in Build Plugins, or run `node scripts/<host>-plugin.mjs pack [directory] --team`
 (`<host>` is `codex`, `claude-code`, `cursor`, `vscode`, `antigravity`, `gemini-cli`, `opencode`, `pi-code`, or `kimi-code`): it writes `kombai-<host>-plugin-<version>-team.zip`
 from a staged copy in which the beta tag takes the place of the pinned version everywhere, so the
 source always pins a released CLI. In the staged copy the line that says how to run the CLI names

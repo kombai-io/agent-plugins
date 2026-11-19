@@ -15,8 +15,8 @@ function cli(script, args, env = {}) {
   return result.stdout.trim();
 }
 
-// The commands Build Plugins runs for each host: `validate --github-output`, then `pack "$RUNNER_TEMP"` with or
-// without `--team`.
+// The commands Build Plugins runs for each host: `validate --github-output`, then `pack "$RUNNER_TEMP"` alone, with
+// `--team` or with `--alpha`.
 // Grok Build and Devin install from a pinned commit of this repository, so their scripts only validate and bump:
 // Validate Plugins and `pnpm run check` run `validate`.
 for (const host of ['grok', 'devin']) {
@@ -38,7 +38,7 @@ for (const host of ['grok', 'devin']) {
 }
 
 for (const host of ['codex', 'claude-code', 'cursor', 'vscode', 'antigravity', 'gemini-cli']) {
-  test(`${host}: validate --github-output and pack <dir> [--team] work as Build Plugins runs them`, () => {
+  test(`${host}: validate --github-output and pack <dir> [--team | --alpha] work as Build Plugins runs them`, () => {
     const out = fs.mkdtempSync(path.join(os.tmpdir(), `kombai-${host}-cli-`));
     try {
       const output = path.join(out, 'github-output');
@@ -47,10 +47,23 @@ for (const host of ['codex', 'claude-code', 'cursor', 'vscode', 'antigravity', '
       const version = cli(script, ['validate', '--github-output'], { GITHUB_OUTPUT: output });
       assert.match(version, /^\d+\.\d+\.\d+$/);
       assert.equal(fs.readFileSync(output, 'utf8'), `version=${version}\n`);
-      for (const team of [false, true]) {
-        const archive = cli(script, ['pack', out, ...(team ? ['--team'] : [])]);
-        assert.equal(archive, path.join(out, `kombai-${host}-plugin-${version}${team ? '-team' : ''}.zip`));
+      for (const [flags, suffix] of [
+        [[], ''],
+        [['--team'], '-team'],
+        [['--alpha'], '-alpha'],
+      ]) {
+        const archive = cli(script, ['pack', out, ...flags]);
+        assert.equal(archive, path.join(out, `kombai-${host}-plugin-${version}${suffix}.zip`));
         assert.ok(fs.statSync(archive).size > 0, archive);
+      }
+      // One build for each pack: both flags, or a second directory, are refused.
+      for (const args of [
+        ['pack', out, '--team', '--alpha'],
+        ['pack', out, out],
+      ]) {
+        const result = spawnSync(process.execPath, [script, ...args], { encoding: 'utf8' });
+        assert.equal(result.status, 1, args.join(' '));
+        assert.match(result.stderr, /Usage: pack \[output-directory\] \[--team \| --alpha\]/);
       }
     } finally {
       fs.rmSync(out, { recursive: true, force: true });

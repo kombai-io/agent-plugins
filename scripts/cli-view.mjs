@@ -39,10 +39,10 @@ export const RUN_LINE_START = "Run Kombai's CLI (`kombai` below)";
  * beside a newer one the CLI reports. Where the launcher's folder holds no usable copy, its own `CLI_NOT_INSTALLED`
  * error names the npx line to run.
  *
- * Two builds get the line that names npx alone (`npxOnly`). A team build (stageTeamBuild) follows npm's `beta` tag,
- * which is what moves a colleague's copy to each new beta. And a host whose skills tell the user which commands to
- * allow ahead of time, by how they start (Antigravity), keeps the command those rules allow: one that starts with
- * `node` or `if` would be refused where the host can't ask.
+ * Two builds get the line that names npx alone (`npxOnly`). A team build (stageTeamBuild) follows npm's `beta` or
+ * `alpha` tag, which is what moves a colleague's copy to each new build. And a host whose skills tell the user which
+ * commands to allow ahead of time, by how they start (Antigravity), keeps the command those rules allow: one that
+ * starts with `node` or `if` would be refused where the host can't ask.
  */
 export function cliRunLine(cliPackage, { npxOnly = false } = {}) {
   return npxOnly
@@ -140,13 +140,14 @@ export function assertNoStrayCli(stray, base, cliPackage, rule) {
  * and its `.mcp.json` registers the view exactly when `cli.view` is on. No other MCP or app configuration ships.
  * `shipped` lists the other files or folders (relative to `root`) a pack zips with the plugin, its marketplace among
  * them, held to the same CLI: filesBesidePlugin of the pack's own list, so nothing it zips goes unchecked.
- * `team` checks a team build instead (stageTeamBuild), which runs TEAM_CLI_PACKAGE. `npxOnly` is for a host whose
+ * `team` checks a team build instead (stageTeamBuild), which runs teamCliPackage(team). `npxOnly` is for a host whose
  * skills run the CLI through npx alone (cliRunLine). Returns whether the plugin registers the view.
  */
 export function checkCliContract(pluginRoot, contract, host, { team = false, root, shipped = [], npxOnly = false } = {}) {
   const cli = contract.cli;
   if (team) {
-    assert(cli?.package === TEAM_CLI_PACKAGE, `${host} team build must run ${TEAM_CLI_PACKAGE}, not ${cli?.package}.`);
+    const teamPackage = teamCliPackage(team);
+    assert(cli?.package === teamPackage, `${host} team build must run ${teamPackage}, not ${cli?.package}.`);
   } else {
     assert(
       isReleaseCliPackage(cli?.package),
@@ -176,7 +177,7 @@ export function checkCliContract(pluginRoot, contract, host, { team = false, roo
       `${host} ${name} skill must run \`kombai skill${topic}\`.`,
     );
   }
-  checkRunLine(pluginRoot, host, cli.package, { npxOnly: npxOnly || team });
+  checkRunLine(pluginRoot, host, cli.package, { npxOnly: npxOnly || Boolean(team) });
 
   const mcpFile = path.join(pluginRoot, '.mcp.json');
   if (cli.view) {
@@ -348,6 +349,35 @@ export const UNQUOTED_YAML_BREAKER_RE = /:\s|\s#/;
 // is allowed: a team ZIP never goes to a plugin directory, and following the tag spares colleagues a reinstall for
 // every beta.
 export const TEAM_CLI_PACKAGE = `${CLI_NAME}@beta`;
+// The alpha build is the same for the step before: the newest alpha from npm's `alpha` tag (Publish CLI's `alpha`
+// action, run from `dev`), which talks to dev. `pack --alpha` zips it.
+export const ALPHA_CLI_PACKAGE = `${CLI_NAME}@alpha`;
+/**
+ * A pack's `team` option: false for the release plugin, `'alpha'` for the alpha build, and anything else true
+ * (`true`, `'beta'`) for the beta build.
+ * @typedef {boolean | 'beta' | 'alpha'} Team
+ */
+/** The CLI a team build runs. @param {Team} team */
+export function teamCliPackage(team) {
+  return team === 'alpha' ? ALPHA_CLI_PACKAGE : TEAM_CLI_PACKAGE;
+}
+/** What a pack's ZIP name ends with, before `.zip`. @param {Team} team */
+export function teamSuffix(team) {
+  if (team === 'alpha') return '-alpha';
+  return team ? '-team' : '';
+}
+/** How every host's `pack` is called. */
+export const PACK_USAGE = 'Usage: pack [output-directory] [--team | --alpha]';
+/**
+ * Read `pack`'s arguments: at most one output directory, and `--team` or `--alpha`, not both.
+ * @returns {{ dir: string | undefined, team: Team }}
+ */
+export function packArgs(args) {
+  const flags = new Set(args.filter((arg) => arg === '--team' || arg === '--alpha'));
+  const dirs = args.filter((arg) => !flags.has(arg));
+  assert(dirs.length <= 1 && flags.size <= 1, PACK_USAGE);
+  return { dir: dirs[0], team: flags.has('--alpha') ? 'alpha' : flags.has('--team') };
+}
 
 /** The files under `target` in name order, `target` itself when it is a file, or none when it is missing. */
 export function filesUnder(target) {
@@ -453,13 +483,14 @@ export function zipPluginFolder(dir, archive) {
 }
 
 /**
- * Copy `files` (paths under `root`) into a new directory as the team build, with TEAM_CLI_PACKAGE in place of the
+ * Copy `files` (paths under `root`) into a new directory as the team build, with teamCliPackage(team) in place of the
  * pinned release CLI (`contract.cli.package`) in every text file, and the team's cliRunLine, which names npx alone, in
  * place of the release one: a colleague's copy moves to each new beta when npx starts that beta, and preprod's backend
- * names no beta for it to move to otherwise. The caller removes the returned directory and checks it with its
- * validator's `team` option.
+ * names no beta for it to move to otherwise; an alpha never keeps an installed copy, so npx is all that runs it. The
+ * caller removes the returned directory and checks it with its validator's `team` option.
+ * @param {Team} [team]
  */
-export function stageTeamBuild(root, files, contract) {
+export function stageTeamBuild(root, files, contract, team = true) {
   const release = contract.cli?.package;
   assert(
     isReleaseCliPackage(release),
@@ -474,13 +505,14 @@ export function stageTeamBuild(root, files, contract) {
   }
   const releaseLine = cliRunLine(release);
   // A plugin whose release line is the npx-only one already (Antigravity) gets the same line from the pin's rewrite.
-  const teamLine = cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true });
+  const teamPackage = teamCliPackage(team);
+  const teamLine = cliRunLine(teamPackage, { npxOnly: true });
   // Whole references only: `@kombai/cli@0.1.40` is not `@kombai/cli@0.1.4` followed by a 0.
   for (const file of filesUnder(stage)) {
     const text = textOf(file);
     const next = text?.replaceAll(releaseLine, teamLine).replace(PINNABLE_REFERENCE_RE, (match) => {
       const reference = withoutFullStop(match);
-      return reference === release ? TEAM_CLI_PACKAGE + match.slice(reference.length) : match;
+      return reference === release ? teamPackage + match.slice(reference.length) : match;
     });
     if (next !== undefined && next !== text) fs.writeFileSync(file, next);
   }

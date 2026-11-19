@@ -6,7 +6,7 @@
 //   pnpm run set-cli-version <x.y.z>
 //
 //   1. refuses a tag (`latest`, `beta`, …), a range or a prerelease: the plugins are release plugins (team builds run
-//      the beta from a staged copy, `pack --team`);
+//      the beta or the alpha from a staged copy, `pack --team` or `pack --alpha`);
 //   2. checks the version on npm: it exists, its `mcp install` takes every client a plugin's skill runs it for
 //      (Codex: `codex`, Claude Code: `claude-code`), and its published dist has every skill topic a skill prints
 //      (`skill`, `skill faq`, `skill assets`), so no plugin pins a CLI older than its skills;
@@ -274,7 +274,7 @@ export function setCliVersion(version, { root = workspaceRoot, npm = npmRegistry
   assert(
     typeof version === 'string' && RELEASE_VERSION_RE.test(version),
     `Pin a released CLI version, x.y.z, not "${version}": the plugin directories refuse a tag, and the plugins ` +
-      "don't run a prerelease (a team build runs the beta: pack --team).",
+      "don't run a prerelease (a team build runs the beta or the alpha: pack --team, pack --alpha).",
   );
   assert(npm.versionExists(version), `${CLI_NAME}@${version} is not on npm.`);
   const clients = requiredInstallClients(root);

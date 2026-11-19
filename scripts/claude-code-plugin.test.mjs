@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { bumpClaudeCodeVersion, packClaudeCodePlugin, validateClaudeCodePlugin } from './claude-code-plugin.mjs';
 import {
+  ALPHA_CLI_PACKAGE,
   CHAT_NOTICES,
   cliRunLine,
   cliViewMcpConfig,
@@ -38,22 +39,22 @@ function fixture(run) {
   }
 }
 
-/** Unzip a team archive and check each stub runs the CLI's newest beta from npm. */
-function checkTeamArchive(archive, pluginDir) {
+/** Unzip a team archive and check each stub runs the CLI's newest beta from npm (or `cliPackage`, the alpha). */
+function checkTeamArchive(archive, pluginDir, cliPackage = TEAM_CLI_PACKAGE) {
   const extracted = fs.mkdtempSync(path.join(os.tmpdir(), 'kombai-team-unpacked-'));
   try {
     const result = spawnSync('unzip', ['-q', archive, '-d', extracted], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
     const plugin = path.join(extracted, pluginDir);
     const contract = JSON.parse(fs.readFileSync(path.join(plugin, 'kombai.package.json'), 'utf8'));
-    assert.equal(contract.cli.package, TEAM_CLI_PACKAGE);
+    assert.equal(contract.cli.package, cliPackage);
     for (const [skill, topic] of [
       ['work-with-kombai', ''],
       ['about-kombai', ' faq'],
       ['generate-assets-with-kombai', ' assets'],
     ]) {
       const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
-      assert.ok(text.includes(cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true })), skill);
+      assert.ok(text.includes(cliRunLine(cliPackage, { npxOnly: true })), skill);
       assert.ok(text.includes(`Run \`kombai skill${topic}\``), skill);
       assert.ok(!text.includes('GitHub Packages'), skill);
       assert.ok(!text.includes(RELEASE_CLI_PACKAGE), skill);
@@ -313,6 +314,30 @@ test('a Claude Code team pack runs the CLI team build, and ships no MCP config e
       assert.ok(readme.includes(`first says how to run them: "${cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true })}"`));
       assert.ok(!readme.includes(LAUNCHER_RUN));
       assert.equal(validateClaudeCodePlugin(extracted, { team: true }), version);
+    } finally {
+      fs.rmSync(extracted, { recursive: true, force: true });
+    }
+  });
+});
+
+test('a Claude Code alpha pack runs the CLI alpha from npm alpha, and passes as an alpha build only', () => {
+  fixture((root) => {
+    const version = validateClaudeCodePlugin(root);
+    const archive = packClaudeCodePlugin(path.join(root, 'out'), root, { team: 'alpha' });
+    assert.equal(path.basename(archive), `kombai-claude-code-plugin-${version}-alpha.zip`);
+    const { extracted, plugin } = checkTeamArchive(archive, 'plugins/claude-code', ALPHA_CLI_PACKAGE);
+    try {
+      const readme = fs.readFileSync(path.join(plugin, 'README.md'), 'utf8');
+      assert.ok(readme.includes(`first says how to run them: "${cliRunLine(ALPHA_CLI_PACKAGE, { npxOnly: true })}"`));
+      assert.ok(!readme.includes(LAUNCHER_RUN));
+      assert.ok(!readme.includes(TEAM_CLI_PACKAGE));
+      assert.equal(validateClaudeCodePlugin(extracted, { team: 'alpha' }), version);
+      // It is neither of the other two builds.
+      assert.throws(
+        () => validateClaudeCodePlugin(extracted, { team: true }),
+        /team build must run @kombai\/cli@beta/,
+      );
+      assert.throws(() => validateClaudeCodePlugin(extracted), /must pin a released Kombai CLI/);
     } finally {
       fs.rmSync(extracted, { recursive: true, force: true });
     }

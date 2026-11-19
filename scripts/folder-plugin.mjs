@@ -11,8 +11,10 @@ import {
   checkPluginFiles,
   checkSkills,
   readPluginFile,
+  packArgs,
   stageTeamBuild,
   zipPluginFolder,
+  teamSuffix,
 } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -85,11 +87,11 @@ export function makeFolderPlugin({ host, label, manifest, files, extraSkills = [
     outputDir = path.resolve(outputDir);
     assertPackOutside(outputDir, root, [relative]);
     const version = validate(root);
-    const from = team ? stageTeamBuild(root, stageFiles, json(path.join(root, relative, 'kombai.package.json'))) : root;
+    const from = team ? stageTeamBuild(root, stageFiles, json(path.join(root, relative, 'kombai.package.json')), team) : root;
     try {
       if (team) validate(from, { team });
       fs.mkdirSync(outputDir, { recursive: true });
-      return zipPluginFolder(path.join(from, relative), path.join(outputDir, `kombai-${host}-plugin-${version}${team ? '-team' : ''}.zip`));
+      return zipPluginFolder(path.join(from, relative), path.join(outputDir, `kombai-${host}-plugin-${version}${teamSuffix(team)}.zip`));
     } finally {
       if (team) fs.rmSync(from, { recursive: true, force: true });
     }
@@ -112,9 +114,8 @@ export function makeFolderPlugin({ host, label, manifest, files, extraSkills = [
         result = bump(value);
       } else if (command === 'pack') {
         const args = [value, ...extra].filter((arg) => arg !== undefined);
-        const dirs = args.filter((arg) => arg !== '--team');
-        assert(dirs.length <= 1, 'Usage: pack [output-directory] [--team]');
-        result = pack(dirs[0] && path.resolve(dirs[0]), undefined, { team: args.includes('--team') });
+        const { dir, team } = packArgs(args);
+        result = pack(dir && path.resolve(dir), undefined, { team });
       } else {
         throw new Error(`Usage: ${host}-plugin.mjs <validate|bump|pack>`);
       }
