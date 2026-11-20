@@ -58,7 +58,7 @@ test('OpenCode entry registers all four packaged skills through the Skills API',
     assert.deepEqual(registered.map((skill) => skill.id), ['work-with-kombai', 'about-kombai', 'generate-assets-with-kombai', 'get-started-with-kombai']);
     for (const skill of registered) {
       assert.ok(skill.description);
-      assert.ok(skill.content.includes('npx -y @kombai/cli@0.2.0'));
+      assert.ok(skill.content.includes('npx -y @kombai/cli@0.3.0'));
       assert.equal(skill.autoinvoke, true);
       assert.equal(fs.existsSync(skill.path), true);
     }

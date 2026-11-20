@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "kombai",
   "displayName": "Kombai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Design interfaces and generate assets with Kombai in Muse Code",
   "compat": {
     "source": "native",
@@ -10,10 +10,26 @@
   },
   "capabilities": {
     "skills": [
-      { "id": "work-with-kombai", "path": "skills/work-with-kombai/SKILL.md", "enabledDefault": true },
-      { "id": "about-kombai", "path": "skills/about-kombai/SKILL.md", "enabledDefault": true },
-      { "id": "generate-assets-with-kombai", "path": "skills/generate-assets-with-kombai/SKILL.md", "enabledDefault": true },
-      { "id": "get-started-with-kombai", "path": "skills/get-started-with-kombai/SKILL.md", "enabledDefault": true }
+      {
+        "id": "work-with-kombai",
+        "path": "skills/work-with-kombai/SKILL.md",
+        "enabledDefault": true
+      },
+      {
+        "id": "about-kombai",
+        "path": "skills/about-kombai/SKILL.md",
+        "enabledDefault": true
+      },
+      {
+        "id": "generate-assets-with-kombai",
+        "path": "skills/generate-assets-with-kombai/SKILL.md",
+        "enabledDefault": true
+      },
+      {
+        "id": "get-started-with-kombai",
+        "path": "skills/get-started-with-kombai/SKILL.md",
+        "enabledDefault": true
+      }
     ],
     "commands": [],
     "hooks": [],

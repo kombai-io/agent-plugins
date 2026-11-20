@@ -1,7 +1,7 @@
 {
   "name": "kombai",
   "displayName": "Kombai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Design interfaces and generate assets with Kombai in Qwen Code",
   "skills": "skills"
 }
