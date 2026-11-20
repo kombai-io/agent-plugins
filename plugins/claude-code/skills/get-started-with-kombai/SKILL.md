@@ -26,7 +26,7 @@ the same three as Kombai's onboarding in Codex:
 
 Show no link: Claude's chat opens none to a new session.
 
-Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.0`.
 
 First look among your tools for one whose name ends in `taste_card` (Claude may list Kombai's tools by name only).
 Then follow one of the two paths below.

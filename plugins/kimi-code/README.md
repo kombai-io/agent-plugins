@@ -2,7 +2,7 @@
 
 This Kimi Code plugin ships four skills: `work-with-kombai` for UI design, `about-kombai` for product questions, `generate-assets-with-kombai` for requested images or videos, and `get-started-with-kombai` for first-use sign-in and prompts. The skills use Kombai’s CLI for the workflow, FAQ, assets, and sign-in topics. The CLI needs Node.js 20 or later and opens the hosted Kombai canvas in your browser. The plugin does not register an MCP server.
 
-Each skill first says how to run them: "Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`."
+Each skill first says how to run them: "Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.0`."
 
 ## Test from a local checkout
 

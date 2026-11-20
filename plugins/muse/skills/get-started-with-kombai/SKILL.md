@@ -5,7 +5,7 @@ description: Set up Kombai for first use in Muse Code, check sign-in, and show d
 
 This Muse Code plugin already supplies Kombai's skills. It has no MCP server or canvas view to install; the Kombai canvas opens in the browser. Do not run a host-specific MCP install command.
 
-Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.2.0`.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.0`.
 
 Run `kombai whoami` to check whether the user is signed in. If not, run `kombai skill sign-in` and follow its instructions. The user completes sign-in in their own browser and checks the match code. Do not sign in or sign up on their behalf unless they explicitly ask.
 

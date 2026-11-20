@@ -18,7 +18,7 @@ and covers Windows, where commands run as `npx.cmd`. The second matches the late
 run Kombai's own copy under `~/.kombai/cli/install` with `node`. Answering the approval prompt with
 "always allow" covers only the Kombai version this skill runs now.
 
-Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.2.0`.
+Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.3.0`.
 
 Run `kombai skill assets` and follow what it prints; it is this skill's full text.
 
