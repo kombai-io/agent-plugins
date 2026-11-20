@@ -3,7 +3,16 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { assertPackOutside, checkCliContract, checkSkills, filesBesidePlugin, stageTeamBuild, STRAY_FILE } from './cli-view.mjs';
+import {
+  assertPackOutside,
+  checkCliContract,
+  checkSkills,
+  filesBesidePlugin,
+  packArgs,
+  stageTeamBuild,
+  STRAY_FILE,
+  teamSuffix,
+} from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -92,12 +101,12 @@ export function packCursorPlugin(
   const version = validateCursorPlugin(root);
   // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
   const from = team
-    ? stageTeamBuild(root, PACKAGE_FILES, readJson(path.join(root, 'plugins/cursor/kombai.package.json')))
+    ? stageTeamBuild(root, PACKAGE_FILES, readJson(path.join(root, 'plugins/cursor/kombai.package.json')), team)
     : root;
   try {
     if (team) validateCursorPlugin(from, { team });
     fs.mkdirSync(outputDir, { recursive: true });
-    const archive = path.join(outputDir, `kombai-cursor-plugin-${version}${team ? '-team' : ''}.zip`);
+    const archive = path.join(outputDir, `kombai-cursor-plugin-${version}${teamSuffix(team)}.zip`);
     fs.rmSync(archive, { force: true });
     for (const [command, args] of [
       ['zip', ['-q', '-r', archive, ...PACKAGE_FILES, '-x', `*${STRAY_FILE}`]],
@@ -129,9 +138,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       result = bumpCursorVersion(value);
     } else if (command === 'pack') {
       const args = [value, ...extra].filter((arg) => arg !== undefined);
-      const dirs = args.filter((arg) => arg !== '--team');
-      assert(dirs.length <= 1, 'Usage: pack [output-directory] [--team]');
-      result = packCursorPlugin(dirs[0] && path.resolve(dirs[0]), undefined, { team: args.includes('--team') });
+      const { dir, team } = packArgs(args);
+      result = packCursorPlugin(dir && path.resolve(dir), undefined, { team });
     } else {
       throw new Error('Usage: cursor-plugin.mjs <validate|bump|pack>');
     }

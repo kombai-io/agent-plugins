@@ -12,9 +12,11 @@ import {
   isFile,
   readPluginFile,
   skillGuidance,
+  packArgs,
   stageTeamBuild,
   WORKFLOW_SKILL,
   zipPluginFolder,
+  teamSuffix,
 } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -224,11 +226,11 @@ export function packAntigravityPlugin(
   assertPackOutside(outputDir, root, [PLUGIN_DIR]);
   const version = validateAntigravityPlugin(root);
   // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
-  const from = team ? stageTeamBuild(root, STAGE_FILES, readJson(path.join(root, PLUGIN_DIR, 'kombai.package.json'))) : root;
+  const from = team ? stageTeamBuild(root, STAGE_FILES, readJson(path.join(root, PLUGIN_DIR, 'kombai.package.json')), team) : root;
   try {
     if (team) validateAntigravityPlugin(from, { team });
     fs.mkdirSync(outputDir, { recursive: true });
-    const archive = path.join(outputDir, `kombai-antigravity-plugin-${version}${team ? '-team' : ''}.zip`);
+    const archive = path.join(outputDir, `kombai-antigravity-plugin-${version}${teamSuffix(team)}.zip`);
     return zipPluginFolder(path.join(from, PLUGIN_DIR), archive);
   } finally {
     if (team) fs.rmSync(from, { recursive: true, force: true });
@@ -251,9 +253,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       result = bumpAntigravityVersion(value);
     } else if (command === 'pack') {
       const args = [value, ...extra].filter((arg) => arg !== undefined);
-      const dirs = args.filter((arg) => arg !== '--team');
-      assert(dirs.length <= 1, 'Usage: pack [output-directory] [--team]');
-      result = packAntigravityPlugin(dirs[0] && path.resolve(dirs[0]), undefined, { team: args.includes('--team') });
+      const { dir, team } = packArgs(args);
+      result = packAntigravityPlugin(dir && path.resolve(dir), undefined, { team });
     } else {
       throw new Error('Usage: antigravity-plugin.mjs <validate|bump|pack>');
     }

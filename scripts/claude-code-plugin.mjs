@@ -11,8 +11,10 @@ import {
   filesBesidePlugin,
   checkSkills,
   SETUP_SKILL,
+  packArgs,
   stageTeamBuild,
   STRAY_FILE,
+  teamSuffix,
 } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -124,12 +126,12 @@ export function packClaudeCodePlugin(
   const version = validateClaudeCodePlugin(root);
   // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
   const from = team
-    ? stageTeamBuild(root, PACKAGE_FILES, readJson(path.join(root, 'plugins/claude-code/kombai.package.json')))
+    ? stageTeamBuild(root, PACKAGE_FILES, readJson(path.join(root, 'plugins/claude-code/kombai.package.json')), team)
     : root;
   try {
     if (team) validateClaudeCodePlugin(from, { team });
     fs.mkdirSync(outputDir, { recursive: true });
-    const archive = path.join(outputDir, `kombai-claude-code-plugin-${version}${team ? '-team' : ''}.zip`);
+    const archive = path.join(outputDir, `kombai-claude-code-plugin-${version}${teamSuffix(team)}.zip`);
     fs.rmSync(archive, { force: true });
     for (const [command, args] of [
       ['zip', ['-q', '-r', archive, ...PACKAGE_FILES, '-x', `*${STRAY_FILE}`]],
@@ -161,9 +163,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       result = bumpClaudeCodeVersion(value);
     } else if (command === 'pack') {
       const args = [value, ...extra].filter((arg) => arg !== undefined);
-      const dirs = args.filter((arg) => arg !== '--team');
-      assert(dirs.length <= 1, 'Usage: pack [output-directory] [--team]');
-      result = packClaudeCodePlugin(dirs[0] && path.resolve(dirs[0]), undefined, { team: args.includes('--team') });
+      const { dir, team } = packArgs(args);
+      result = packClaudeCodePlugin(dir && path.resolve(dir), undefined, { team });
     } else {
       throw new Error('Usage: claude-code-plugin.mjs <validate|bump|pack>');
     }

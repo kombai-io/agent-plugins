@@ -13,9 +13,11 @@ import {
   FAQ_SKILL,
   readPluginFile,
   skillGuidance,
+  packArgs,
   stageTeamBuild,
   STRAY_FILE,
   WORKFLOW_SKILL,
+  teamSuffix,
 } from './cli-view.mjs';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -147,12 +149,12 @@ export function packVsCodePlugin(
   const version = validateVsCodePlugin(root);
   // The team build zips a staged copy that runs the CLI's team build (cli-view.mjs).
   const from = team
-    ? stageTeamBuild(root, PACKAGE_FILES, readJson(path.join(root, 'plugins/vscode/kombai.package.json')))
+    ? stageTeamBuild(root, PACKAGE_FILES, readJson(path.join(root, 'plugins/vscode/kombai.package.json')), team)
     : root;
   try {
     if (team) validateVsCodePlugin(from, { team });
     fs.mkdirSync(outputDir, { recursive: true });
-    const archive = path.join(outputDir, `kombai-vscode-plugin-${version}${team ? '-team' : ''}.zip`);
+    const archive = path.join(outputDir, `kombai-vscode-plugin-${version}${teamSuffix(team)}.zip`);
     fs.rmSync(archive, { force: true });
     for (const [command, args] of [
       ['zip', ['-q', '-r', archive, ...PACKAGE_FILES, '-x', `*${STRAY_FILE}`]],
@@ -184,9 +186,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       result = bumpVsCodeVersion(value);
     } else if (command === 'pack') {
       const args = [value, ...extra].filter((arg) => arg !== undefined);
-      const dirs = args.filter((arg) => arg !== '--team');
-      assert(dirs.length <= 1, 'Usage: pack [output-directory] [--team]');
-      result = packVsCodePlugin(dirs[0] && path.resolve(dirs[0]), undefined, { team: args.includes('--team') });
+      const { dir, team } = packArgs(args);
+      result = packVsCodePlugin(dir && path.resolve(dir), undefined, { team });
     } else {
       throw new Error('Usage: vscode-plugin.mjs <validate|bump|pack>');
     }
