@@ -26,6 +26,8 @@ what it prints: generating an AI image or video for a design or the repo, and ge
 to it. It runs only when the user asks Kombai for an image or video (names Kombai or picks the skill), or
 for the videos a taste run left as prompts once the user asked for AI video; never on its own, and a plain
 image or video request stays with the host's own tool. It is not for stock photos or for designing a whole UI (that is `work-with-kombai`'s).
+The Claude Code plugin leaves this skill out: Anthropic's plugin directory refuses a tool that hands
+back AI-generated media as a file or link of its own (v0.6.2 was refused for it).
 
 **Release order:** the pinned CLI 0.2.0 includes vscode-assistant PR #4107 and #4095. Future pins must
 keep both changes: this skill needs a CLI release that ships #4107, not only
@@ -42,9 +44,12 @@ An existing MCP server that does not support it receives `account` instead, so g
 without first replacing their running server. This rule takes precedence over the CLI text;
 without the card tool, the CLI's normal sign-in instructions apply.
 
-The Codex and Claude Code plugins have a fourth, `get-started-with-kombai`, their onboarding: it sets
-up Kombai's MCP server in the user's own config before the first design chat, checks the sign-in,
-and ends with prompts to try (see [The canvas view](#the-canvas-view)).
+The Codex and Claude Code plugins have a fourth, `get-started-with-kombai`, their onboarding. Codex's
+sets up Kombai's MCP server in the user's own config before the first design chat, checks the
+sign-in, and ends with prompts to try (see [The canvas view](#the-canvas-view)). Claude Code's only
+checks the sign-in and ends with the same prompts: Anthropic's plugin directory refused v0.6.2 for
+plugin text that adds an MCP server the plugin does not declare, and the validator keeps
+`mcp install` out of it.
 
 OpenCode also includes `get-started-with-kombai`. Its onboarding checks sign-in and suggests first
 requests; its browser-canvas plugin has no host MCP connection to install.
@@ -175,20 +180,19 @@ in it (a taste run's design brief, and the plans when taste is out of credits), 
 MCP App views, and the CLI decides what each host is listed (`VIEW_HOSTS` and `cardsFor` in
 vscode-assistant's `packages/cli/src/mcp/client-gate.js`): Codex desktop gets the view and both
 cards, and Claude desktop's Code tab the taste card. Every plugin has `cli.view` off. Anthropic's
-plugin directory refuses a plugin that ships a local (stdio) MCP server, so the Claude Code plugin
+plugin directory refuses a plugin that ships an MCP server, so the Claude Code plugin
 (from 0.5.0) ships skills only, and its validator keeps it that way: no `.mcp.json` and no manifest
 `mcpServers`. Its skill is the same stub over `npx -y <cli.package> skill` as before; in the Claude
 desktop app that text tells the agent to run `npx -y <cli.package> mcp install claude-code` once a
 session, without asking, when no `taste_card` tool is there, which writes the server into the user's
 own Claude Code config (`.claude.json`'s `mcpServers`, as `claude mcp add --scope user` does). A
 running Claude Code session never picks up a new MCP server, so the card shows from the next session
-while the work carries on in this one. So that the user's first design chat has the card, the Claude
-Code plugin has the same onboarding skill as Codex, `get-started-with-kombai`, which runs that install
-before any design chat. Claude Code has no manifest key that runs a skill after an install, so the
-user runs it (`/kombai:get-started-with-kombai`, or asking Claude to get started with Kombai), as the
-plugin's README says; it ends with the same three prompts as Codex's, each in a code block (Claude
-shows a Copy button) that starts with `/kombai:work-with-kombai`, since Claude's chat opens no link
-to a new session. The CLI answers `claudeDesktop: false` in a terminal, which shows no card; once the
+while the work carries on in this one. The Claude Code plugin's onboarding skill,
+`get-started-with-kombai`, doesn't run that install, unlike Codex's: Anthropic's plugin directory
+refused v0.6.2 for plugin text that adds an MCP server the plugin does not declare. It checks the
+sign-in and ends with the same three prompts as Codex's, each in a code block (Claude shows a Copy
+button) that starts with `/kombai:work-with-kombai`. So the user's first design chat runs the
+install, and the card shows from the next session. The CLI answers `claudeDesktop: false` in a terminal, which shows no card; once the
 server is in the user's config, terminal sessions start it too and get no tools from it, as they did
 with 0.4.x's `.mcp.json`. `mcp uninstall claude-code` takes it out; uninstalling the plugin leaves it
 in place. OpenAI's plugin directory drops a plugin's local MCP config, so the Codex
@@ -496,6 +500,11 @@ directory takes a plugin version once, and runs the CLI the ZIP pins:
    team build), or `pnpm run pack:codex ./dist` and `pnpm run pack:claude-code ./dist` on a clean
    checkout.
 5. Submit the Codex ZIP to OpenAI's portal and the Claude Code ZIP to Anthropic's directory.
+
+The Claude Code manifest names no `icon`: Anthropic's directory warns on it ("Field from another
+tool's manifest"), since Claude Code ignores it, and the validator refuses it. The listing's logo is
+uploaded instead, on the submission's Listing tab (Icon: a square PNG or JPEG, 512 to 2048 pixels a
+side). Use `plugins/codex/assets/logo.png`, the same 512×512 logo the other plugins ship.
 
 The plugins are ready for the directories only from a CLI release that names its own exact
 version after the first call: up to 0.1.4, the CLI's skill text has the agent run later commands

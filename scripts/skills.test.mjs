@@ -42,6 +42,11 @@ const COPIES = {
   'plugins/kimi-code': null,
 };
 const MARKERS = [...new Set(Object.values(COPIES).filter(Boolean))];
+// The copies that leave a skill out: Anthropic's plugin directory refuses a tool that hands back AI-generated media as
+// a file or link of its own, so the Claude Code plugin ships no assets skill.
+const OMITTED = { 'plugins/claude-code': [ASSETS_SKILL] };
+/** The copies that ship `skill`. */
+const copiesOf = (skill) => Object.keys(COPIES).filter((copy) => !(OMITTED[copy] ?? []).includes(skill));
 // The one copy with more of its own: the Codex app shows the canvas beside the chat, through canvas_app.
 const CODEX_WORKFLOW = `plugins/codex/${WORKFLOW_SKILL}`;
 const NETWORK_BULLET = /^- \*\*The network is blocked\*\*.*$/m;
@@ -102,7 +107,7 @@ test('every plugin has a row in the skill copies table', () => {
 for (const skill of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
   test(`every copy of ${skill} shares the standalone text outside its host guidance`, () => {
     const standalone = parts('.', skill);
-    for (const copy of Object.keys(COPIES)) {
+    for (const copy of copiesOf(skill)) {
       const own = parts(copy, skill);
       assert.equal(own.body, standalone.body, `${copy}/${skill}: body`);
       assert.equal(own.runLine, runLineOf(copy), `${copy}/${skill}: the line that says how to run the CLI`);
@@ -119,7 +124,7 @@ for (const skill of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
     const standalone = parts('.', skill);
     // The standalone skill runs in any agent, so its network bullet is the generic one.
     assert.equal(standalone.bullet, GENERIC_BULLET, `${skill}: standalone network bullet`);
-    for (const [copy, marker] of Object.entries(COPIES)) {
+    for (const [copy, marker] of Object.entries(COPIES).filter(([copy]) => copiesOf(skill).includes(copy))) {
       const own = parts(copy, skill);
       for (const other of MARKERS) {
         assert.equal(own.text.includes(other), other === marker, `${copy}/${skill}: ${other}`);
@@ -176,12 +181,14 @@ test('the Codex and Claude Code copies open every skill with their own chat noti
 test("each copy's skills share one network bullet", () => {
   for (const copy of Object.keys(COPIES)) {
     assert.equal(parts(copy, WORKFLOW_SKILL).bullet, parts(copy, FAQ_SKILL).bullet, copy);
-    assert.equal(parts(copy, ASSETS_SKILL).bullet, parts(copy, FAQ_SKILL).bullet, copy);
+    if (copiesOf(ASSETS_SKILL).includes(copy)) {
+      assert.equal(parts(copy, ASSETS_SKILL).bullet, parts(copy, FAQ_SKILL).bullet, copy);
+    }
   }
 });
 
 test('every copy of the assets skill is named for generating assets, and routes stock photos and whole-UI design elsewhere', () => {
-  for (const copy of Object.keys(COPIES)) {
+  for (const copy of copiesOf(ASSETS_SKILL)) {
     const text = fs.readFileSync(path.join(root, copy, 'skills', ASSETS_SKILL, 'SKILL.md'), 'utf8');
     assert.match(text, /^name: generate-assets-with-kombai\r?$/m, `${copy}: name`);
     const description = text.match(/^description: (.+)$/m)?.[1] ?? '';

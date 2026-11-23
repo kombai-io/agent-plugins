@@ -5,17 +5,22 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   assertPackOutside,
+  ASSETS_SKILL,
+  SETUP_SKILL,
   CHAT_NOTICES,
   checkChatNotice,
   checkCliContract,
   filesBesidePlugin,
   checkSkills,
-  SETUP_SKILL,
   packArgs,
   stageTeamBuild,
   STRAY_FILE,
   teamSuffix,
 } from './cli-view.mjs';
+
+// Anthropic's plugin directory refuses a tool that hands back AI-generated media as a file or link of its own, so the
+// Claude Code plugin ships no generate-assets-with-kombai skill.
+const OMITTED_SKILLS = [ASSETS_SKILL];
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -59,6 +64,12 @@ export function validateClaudeCodePlugin(root = workspaceRoot, { team = false } 
   assert(manifest.name === 'kombai' && contract.name === manifest.name, 'Claude plugin names must be kombai.');
   assert(VERSION_RE.test(manifest.version), `Invalid Claude plugin version: ${manifest.version}`);
   assert(manifest.version === contract.version, 'Claude manifest and package contract versions must match.');
+  // Anthropic's plugin directory warns on `icon` ("Field from another tool's manifest"): Claude Code ignores it. The
+  // listing's icon is uploaded on the submission's Listing tab instead.
+  assert(
+    manifest.icon === undefined,
+    "Claude manifest must not name an icon: Anthropic's plugin directory warns on it. Upload the logo on the listing.",
+  );
   assert(contract.schemaVersion === 'kombai-claude-code-plugin/v2', 'Unexpected Claude package contract schema.');
   for (const file of [
     'README.md',
@@ -66,18 +77,18 @@ export function validateClaudeCodePlugin(root = workspaceRoot, { team = false } 
     '.claude-plugin/plugin.json',
     'skills/work-with-kombai/SKILL.md',
     'skills/about-kombai/SKILL.md',
-    'skills/generate-assets-with-kombai/SKILL.md',
     `skills/${SETUP_SKILL}/SKILL.md`,
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Claude plugin file: ${file}`);
   }
-  // Anthropic's plugin directory refuses a plugin that ships a local (stdio) MCP server, so the plugin is skills-only:
+  // Anthropic's plugin directory refuses a plugin that ships an MCP server, so the plugin is skills-only:
   // the Kombai CLI writes its server into the user's own Claude Code config instead (`kombai mcp install claude-code`,
   // which the CLI's notes for the Claude desktop app run when Kombai's taste card is missing).
   const view = checkCliContract(pluginRoot, contract, 'Claude', {
     team,
     root,
     shipped: filesBesidePlugin(PACKAGE_FILES),
+    omit: OMITTED_SKILLS,
   });
   assert(!view, 'Claude must have the canvas view off: the plugin ships no MCP server (cli.view must be false).');
   assert(manifest.mcpServers === undefined, 'Claude manifest must not name mcpServers: the plugin ships no MCP server.');
@@ -86,16 +97,15 @@ export function validateClaudeCodePlugin(root = workspaceRoot, { team = false } 
     marketplace.plugins[0].mcpServers === undefined,
     'Claude marketplace entry must not name mcpServers: the plugin ships no MCP server.',
   );
-  checkSkills(pluginRoot, 'Claude', [SETUP_SKILL]);
+  checkSkills(pluginRoot, 'Claude', [SETUP_SKILL], OMITTED_SKILLS);
   // Claude's chat offers the plugin too, but its skills need a shell on the user's computer.
   checkChatNotice(pluginRoot, 'Claude', CHAT_NOTICES['claude-code']);
-  // Getting started sets Kombai's server up before the first design chat, which then has the taste card from its first
-  // message: a running session never picks up a new MCP server.
+  // Anthropic's plugin directory refuses plugin text that adds an MCP server the plugin does not declare (v0.6.2), so
+  // Claude Code's onboarding, unlike Codex's, only checks the sign-in and shows prompts: no `kombai mcp install`.
   assert(
-    fs
-      .readFileSync(path.join(pluginRoot, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8')
-      .includes('Run `kombai mcp install claude-code`'),
-    `Claude ${SETUP_SKILL} skill must run \`kombai mcp install claude-code\`.`,
+    !/\bmcp\s+install\b/.test(fs.readFileSync(path.join(pluginRoot, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8')),
+    `Claude ${SETUP_SKILL} skill must not run \`kombai mcp install\`: Anthropic's plugin directory refuses plugin text ` +
+      'that adds an MCP server the plugin does not declare.',
   );
   return manifest.version;
 }

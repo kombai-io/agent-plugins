@@ -1,7 +1,7 @@
 {
   "schemaVersion": "kombai-claude-code-plugin/v2",
   "name": "kombai",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "cli": {
     "package": "@kombai/cli@0.3.1",
     "view": false

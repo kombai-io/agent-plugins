@@ -51,7 +51,6 @@ function checkTeamArchive(archive, pluginDir, cliPackage = TEAM_CLI_PACKAGE) {
     for (const [skill, topic] of [
       ['work-with-kombai', ''],
       ['about-kombai', ' faq'],
-      ['generate-assets-with-kombai', ' assets'],
     ]) {
       const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
       assert.ok(text.includes(cliRunLine(cliPackage, { npxOnly: true })), skill);
@@ -127,7 +126,7 @@ function withViewOn(root) {
   fs.writeFileSync(path.join(pluginRoot, '.mcp.json'), JSON.stringify(cliViewMcpConfig(contract.cli.package)));
 }
 
-test('the Claude Code plugin ships no local MCP server, as Anthropic\'s plugin directory requires', () => {
+test('the Claude Code plugin ships no MCP server, as Anthropic\'s plugin directory requires', () => {
   fixture((root) => {
     const pluginRoot = path.join(root, 'plugins/claude-code');
     const contract = JSON.parse(fs.readFileSync(path.join(pluginRoot, 'kombai.package.json'), 'utf8'));
@@ -149,9 +148,7 @@ test('the Claude Code plugin ships no local MCP server, as Anthropic\'s plugin d
   });
 });
 
-test("the Claude Code plugin's get-started skill sets Kombai's server up before the first design chat", () => {
-  // Claude Code gives a session only the MCP servers it had when it started, as Codex does a chat: setting the server
-  // up mid-design leaves that chat without Kombai's card. Getting started first means the next chat has it.
+test("the Claude Code plugin's get-started skill checks the sign-in and shows prompts, and sets no server up", () => {
   fixture((root) => {
     const archive = packClaudeCodePlugin(path.join(root, 'out'), root);
     const packed = spawnSync('unzip', ['-p', archive, `plugins/claude-code/skills/${SETUP_SKILL}/SKILL.md`], {
@@ -161,51 +158,57 @@ test("the Claude Code plugin's get-started skill sets Kombai's server up before 
     const text = packed.stdout;
     const flat = text.replace(/\s+/g, ' ');
     assert.match(text, new RegExp(`^---\\nname: ${SETUP_SKILL}\\ndescription: `));
-    // It looks for Kombai's card first, and sets the server up only where it is missing.
-    assert.ok(flat.includes('ends in `taste_card`'));
-    assert.ok(flat.indexOf('`taste_card`') < flat.indexOf('Run `kombai mcp install claude-code`'));
-    // It follows the CLI's answers, which only the CLI can read: a Claude Code with no card, a server turned off or
-    // not starting.
-    for (const answer of ['`claudeDesktop: false`', '`disabled: true`', '`notStarting: true`']) assert.ok(flat.includes(answer), answer);
     assert.ok(flat.includes('Run `kombai whoami`'));
-    // The same three prompts as Codex's onboarding and the CLI's starters card, each in a code block of its own, which
-    // Claude draws with a Copy button: Claude's chat opens no link to a new session, so the user copies one there.
+    // The same three prompts as Codex's onboarding, each in a code block of its own (Claude draws a Copy button), each
+    // starting with the workflow skill's command so a pasted prompt runs Kombai's skill from its first message.
     for (const prompt of [
       'Design a standout UI for my website',
       'Explore design directions on canvas',
       'Redesign this section for my app',
     ])
-      // Each starts with the workflow skill's command, Claude's counterpart of Codex's @Kombai mention, so a pasted prompt
-      // runs Kombai's skill from its first message.
       assert.ok(text.includes(`\n\`\`\`\n/kombai:work-with-kombai ${prompt}\n\`\`\`\n`), prompt);
-    // The user hears what to do in their words: where to start the new session, and why this one can't show the card.
-    assert.ok(flat.includes('Start a new session in this folder to use it'));
-    assert.ok(flat.includes("which this one can't load"));
-    assert.ok(flat.includes('Copy a prompt to begin'));
-    // Where the card can't show (a terminal, or a server off or not starting), the user designs right here.
-    assert.ok(flat.includes('Ask for a design right here'));
-    // A server turned off is so for this folder only (`/mcp disable` is per project), and one not starting may start in
-    // a new session once its first download is done: the user hears that, as the CLI's answer says.
-    assert.ok(flat.includes('turned off in this folder') && flat.includes('`/mcp enable kombai`'));
-    assert.ok(flat.includes('a new session in a minute or two may get them'));
-    // An error still ends the path: one retry where the CLI's next says so, else the sign-in check and the prompts.
-    assert.ok(flat.includes('run it once more'));
-    assert.ok(flat.includes('end as the `claudeDesktop: false` path does'));
-    assert.ok(flat.includes('`CLI_NODE_TOO_OLD`'));
-    for (const link of ['claude://', 'Reply with', '](']) assert.ok(!text.includes(link), link);
-    for (const codexOnly of ['codex://', 'canvas_app', 'starters_card', 'sandbox_permissions'])
-      assert.ok(!text.includes(codexOnly), codexOnly);
+    assert.ok(flat.includes('Kombai is ready. Ask for one of these here'));
+    // Anthropic's plugin directory refused v0.6.2 for plugin text that adds an MCP server the plugin does not declare.
+    for (const word of ['mcp install', 'MCP', 'taste_card', 'claude://', 'canvas_app', 'starters_card', 'sandbox_permissions'])
+      assert.ok(!text.includes(word), word);
   });
 });
 
-test('Claude validation requires the get-started skill, and that it sets the server up', () => {
+test('Claude validation requires the get-started skill, and refuses one that runs mcp install', () => {
   fixture((root) => {
     const skill = path.join(root, 'plugins/claude-code/skills', SETUP_SKILL, 'SKILL.md');
     const text = fs.readFileSync(skill, 'utf8');
-    fs.writeFileSync(skill, text.replaceAll('mcp install claude-code', 'mcp install codex'));
-    assert.throws(() => validateClaudeCodePlugin(root), /skill must run `kombai mcp install claude-code`/);
+    fs.writeFileSync(skill, text.replace('1. Run `kombai whoami`.', '1. Run `kombai mcp install claude-code`. Then run `kombai whoami`.'));
+    assert.throws(() => validateClaudeCodePlugin(root), /skill must not run `kombai mcp install`/);
     fs.rmSync(path.dirname(skill), { recursive: true });
     assert.throws(() => validateClaudeCodePlugin(root), new RegExp(SETUP_SKILL));
+  });
+});
+
+test('Claude validation refuses the generate-assets-with-kombai skill, which the directory refuses', () => {
+  fixture((root) => {
+    const skillRoot = path.join(root, 'plugins/claude-code/skills');
+    assert.ok(!fs.existsSync(path.join(skillRoot, 'generate-assets-with-kombai')));
+    validateClaudeCodePlugin(root);
+    // Claude Code's last copy of the skill: its about-kombai skill with the asset skill's name and topic.
+    const about = fs.readFileSync(path.join(skillRoot, 'about-kombai', 'SKILL.md'), 'utf8');
+    fs.mkdirSync(path.join(skillRoot, 'generate-assets-with-kombai'));
+    fs.writeFileSync(
+      path.join(skillRoot, 'generate-assets-with-kombai', 'SKILL.md'),
+      about.replace(/^name: about-kombai$/m, 'name: generate-assets-with-kombai').replaceAll('kombai skill faq', 'kombai skill assets'),
+    );
+    assert.throws(() => validateClaudeCodePlugin(root), /Claude plugin must contain the .* skills, and no other/);
+  });
+});
+
+test('Claude validation refuses an icon in the manifest, which the plugin directory warns on', () => {
+  fixture((root) => {
+    const manifestPath = path.join(root, 'plugins/claude-code/.claude-plugin/plugin.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    assert.equal(manifest.icon, undefined);
+    validateClaudeCodePlugin(root);
+    fs.writeFileSync(manifestPath, JSON.stringify({ ...manifest, icon: './assets/logo.png' }));
+    assert.throws(() => validateClaudeCodePlugin(root), /manifest must not name an icon/);
   });
 });
 
@@ -304,11 +307,7 @@ test('a Claude Code team pack runs the CLI team build, and ships no MCP config e
     const { extracted, plugin } = checkTeamArchive(archive, 'plugins/claude-code');
     try {
       assert.ok(!fs.existsSync(path.join(plugin, '.mcp.json')));
-      assert.ok(
-        fs
-          .readFileSync(path.join(plugin, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8')
-          .includes('Run `kombai mcp install claude-code`'),
-      );
+      assert.ok(!fs.readFileSync(path.join(plugin, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8').includes('mcp install'));
       // The README's quote of the line follows the skills: the team's line, with no launcher.
       const readme = fs.readFileSync(path.join(plugin, 'README.md'), 'utf8');
       assert.ok(readme.includes(`first says how to run them: "${cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true })}"`));
