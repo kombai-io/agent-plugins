@@ -148,19 +148,40 @@ test('the Claude Code plugin ships no MCP server, as Anthropic\'s plugin directo
   });
 });
 
-test('Claude validation refuses the get-started-with-kombai skill, which adds an MCP server the plugin does not declare', () => {
+test("the Claude Code plugin's get-started skill checks the sign-in and shows prompts, and sets no server up", () => {
   fixture((root) => {
-    const skillRoot = path.join(root, 'plugins/claude-code/skills');
-    assert.ok(!fs.existsSync(path.join(skillRoot, SETUP_SKILL)));
-    // Claude Code's last copy of the skill ran `kombai mcp install claude-code`: its about-kombai skill renamed will do,
-    // since the skill set itself is refused.
-    const about = fs.readFileSync(path.join(skillRoot, 'about-kombai', 'SKILL.md'), 'utf8');
-    fs.mkdirSync(path.join(skillRoot, SETUP_SKILL));
-    fs.writeFileSync(
-      path.join(skillRoot, SETUP_SKILL, 'SKILL.md'),
-      about.replace(/^name: about-kombai$/m, `name: ${SETUP_SKILL}`),
-    );
-    assert.throws(() => validateClaudeCodePlugin(root), /Claude plugin must contain the .* skills, and no other/);
+    const archive = packClaudeCodePlugin(path.join(root, 'out'), root);
+    const packed = spawnSync('unzip', ['-p', archive, `plugins/claude-code/skills/${SETUP_SKILL}/SKILL.md`], {
+      encoding: 'utf8',
+    });
+    assert.equal(packed.status, 0, packed.stderr);
+    const text = packed.stdout;
+    const flat = text.replace(/\s+/g, ' ');
+    assert.match(text, new RegExp(`^---\\nname: ${SETUP_SKILL}\\ndescription: `));
+    assert.ok(flat.includes('Run `kombai whoami`'));
+    // The same three prompts as Codex's onboarding, each in a code block of its own (Claude draws a Copy button), each
+    // starting with the workflow skill's command so a pasted prompt runs Kombai's skill from its first message.
+    for (const prompt of [
+      'Design a standout UI for my website',
+      'Explore design directions on canvas',
+      'Redesign this section for my app',
+    ])
+      assert.ok(text.includes(`\n\`\`\`\n/kombai:work-with-kombai ${prompt}\n\`\`\`\n`), prompt);
+    assert.ok(flat.includes('Kombai is ready. Ask for one of these here'));
+    // Anthropic's plugin directory refused v0.6.2 for plugin text that adds an MCP server the plugin does not declare.
+    for (const word of ['mcp install', 'MCP', 'taste_card', 'claude://', 'canvas_app', 'starters_card', 'sandbox_permissions'])
+      assert.ok(!text.includes(word), word);
+  });
+});
+
+test('Claude validation requires the get-started skill, and refuses one that runs mcp install', () => {
+  fixture((root) => {
+    const skill = path.join(root, 'plugins/claude-code/skills', SETUP_SKILL, 'SKILL.md');
+    const text = fs.readFileSync(skill, 'utf8');
+    fs.writeFileSync(skill, text.replace('1. Run `kombai whoami`.', '1. Run `kombai mcp install claude-code`. Then run `kombai whoami`.'));
+    assert.throws(() => validateClaudeCodePlugin(root), /skill must not run `kombai mcp install`/);
+    fs.rmSync(path.dirname(skill), { recursive: true });
+    assert.throws(() => validateClaudeCodePlugin(root), new RegExp(SETUP_SKILL));
   });
 });
 
@@ -275,7 +296,7 @@ test('a Claude Code team pack runs the CLI team build, and ships no MCP config e
     const { extracted, plugin } = checkTeamArchive(archive, 'plugins/claude-code');
     try {
       assert.ok(!fs.existsSync(path.join(plugin, '.mcp.json')));
-      assert.ok(!fs.existsSync(path.join(plugin, 'skills', SETUP_SKILL)));
+      assert.ok(!fs.readFileSync(path.join(plugin, 'skills', SETUP_SKILL, 'SKILL.md'), 'utf8').includes('mcp install'));
       // The README's quote of the line follows the skills: the team's line, with no launcher.
       const readme = fs.readFileSync(path.join(plugin, 'README.md'), 'utf8');
       assert.ok(readme.includes(`first says how to run them: "${cliRunLine(TEAM_CLI_PACKAGE, { npxOnly: true })}"`));
