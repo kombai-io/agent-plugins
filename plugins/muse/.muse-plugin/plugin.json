@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "kombai",
   "displayName": "Kombai",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Design interfaces and generate assets with Kombai in Muse Code",
   "compat": {
     "source": "native",

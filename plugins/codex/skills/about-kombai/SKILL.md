@@ -20,7 +20,7 @@ inside the sandbox. Reply with only this, word for word:
 >
 > Kombai doesn't run in ChatGPT's Chat or Work tabs.
 
-Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.0`.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.1`.
 
 Run `kombai skill faq` and answer from what it prints; it is this skill's full text.
 

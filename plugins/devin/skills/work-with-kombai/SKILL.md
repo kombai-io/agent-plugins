@@ -3,7 +3,7 @@ name: work-with-kombai
 description: Design UI with Kombai's taste agent. Designs go on a Kombai canvas, or in another design tool or the repo's code when the user asks for that; design systems are .ds files in the Kombai account and need no canvas. Use when the user asks to work with Kombai, for a design, mockup, variants or a design system, or pastes a Kombai canvas link; not for ordinary coding, and not for a design in another tool unless the user names Kombai.
 ---
 
-Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.0`.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.1`.
 
 Run `kombai skill` and follow what it prints; it is this skill's full text.
 

@@ -2,7 +2,7 @@
 
 This native Muse Code plugin provides four skills: `work-with-kombai` for UI design, `about-kombai` for product questions, `generate-assets-with-kombai` for requested images or videos, and `get-started-with-kombai` for first use. They use Kombai’s CLI, which needs Node.js 20 or later. Designs open on Kombai's hosted canvas in your browser. This plugin declares no hooks, reminders, commands, or MCP servers.
 
-Each skill first says how to run them: "Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.0`."
+Each skill first says how to run them: "Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.1`."
 
 ## Install from this checkout
 
