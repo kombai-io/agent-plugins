@@ -105,7 +105,10 @@ test('set-cli-version pins the version in every plugin and every file that names
     for (const host of Object.keys(PLUGINS)) {
       assert.ok(result.changed.includes(`plugins/${host}/kombai.package.json`), host);
       assert.ok(result.changed.includes(`plugins/${host}/skills/work-with-kombai/SKILL.md`), host);
-      assert.ok(result.changed.includes(`plugins/${host}/skills/generate-assets-with-kombai/SKILL.md`), host);
+      // The Claude Code plugin ships no assets skill (claude-code-plugin.mjs).
+      if (host !== 'claude-code') {
+        assert.ok(result.changed.includes(`plugins/${host}/skills/generate-assets-with-kombai/SKILL.md`), host);
+      }
       assert.ok(result.changed.includes(`plugins/${host}/README.md`), host);
     }
     for (const file of [

@@ -26,6 +26,8 @@ what it prints: generating an AI image or video for a design or the repo, and ge
 to it. It runs only when the user asks Kombai for an image or video (names Kombai or picks the skill), or
 for the videos a taste run left as prompts once the user asked for AI video; never on its own, and a plain
 image or video request stays with the host's own tool. It is not for stock photos or for designing a whole UI (that is `work-with-kombai`'s).
+The Claude Code plugin leaves this skill out: Anthropic's plugin directory refuses a tool that hands
+back AI-generated media as a file or link of its own (v0.6.2 was refused for it).
 
 **Release order:** the pinned CLI 0.2.0 includes vscode-assistant PR #4107 and #4095. Future pins must
 keep both changes: this skill needs a CLI release that ships #4107, not only

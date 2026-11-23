@@ -141,9 +141,15 @@ export function assertNoStrayCli(stray, base, cliPackage, rule) {
  * `shipped` lists the other files or folders (relative to `root`) a pack zips with the plugin, its marketplace among
  * them, held to the same CLI: filesBesidePlugin of the pack's own list, so nothing it zips goes unchecked.
  * `team` checks a team build instead (stageTeamBuild), which runs teamCliPackage(team). `npxOnly` is for a host whose
- * skills run the CLI through npx alone (cliRunLine). Returns whether the plugin registers the view.
+ * skills run the CLI through npx alone (cliRunLine). `omit` names the skills the host leaves out (checkSkills).
+ * Returns whether the plugin registers the view.
  */
-export function checkCliContract(pluginRoot, contract, host, { team = false, root, shipped = [], npxOnly = false } = {}) {
+export function checkCliContract(
+  pluginRoot,
+  contract,
+  host,
+  { team = false, root, shipped = [], npxOnly = false, omit = [] } = {},
+) {
   const cli = contract.cli;
   if (team) {
     const teamPackage = teamCliPackage(team);
@@ -170,7 +176,7 @@ export function checkCliContract(pluginRoot, contract, host, { team = false, roo
     `${host} marketplace must name only the CLI the plugin pins`,
   );
   assert(typeof cli.view === 'boolean', `${host} contract must say whether it registers the canvas view (cli.view).`);
-  for (const [name, topic] of Object.entries(SKILL_TOPICS)) {
+  for (const [name, topic] of Object.entries(SKILL_TOPICS).filter(([name]) => !omit.includes(name))) {
     const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');
     assert(
       skill.includes(`Run \`kombai skill${topic}\``),
@@ -313,10 +319,11 @@ export function checkChatNotice(pluginRoot, host, notice) {
 }
 
 /**
- * Check that a plugin ships exactly the workflow, FAQ and asset skills, plus the host's own `extra` ones, each named in its
- * frontmatter and described.
+ * Check that a plugin ships exactly the workflow, FAQ and asset skills, less the ones its host leaves out (`omit`), plus
+ * the host's own `extra` ones, each named in its frontmatter and described.
  */
-export function checkSkills(pluginRoot, host, extra = []) {
+export function checkSkills(pluginRoot, host, extra = [], omit = []) {
+  const expected = [...Object.keys(SKILL_TOPICS).filter((name) => !omit.includes(name)), ...extra];
   const skillRoot = path.join(pluginRoot, 'skills');
   const names = fs
     .readdirSync(skillRoot, { withFileTypes: true })
@@ -324,8 +331,8 @@ export function checkSkills(pluginRoot, host, extra = []) {
     .map((entry) => entry.name)
     .sort();
   assert(
-    JSON.stringify(names) === JSON.stringify([...Object.keys(SKILL_TOPICS), ...extra].sort()),
-    `${host} plugin must contain the ${[WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL, ...extra].join(', ')} skills, and no other.`,
+    JSON.stringify(names) === JSON.stringify([...expected].sort()),
+    `${host} plugin must contain the ${expected.join(', ')} skills, and no other.`,
   );
   for (const name of names) {
     const skill = fs.readFileSync(path.join(skillRoot, name, 'SKILL.md'), 'utf8');

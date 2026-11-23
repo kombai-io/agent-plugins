@@ -51,7 +51,6 @@ function checkTeamArchive(archive, pluginDir, cliPackage = TEAM_CLI_PACKAGE) {
     for (const [skill, topic] of [
       ['work-with-kombai', ''],
       ['about-kombai', ' faq'],
-      ['generate-assets-with-kombai', ' assets'],
     ]) {
       const text = fs.readFileSync(path.join(plugin, 'skills', skill, 'SKILL.md'), 'utf8');
       assert.ok(text.includes(cliRunLine(cliPackage, { npxOnly: true })), skill);
@@ -127,7 +126,7 @@ function withViewOn(root) {
   fs.writeFileSync(path.join(pluginRoot, '.mcp.json'), JSON.stringify(cliViewMcpConfig(contract.cli.package)));
 }
 
-test('the Claude Code plugin ships no local MCP server, as Anthropic\'s plugin directory requires', () => {
+test('the Claude Code plugin ships no MCP server, as Anthropic\'s plugin directory requires', () => {
   fixture((root) => {
     const pluginRoot = path.join(root, 'plugins/claude-code');
     const contract = JSON.parse(fs.readFileSync(path.join(pluginRoot, 'kombai.package.json'), 'utf8'));
@@ -206,6 +205,22 @@ test('Claude validation requires the get-started skill, and that it sets the ser
     assert.throws(() => validateClaudeCodePlugin(root), /skill must run `kombai mcp install claude-code`/);
     fs.rmSync(path.dirname(skill), { recursive: true });
     assert.throws(() => validateClaudeCodePlugin(root), new RegExp(SETUP_SKILL));
+  });
+});
+
+test('Claude validation refuses the generate-assets-with-kombai skill, which the directory refuses', () => {
+  fixture((root) => {
+    const skillRoot = path.join(root, 'plugins/claude-code/skills');
+    assert.ok(!fs.existsSync(path.join(skillRoot, 'generate-assets-with-kombai')));
+    validateClaudeCodePlugin(root);
+    // Claude Code's last copy of the skill: its about-kombai skill with the asset skill's name and topic.
+    const about = fs.readFileSync(path.join(skillRoot, 'about-kombai', 'SKILL.md'), 'utf8');
+    fs.mkdirSync(path.join(skillRoot, 'generate-assets-with-kombai'));
+    fs.writeFileSync(
+      path.join(skillRoot, 'generate-assets-with-kombai', 'SKILL.md'),
+      about.replace(/^name: about-kombai$/m, 'name: generate-assets-with-kombai').replaceAll('kombai skill faq', 'kombai skill assets'),
+    );
+    assert.throws(() => validateClaudeCodePlugin(root), /Claude plugin must contain the .* skills, and no other/);
   });
 });
 

@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   assertPackOutside,
+  ASSETS_SKILL,
   CHAT_NOTICES,
   checkChatNotice,
   checkCliContract,
@@ -16,6 +17,10 @@ import {
   STRAY_FILE,
   teamSuffix,
 } from './cli-view.mjs';
+
+// Anthropic's plugin directory refuses a tool that hands back AI-generated media as a file or link of its own, so the
+// Claude Code plugin ships no generate-assets-with-kombai skill.
+const OMITTED_SKILLS = [ASSETS_SKILL];
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -66,18 +71,18 @@ export function validateClaudeCodePlugin(root = workspaceRoot, { team = false } 
     '.claude-plugin/plugin.json',
     'skills/work-with-kombai/SKILL.md',
     'skills/about-kombai/SKILL.md',
-    'skills/generate-assets-with-kombai/SKILL.md',
     `skills/${SETUP_SKILL}/SKILL.md`,
   ]) {
     assert(fs.statSync(path.join(pluginRoot, file)).isFile(), `Missing Claude plugin file: ${file}`);
   }
-  // Anthropic's plugin directory refuses a plugin that ships a local (stdio) MCP server, so the plugin is skills-only:
+  // Anthropic's plugin directory refuses a plugin that ships an MCP server, so the plugin is skills-only:
   // the Kombai CLI writes its server into the user's own Claude Code config instead (`kombai mcp install claude-code`,
   // which the CLI's notes for the Claude desktop app run when Kombai's taste card is missing).
   const view = checkCliContract(pluginRoot, contract, 'Claude', {
     team,
     root,
     shipped: filesBesidePlugin(PACKAGE_FILES),
+    omit: OMITTED_SKILLS,
   });
   assert(!view, 'Claude must have the canvas view off: the plugin ships no MCP server (cli.view must be false).');
   assert(manifest.mcpServers === undefined, 'Claude manifest must not name mcpServers: the plugin ships no MCP server.');
@@ -86,7 +91,7 @@ export function validateClaudeCodePlugin(root = workspaceRoot, { team = false } 
     marketplace.plugins[0].mcpServers === undefined,
     'Claude marketplace entry must not name mcpServers: the plugin ships no MCP server.',
   );
-  checkSkills(pluginRoot, 'Claude', [SETUP_SKILL]);
+  checkSkills(pluginRoot, 'Claude', [SETUP_SKILL], OMITTED_SKILLS);
   // Claude's chat offers the plugin too, but its skills need a shell on the user's computer.
   checkChatNotice(pluginRoot, 'Claude', CHAT_NOTICES['claude-code']);
   // Getting started sets Kombai's server up before the first design chat, which then has the taste card from its first
