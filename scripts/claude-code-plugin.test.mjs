@@ -201,6 +201,17 @@ test('Claude validation refuses the generate-assets-with-kombai skill, which the
   });
 });
 
+test('Claude validation refuses an icon in the manifest, which the plugin directory warns on', () => {
+  fixture((root) => {
+    const manifestPath = path.join(root, 'plugins/claude-code/.claude-plugin/plugin.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    assert.equal(manifest.icon, undefined);
+    validateClaudeCodePlugin(root);
+    fs.writeFileSync(manifestPath, JSON.stringify({ ...manifest, icon: './assets/logo.png' }));
+    assert.throws(() => validateClaudeCodePlugin(root), /manifest must not name an icon/);
+  });
+});
+
 test('Claude validation requires every skill to open with its Claude Code-only notice', () => {
   fixture((root) => {
     const notice = CHAT_NOTICES['claude-code'];

@@ -6,6 +6,5 @@
     "name": "Kombai"
   },
   "repository": "https://github.com/kombai-io/agent-plugins",
-  "homepage": "https://kombai.com/",
-  "icon": "./assets/logo.png"
+  "homepage": "https://kombai.com/"
 }

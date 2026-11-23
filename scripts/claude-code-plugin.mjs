@@ -64,6 +64,12 @@ export function validateClaudeCodePlugin(root = workspaceRoot, { team = false } 
   assert(manifest.name === 'kombai' && contract.name === manifest.name, 'Claude plugin names must be kombai.');
   assert(VERSION_RE.test(manifest.version), `Invalid Claude plugin version: ${manifest.version}`);
   assert(manifest.version === contract.version, 'Claude manifest and package contract versions must match.');
+  // Anthropic's plugin directory warns on `icon` ("Field from another tool's manifest"): Claude Code ignores it. The
+  // listing's icon is uploaded on the submission's Listing tab instead.
+  assert(
+    manifest.icon === undefined,
+    "Claude manifest must not name an icon: Anthropic's plugin directory warns on it. Upload the logo on the listing.",
+  );
   assert(contract.schemaVersion === 'kombai-claude-code-plugin/v2', 'Unexpected Claude package contract schema.');
   for (const file of [
     'README.md',

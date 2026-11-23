@@ -501,6 +501,11 @@ directory takes a plugin version once, and runs the CLI the ZIP pins:
    checkout.
 5. Submit the Codex ZIP to OpenAI's portal and the Claude Code ZIP to Anthropic's directory.
 
+The Claude Code manifest names no `icon`: Anthropic's directory warns on it ("Field from another
+tool's manifest"), since Claude Code ignores it, and the validator refuses it. The listing's logo is
+uploaded instead, on the submission's Listing tab (Icon: a square PNG or JPEG, 512 to 2048 pixels a
+side). Use `plugins/codex/assets/logo.png`, the same 512×512 logo the other plugins ship.
+
 The plugins are ready for the directories only from a CLI release that names its own exact
 version after the first call: up to 0.1.4, the CLI's skill text has the agent run later commands
 with the CLI's `latest` tag, and `mcp install` writes that tag into the host's MCP config, whatever
