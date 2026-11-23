@@ -166,15 +166,16 @@ test('set-cli-version refuses a tag, a prerelease, a range, and a version npm do
 
 test("set-cli-version refuses a CLI whose mcp install doesn't take a client a plugin's skill installs for", () => {
   fixture((root) => {
-    assert.deepEqual(requiredInstallClients(root), ['claude-code', 'codex']);
+    // The Claude Code plugin has no get-started skill, so only Codex's runs `mcp install`.
+    assert.deepEqual(requiredInstallClients(root), ['codex']);
     const before = snapshot(root);
     assert.throws(
-      () => setCliVersion('0.1.4', { root, npm: fakeNpm({ help: 'kombai mcp install codex' }) }),
-      /can't run `mcp install claude-code`.*it answered: kombai mcp install codex/,
+      () => setCliVersion('0.1.4', { root, npm: fakeNpm({ help: 'kombai mcp install claude-code' }) }),
+      /can't run `mcp install codex`.*it answered: kombai mcp install claude-code/,
     );
     assert.throws(
       () => setCliVersion('0.1.4', { root, npm: fakeNpm({ help: '{"error":{"code":"CLI_UNKNOWN_COMMAND"}}' }) }),
-      /can't run `mcp install claude-code`/,
+      /can't run `mcp install codex`/,
     );
     assert.deepEqual(snapshot(root), before);
   });
@@ -249,7 +250,7 @@ test("an install command split across lines still counts toward the clients the 
   fixture((root) => {
     const skill = path.join(root, 'plugins/cursor/skills/work-with-kombai/SKILL.md');
     fs.appendFileSync(skill, '\nRun `kombai mcp\ninstall cursor`.\n');
-    assert.deepEqual(requiredInstallClients(root), ['claude-code', 'codex', 'cursor']);
+    assert.deepEqual(requiredInstallClients(root), ['codex', 'cursor']);
     assert.throws(() => setCliVersion('0.1.5', { root, npm: fakeNpm() }), /can't run `mcp install cursor`/);
   });
 });
