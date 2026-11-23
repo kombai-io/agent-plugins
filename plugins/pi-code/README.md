@@ -1,6 +1,6 @@
 # Kombai for Pi
 
-This Pi package provides four skills: `work-with-kombai` for UI design, `about-kombai` for product questions, `generate-assets-with-kombai` for requested images or videos, and `get-started-with-kombai` for first-use sign-in and prompts. The skills run the pinned Kombai CLI (`npx -y @kombai/cli@0.3.0`), which needs Node.js 20 or later. Each skill writes its commands as `kombai <command>` and first says how to run them: "Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.0`." Designs open on the hosted Kombai canvas in your browser. This package does not register an MCP server.
+This Pi package provides four skills: `work-with-kombai` for UI design, `about-kombai` for product questions, `generate-assets-with-kombai` for requested images or videos, and `get-started-with-kombai` for first-use sign-in and prompts. The skills run the pinned Kombai CLI (`npx -y @kombai/cli@0.3.1`), which needs Node.js 20 or later. Each skill writes its commands as `kombai <command>` and first says how to run them: "Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.1`." Designs open on the hosted Kombai canvas in your browser. This package does not register an MCP server.
 
 ## Test from a local checkout
 

@@ -20,7 +20,7 @@ allow it for the session; later Kombai commands then run with it, so do not pass
 user declines, stop and explain that Kombai needs it. If there is no such parameter and `$SANDBOX`
 is empty, Kombai is not sandboxed: report a permission or network error as it is.
 
-Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.0`.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.1`.
 
 Run `kombai skill` and follow what it prints; it is this skill's full text.
 

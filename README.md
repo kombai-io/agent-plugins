@@ -11,17 +11,17 @@ This standalone repository contains the [Codex](plugins/codex/README.md),
 and release tooling.
 
 Each plugin's `work-with-kombai` skill runs the Kombai CLI
-(`npx -y @kombai/cli@0.3.0 skill`), which prints the full instructions for designing on a hosted
+(`npx -y @kombai/cli@0.3.1 skill`), which prints the full instructions for designing on a hosted
 Kombai canvas. The CLI needs Node.js 20 or later. A skill writes that command as `kombai skill`, and
 opens with one line that says how to run `kombai`: from the copy of the CLI already installed on the
 computer, through its launcher, with `npx` as the fallback where there is none yet (see
 [The CLI version](#the-cli-version)).
 
-A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.3.0 skill faq` and answers the user's
+A second skill, `about-kombai`, runs `npx -y @kombai/cli@0.3.1 skill faq` and answers the user's
 questions about Kombai from what it prints: accounts and guest mode, credits, where designs and data
 live, sharing, updates and support.
 
-A third skill, `generate-assets-with-kombai`, runs `npx -y @kombai/cli@0.3.0 skill assets` and follows
+A third skill, `generate-assets-with-kombai`, runs `npx -y @kombai/cli@0.3.1 skill assets` and follows
 what it prints: generating an AI image or video for a design or the repo, and getting a public link
 to it. It runs only when the user asks Kombai for an image or video (names Kombai or picks the skill), or
 for the videos a taste run left as prompts once the user asked for AI video; never on its own, and a plain
@@ -350,7 +350,7 @@ and that `.mcp.json` matches `cli.view`. The scripts do not read a sibling check
 
 OpenAI's and Anthropic's plugin directories refuse a plugin that runs a floating npm tag (the
 CLI's `latest`), so the source pins one released CLI: every plugin's `cli.package`
-is `@kombai/cli@0.3.0`, the same in every plugin, and every file that names the CLI (the skills under
+is `@kombai/cli@0.3.1`, the same in every plugin, and every file that names the CLI (the skills under
 `plugins/` and `skills/`, the READMEs, `agents/openai.yaml`, the marketplaces) names that one.
 Describe a tag without the package name in front of it (the CLI's `latest` tag): the check reads
 any package name followed by a tag as one the plugins run, and set-cli-version would rewrite it. Move them all with
@@ -387,7 +387,7 @@ The skills go to that copy first too. Each writes its commands as `kombai <comma
 own skill text does, and has the same line before the first of them (`cliRunLine` in
 `scripts/cli-view.mjs`):
 
-> Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.0`.
+> Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.1`.
 
 So a skill names `npx` once, as the fallback that installs the CLI. The validators check that the
 line is there word for word with the plugin's own `cli.package`, in a paragraph of its own before the
@@ -407,7 +407,7 @@ the line, so it says what the plugin runs (`scripts/skills.test.mjs` checks the 
 
 The Antigravity plugin is the exception. Its skills have the line that names `npx` alone:
 
-> Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.3.0`.
+> Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.3.1`.
 
 Where Antigravity can't ask the user (a headless `agy -p` run) it skips any command the user's Allow
 rules don't match, and a rule matches by how a command starts. The rules its skills give are for the

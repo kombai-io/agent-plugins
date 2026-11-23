@@ -16,7 +16,7 @@ off the terminal sandbox, if their organization allows it, and wait. In GitHub C
 installs this same plugin, run the command in its sandbox first; if the sandbox blocks it, ask for
 the bypass Copilot CLI offers.
 
-Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.0`.
+Run Kombai's CLI (`kombai` below) from `node "$HOME/.kombai/cli/install/latest/launch.mjs"` if that file exists; if not, fall back to `npx -y @kombai/cli@0.3.1`.
 
 Run `kombai skill assets` and follow what it prints; it is this skill's full text.
 
