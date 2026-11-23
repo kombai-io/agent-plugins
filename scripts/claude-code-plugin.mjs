@@ -26,6 +26,27 @@ const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
 const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const PACKAGE_FILES = ['.claude-plugin', 'plugins/claude-code', 'LICENSE'];
 
+const ICON_FILE = '.claude-plugin/icon.png';
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+/** The plugin directory's icon rules: a square PNG, 512 to 2048 px a side, under 2 MB. */
+function checkIcon(file) {
+  assert(fs.statSync(file, { throwIfNoEntry: false })?.isFile(), `Missing Claude plugin file: ${ICON_FILE}`);
+  const data = fs.readFileSync(file);
+  assert(data.length < 2 * 1024 * 1024, `Claude plugin ${ICON_FILE} must be under 2 MB.`);
+  // The IHDR chunk follows the signature: width and height are its first two big-endian 32-bit fields.
+  assert(
+    data.subarray(0, 8).equals(PNG_SIGNATURE) && data.toString('ascii', 12, 16) === 'IHDR',
+    `Claude plugin ${ICON_FILE} must be a PNG.`,
+  );
+  const width = data.readUInt32BE(16);
+  const height = data.readUInt32BE(20);
+  assert(
+    width === height && width >= 512 && width <= 2048,
+    `Claude plugin ${ICON_FILE} must be square, 512 to 2048 px a side (it is ${width}x${height}).`,
+  );
+}
+
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
@@ -64,12 +85,14 @@ export function validateClaudeCodePlugin(root = workspaceRoot, { team = false } 
   assert(manifest.name === 'kombai' && contract.name === manifest.name, 'Claude plugin names must be kombai.');
   assert(VERSION_RE.test(manifest.version), `Invalid Claude plugin version: ${manifest.version}`);
   assert(manifest.version === contract.version, 'Claude manifest and package contract versions must match.');
-  // Anthropic's plugin directory warns on `icon` ("Field from another tool's manifest"): Claude Code ignores it. The
-  // listing's icon is uploaded on the submission's Listing tab instead.
+  // Anthropic's plugin directory warns on `icon` ("Field from another tool's manifest"), and warns "No icon" without
+  // one: it reads the icon from the default path instead, .claude-plugin/icon.png, a square PNG 512 to 2048 px a side
+  // and under 2 MB. The listing takes it only the first time the plugin is saved or submitted in the portal.
   assert(
     manifest.icon === undefined,
-    "Claude manifest must not name an icon: Anthropic's plugin directory warns on it. Upload the logo on the listing.",
+    "Claude manifest must not name an icon: Anthropic's plugin directory warns on it. Ship .claude-plugin/icon.png.",
   );
+  checkIcon(path.join(pluginRoot, ICON_FILE));
   assert(contract.schemaVersion === 'kombai-claude-code-plugin/v2', 'Unexpected Claude package contract schema.');
   for (const file of [
     'README.md',

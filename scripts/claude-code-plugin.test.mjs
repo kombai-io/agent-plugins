@@ -212,6 +212,28 @@ test('Claude validation refuses an icon in the manifest, which the plugin direct
   });
 });
 
+test('Claude validation requires a square PNG icon at .claude-plugin/icon.png, 512 to 2048 px', () => {
+  fixture((root) => {
+    const iconPath = path.join(root, 'plugins/claude-code/.claude-plugin/icon.png');
+    const original = fs.readFileSync(iconPath);
+    validateClaudeCodePlugin(root);
+    const sized = (width, height) => {
+      const data = Buffer.from(original);
+      data.writeUInt32BE(width, 16);
+      data.writeUInt32BE(height, 20);
+      return data;
+    };
+    fs.writeFileSync(iconPath, sized(512, 256));
+    assert.throws(() => validateClaudeCodePlugin(root), /must be square, 512 to 2048 px/);
+    fs.writeFileSync(iconPath, sized(256, 256));
+    assert.throws(() => validateClaudeCodePlugin(root), /must be square, 512 to 2048 px/);
+    fs.writeFileSync(iconPath, '<svg/>');
+    assert.throws(() => validateClaudeCodePlugin(root), /must be a PNG/);
+    fs.rmSync(iconPath);
+    assert.throws(() => validateClaudeCodePlugin(root), /Missing Claude plugin file: \.claude-plugin\/icon\.png/);
+  });
+});
+
 test('Claude validation requires every skill to open with its Claude Code-only notice', () => {
   fixture((root) => {
     const notice = CHAT_NOTICES['claude-code'];
