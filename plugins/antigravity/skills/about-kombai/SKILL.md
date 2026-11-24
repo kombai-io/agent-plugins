@@ -6,17 +6,18 @@ description: Answer the user's questions about Kombai itself (what it is, which 
 When Antigravity runs terminal commands in its sandbox, request to run the first command below
 outside the sandbox **from the first try**, and the same for every later Kombai CLI command: the
 sandbox has no network, and Kombai writes `~/.kombai`. `npx` may contact the package registry before
-Kombai starts. Do not try the sandboxed command first. If the request is refused, or this session
-cannot ask (a headless `agy -p` run), do not retry inside the sandbox: explain the restriction and
-ask the user to allow Kombai's commands with the Allow rules
-`command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)` and
-`command(regex:node .*/\.kombai/cli/install/[a-z]+/launch\.mjs.? .*)` (`unsandboxed(...)` on
-business and enterprise accounts) in Antigravity's permission settings; for agy, with
-`/permissions` or under `permissions.allow` in `~/.gemini/antigravity-cli/settings.json`. The first
-rule matches every Kombai CLI version started with `npx`, so it keeps working when Kombai updates,
-and covers Windows, where commands run as `npx.cmd`. The second matches the later commands, which
-run Kombai's own copy under `~/.kombai/cli/install` with `node`. Answering the approval prompt with
-"always allow" covers only the Kombai version this skill runs now.
+Kombai starts. Do not try the sandboxed command first. If approval is declined, stop. A headless
+`agy -p` run cannot prompt. For headless use, ask the user to add the Allow rule
+`command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)` for the bootstrap in Antigravity's
+permission settings (in agy, `/permissions` or `permissions.allow` in
+`~/.gemini/antigravity-cli/settings.json`). Business and enterprise accounts use `unsandboxed(...)`.
+
+If the CLI prints a Node launcher for later commands, verify its absolute path against the installed
+`launch.mjs` under the user's own `~/.kombai/cli/install/latest/` or `beta/` channel. Only then
+offer a literal Allow rule, for example `command(node "/Users/sam/.kombai/cli/install/latest/launch.mjs")`.
+Substitute the verified path, keeping the quotes and forward slashes on Windows too. Replace any
+older Node launcher rule that used a wildcard path. If the path cannot be verified or the host
+still prompts, ask for approval of the individual command in an interactive session.
 
 Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.3.1`.
 
