@@ -6,18 +6,21 @@ description: Answer the user's questions about Kombai itself (what it is, which 
 When Antigravity runs terminal commands in its sandbox, request to run the first command below
 outside the sandbox **from the first try**, and the same for every later Kombai CLI command: the
 sandbox has no network, and Kombai writes `~/.kombai`. `npx` may contact the package registry before
-Kombai starts. Do not try the sandboxed command first. If approval is declined, stop. A headless
-`agy -p` run cannot prompt. For headless use, ask the user to add the Allow rule
-`command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)` for the bootstrap in Antigravity's
-permission settings (in agy, `/permissions` or `permissions.allow` in
-`~/.gemini/antigravity-cli/settings.json`). Business and enterprise accounts use `unsandboxed(...)`.
+Kombai starts. Do not try the sandboxed command first. If approval is declined, explain that Kombai
+needs network access and writes to the user's home directory, then stop.
 
-If the CLI prints a Node launcher for later commands, verify its absolute path against the installed
-`launch.mjs` under the user's own `~/.kombai/cli/install/latest/` or `beta/` channel. Only then
-offer a literal Allow rule, for example `command(node "/Users/sam/.kombai/cli/install/latest/launch.mjs")`.
-Substitute the verified path, keeping the quotes and forward slashes on Windows too. Replace any
-older Node launcher rule that used a wildcard path. If the path cannot be verified or the host
-still prompts, ask for approval of the individual command in an interactive session.
+For a headless `agy -p` run, the user can configure both Allow rules before starting. For the
+bootstrap use `command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)`. For later commands, use
+the absolute home directory of the account that runs agy and append `.kombai/cli/install/latest/launch.mjs`
+(use `beta` for the beta channel). For example, Sam would use `command(node "/Users/sam/.kombai/cli/install/latest/launch.mjs")`.
+Substitute that account's actual path and keep the quotes. The bootstrap installs the launcher there when needed.
+Replace any older Node launcher rule that uses a wildcard path.
+
+Add the rules in Antigravity's permission settings (in agy, `/permissions` or `permissions.allow` in
+`~/.gemini/antigravity-cli/settings.json`). Business and enterprise accounts use `unsandboxed(...)`.
+The launcher prefix covers ordinary POSIX commands. In native PowerShell and Command Prompt, approve
+the complete command. A headless run cannot prompt; if a command needs approval, explain which
+command was blocked.
 
 Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.3.1`.
 

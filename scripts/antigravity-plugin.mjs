@@ -85,7 +85,7 @@ export const ANTIGRAVITY_SANDBOX = 'When Antigravity runs terminal commands in i
 // words, so a rule naming the pinned CLI version would stop matching when set-cli-version moves it; each word of a
 // `regex:` rule is matched as a whole regular expression, so this takes any CLI version, and `npx.cmd` on Windows.
 export const ANTIGRAVITY_ALLOW_RULE = 'command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)';
-// An example only: the user substitutes the absolute path verified under their managed CLI installation.
+// An example only: the user fills in their agy account's absolute home directory and channel before the first run.
 export const ANTIGRAVITY_LAUNCHER_EXAMPLE = 'command(node "/Users/sam/.kombai/cli/install/latest/launch.mjs")';
 
 function readJson(file) {
@@ -167,7 +167,7 @@ export function checkAntigravityPluginDir(pluginRoot, { team = false } = {}) {
   assert(manifest.version === contract.version, 'Antigravity manifest and package contract versions must match.');
   assert(contract.schemaVersion === 'kombai-antigravity-plugin/v2', 'Unexpected Antigravity package contract schema.');
   checkPluginFiles(pluginRoot, [...PLUGIN_FILES, logo], 'Antigravity plugin');
-  // A headless first run must work with only the bootstrap rule, before there is a managed launcher to approve.
+  // The first command bootstraps with npx; the managed launcher may not exist yet.
   checkCliContract(pluginRoot, contract, 'Antigravity', { team, npxOnly: true });
   checkSkills(pluginRoot, 'Antigravity');
   for (const name of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {

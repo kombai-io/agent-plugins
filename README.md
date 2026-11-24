@@ -413,10 +413,10 @@ The Antigravity plugin is the exception. Its skills have the line that names `np
 
 > Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.3.1`.
 
-A headless `agy -p` run can start with the npm bootstrap Allow rule. If the CLI then prints a Node
-launcher, add a literal Allow rule for its verified absolute path in the user's managed CLI
-installation. The Antigravity skills keep their first command on npx so it also works before the
-launcher is installed. See the [Antigravity permission setup](plugins/antigravity/README.md#using-it).
+For a headless `agy -p` run on a POSIX shell, the user can configure the npm bootstrap rule and the
+literal launcher rule together before the first run. The launcher's path is determined by the agy
+account's home directory and the CLI channel. The first command uses npx to install it.
+See the [Antigravity permission setup](plugins/antigravity/README.md#using-it) for the rules and Windows behavior.
 
 Disclose it where a directory asks what the plugin downloads or runs:
 the CLI's `skill faq` (Setup and problems, Updates) says the same to users. Two rules for the pin
