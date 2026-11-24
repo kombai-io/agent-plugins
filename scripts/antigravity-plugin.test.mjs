@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
   ANTIGRAVITY_ALLOW_RULE,
-  ANTIGRAVITY_LAUNCHER_RULE,
+  ANTIGRAVITY_LAUNCHER_EXAMPLE,
   ANTIGRAVITY_SANDBOX,
   bumpAntigravityVersion,
   checkAntigravityPluginDir,
@@ -296,36 +296,17 @@ test("the Antigravity skills give an Allow rule that matches every CLI version, 
   });
 });
 
-test("the Antigravity skills give an Allow rule for the commands that run the CLI's own copy", () => {
-  // The same word-by-word model as the npx rule's test. The launcher path is one word with its quotes on it, as a
-  // split on spaces leaves it; the rule takes it without them too.
-  const words = ANTIGRAVITY_LAUNCHER_RULE.slice('command(regex:'.length, -1).split(' ');
-  const matches = (command) => {
-    const parts = command.split(' ');
-    return parts.length >= words.length && words.every((word, i) => new RegExp(`^(?:${word})$`).test(parts[i]));
-  };
-  for (const command of [
-    'node "/Users/u/.kombai/cli/install/latest/launch.mjs" skill',
-    'node "/home/u/.kombai/cli/install/beta/launch.mjs" taste start --brief brief.md --variants 2',
-    'node "C:/Users/u/.kombai/cli/install/latest/launch.mjs" whoami',
-    'node /Users/u/.kombai/cli/install/latest/launch.mjs canvas list',
-  ]) {
-    assert.ok(matches(command), command);
-  }
-  for (const command of [
-    'node "/Users/u/.kombai/cli/install/latest/launch.mjs"',
-    'node "/Users/u/.kombai/cli/install/latest/other.mjs" skill',
-    'node "/Users/u/kombai/cli/install/latest/launch.mjs" skill',
-    'node /tmp/evil.mjs skill',
-    'npx -y @kombai/cli@0.2.0 skill',
-  ]) {
-    assert.ok(!matches(command), command);
-  }
+test('Antigravity validation requires the exact launcher example and rejects broader rules alongside it', () => {
   fixture((root) => {
-    const skillPath = path.join(root, 'plugins/antigravity/skills/work-with-kombai/SKILL.md');
-    const text = fs.readFileSync(skillPath, 'utf8');
-    fs.writeFileSync(skillPath, text.replace(/`command\(regex:node [^`]*`/, '`command(kombai)`'));
-    assert.throws(() => validateAntigravityPlugin(root), /work-with-kombai skill must give the Allow rule .*own copy/);
+    const skillPath = path.join(root, PLUGIN, 'skills', WORKFLOW_SKILL, 'SKILL.md');
+    const skill = fs.readFileSync(skillPath, 'utf8');
+    for (const change of [
+      skill.replace(ANTIGRAVITY_LAUNCHER_EXAMPLE, 'command(node)'),
+      skill.replace(ANTIGRAVITY_SANDBOX, 'Also allow `unsandboxed(regex:node .*)`. ' + ANTIGRAVITY_SANDBOX),
+    ]) {
+      fs.writeFileSync(skillPath, change);
+      assert.throws(() => validateAntigravityPlugin(root), /literal Allow rule for the verified launcher/);
+    }
   });
 });
 

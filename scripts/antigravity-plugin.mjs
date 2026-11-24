@@ -85,11 +85,8 @@ export const ANTIGRAVITY_SANDBOX = 'When Antigravity runs terminal commands in i
 // words, so a rule naming the pinned CLI version would stop matching when set-cli-version moves it; each word of a
 // `regex:` rule is matched as a whole regular expression, so this takes any CLI version, and `npx.cmd` on Windows.
 export const ANTIGRAVITY_ALLOW_RULE = 'command(regex:npx(.cmd)? -y @kombai/cli@[a-z0-9.-]+ .*)';
-// The Allow rule for every Kombai command after the first. A self-managing CLI (0.2.0 and later) keeps its own copy
-// under ~/.kombai/cli/install/<channel>/ and its skill text runs every later command through that folder's launcher,
-// `node "<home>/.kombai/cli/install/<channel>/launch.mjs" <command>` (vscode-assistant packages/cli/src/managed/place.js,
-// `launcherRun`): forward slashes on Windows too, the path in double quotes, which `.*` and `.?` absorb.
-export const ANTIGRAVITY_LAUNCHER_RULE = 'command(regex:node .*/\\.kombai/cli/install/[a-z]+/launch\\.mjs.? .*)';
+// An example only: the user fills in their agy account's absolute home directory and channel before the first run.
+export const ANTIGRAVITY_LAUNCHER_EXAMPLE = 'command(node "/Users/sam/.kombai/cli/install/latest/launch.mjs")';
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -170,25 +167,25 @@ export function checkAntigravityPluginDir(pluginRoot, { team = false } = {}) {
   assert(manifest.version === contract.version, 'Antigravity manifest and package contract versions must match.');
   assert(contract.schemaVersion === 'kombai-antigravity-plugin/v2', 'Unexpected Antigravity package contract schema.');
   checkPluginFiles(pluginRoot, [...PLUGIN_FILES, logo], 'Antigravity plugin');
-  // The skills run the CLI through npx alone. Where Antigravity can't ask (a headless `agy -p` run) it runs only the
-  // commands the user's Allow rules match, by how they start, and skips the rest; the rules the skills give are for
-  // `npx … @kombai/cli@…` and `kombai`. A command that starts with `node` (the installed CLI's launcher) or `if` (a
-  // check for it) would be skipped, and the skill would send the user back to the same rules.
+  // The first command bootstraps with npx; the managed launcher may not exist yet.
   checkCliContract(pluginRoot, contract, 'Antigravity', { team, npxOnly: true });
   checkSkills(pluginRoot, 'Antigravity');
   for (const name of [WORKFLOW_SKILL, FAQ_SKILL, ASSETS_SKILL]) {
     const skill = fs.readFileSync(path.join(pluginRoot, 'skills', name, 'SKILL.md'), 'utf8');
+    const guidance = skillGuidance(skill).replace(/\s+/g, ' ');
     assert(
-      skillGuidance(skill).includes(ANTIGRAVITY_SANDBOX),
+      guidance.includes(ANTIGRAVITY_SANDBOX),
       `Antigravity ${name} skill must ask to run outside Antigravity's sandbox before the first command.`,
     );
     assert(
-      skillGuidance(skill).replace(/\s+/g, ' ').includes(ANTIGRAVITY_ALLOW_RULE),
+      guidance.includes(ANTIGRAVITY_ALLOW_RULE),
       `Antigravity ${name} skill must give the Allow rule ${ANTIGRAVITY_ALLOW_RULE}, which matches every CLI version.`,
     );
+    const rules = [...guidance.matchAll(/`((?:command|unsandboxed)\([^`]*\))`/g)].map(([, rule]) => rule);
+    const allowed = [ANTIGRAVITY_ALLOW_RULE, ANTIGRAVITY_LAUNCHER_EXAMPLE, 'unsandboxed(...)'];
     assert(
-      skillGuidance(skill).replace(/\s+/g, ' ').includes(ANTIGRAVITY_LAUNCHER_RULE),
-      `Antigravity ${name} skill must give the Allow rule ${ANTIGRAVITY_LAUNCHER_RULE}, which matches the CLI's own copy.`,
+      rules.includes(ANTIGRAVITY_LAUNCHER_EXAMPLE) && rules.every((rule) => allowed.includes(rule)),
+      `Antigravity ${name} skill must show a literal Allow rule for the verified launcher and no broader rule.`,
     );
   }
   return manifest.version;

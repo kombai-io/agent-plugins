@@ -413,12 +413,10 @@ The Antigravity plugin is the exception. Its skills have the line that names `np
 
 > Run Kombai's CLI (`kombai` below) as `npx -y @kombai/cli@0.3.1`.
 
-Where Antigravity can't ask the user (a headless `agy -p` run) it skips any command the user's Allow
-rules don't match, and a rule matches by how a command starts. The rules its skills give are for the
-`npx` command and `kombai`, so a command that starts with `node` or `if` would be skipped there, and
-the skill would send the user back to the same rules. Its validator refuses the launcher line
-(`npxOnly` in `scripts/antigravity-plugin.mjs`), and its test checks that every command the skills
-run starts the way the rule allows.
+For a headless `agy -p` run on a POSIX shell, the user can configure the npm bootstrap rule and the
+literal launcher rule together before the first run. The launcher's path is determined by the agy
+account's home directory and the CLI channel. The first command uses npx to install it.
+See the [Antigravity permission setup](plugins/antigravity/README.md#using-it) for the rules and Windows behavior.
 
 Disclose it where a directory asks what the plugin downloads or runs:
 the CLI's `skill faq` (Setup and problems, Updates) says the same to users. Two rules for the pin
